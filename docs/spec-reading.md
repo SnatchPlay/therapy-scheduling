@@ -43,7 +43,7 @@
 
 Питання інших розробників, на які спираюсь: Sofiia-pm/therapy-scheduling-spec#3 (відповідь PM — B, додано
 AC-HOLD-22/23), Sofiia-pm/therapy-scheduling-spec#5 (відповідь PM — C, додано AC-HOLD-20/21),
-Sofiia-pm/therapy-scheduling-spec#4 (відповіді ще немає).
+Sofiia-pm/therapy-scheduling-spec#4 (відповідь PM — A: повідомлення над усіма слотами дня; змінено AC-HOLD-18, додано AC-HOLD-24 — перенесено зміною `clarify-slot-hold`, MODIFIED / ADDED).
 
 ## Власні припущення
 
