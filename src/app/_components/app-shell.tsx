@@ -5,6 +5,7 @@ import { type Role, STAFF } from "@/lib/supabase/viewer";
 
 // Посилання за матрицею прав requirements/product.md: терапевт бачить лише свій розклад.
 const LINKS: { href: string; label: string; roles: readonly Role[] }[] = [
+  { href: "/slots", label: "Slots", roles: STAFF },
   { href: "/clients", label: "Clients", roles: STAFF },
 ];
 

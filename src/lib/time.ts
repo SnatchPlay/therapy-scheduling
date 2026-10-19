@@ -1,0 +1,41 @@
+// Час практики: America/Los_Angeles, формат РРРР-ММ-ДД ГГ:ХХ, 24 години (припущення вимоги PM).
+export const PRACTICE_TIME_ZONE = "America/Los_Angeles";
+
+const parts = new Intl.DateTimeFormat("en-CA", {
+  timeZone: PRACTICE_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+function practiceParts(value: string | Date) {
+  return Object.fromEntries(parts.formatToParts(new Date(value)).map((p) => [p.type, p.value]));
+}
+
+/** «2026-11-03 14:30» */
+export function formatPracticeDateTime(value: string | Date): string {
+  const p = practiceParts(value);
+  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`;
+}
+
+/** «14:30» */
+export function formatPracticeTime(value: string | Date): string {
+  const p = practiceParts(value);
+  return `${p.hour}:${p.minute}`;
+}
+
+/** Сьогоднішня дата практики «2026-11-03». */
+export function practiceDate(value: string | Date = new Date()): string {
+  const p = practiceParts(value);
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
+/** Існуюча календарна дата «РРРР-ММ-ДД» (Date.parse приймає й «2026-02-31», тож звіряємо туди й назад). */
+export function isIsoDate(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const time = Date.parse(`${value}T00:00:00Z`);
+  return !Number.isNaN(time) && new Date(time).toISOString().slice(0, 10) === value;
+}

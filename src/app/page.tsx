@@ -5,7 +5,8 @@ import { getViewer, STAFF } from "@/lib/supabase/viewer";
 // Головна — розвилка за роллю (матриця прав requirements/product.md).
 export default async function Home() {
   const { role, email } = await getViewer();
-  if (role && STAFF.includes(role)) redirect("/clients");
+  // design.md Р6: планувальник починає зі слотів.
+  if (role && STAFF.includes(role)) redirect("/slots");
 
   return (
     <AppShell role={role} email={email} title="Therapy scheduling">
