@@ -37,6 +37,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      clients: {
+        Row: {
+          id: string;
+          full_name: string;
+          email: string;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          full_name: string;
+          email: string;
+          created_by?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          full_name?: string;
+          email?: string;
+          created_by?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
