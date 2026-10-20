@@ -4,7 +4,7 @@
 Докази — посилання (run CI, PR), назви змінних і знімки екрана в docs/img/. Значень секретів і паролів тут немає.
 -->
 
-Моє репо: https://github.com/SnatchPlay/therapy-scheduling · Прод-URL: PROD_URL
+Моє репо: https://github.com/SnatchPlay/therapy-scheduling · Прод-URL: https://therapy-scheduling-weld.vercel.app
 Репо вимог PM: https://github.com/Sofiia-pm/therapy-scheduling-spec · Організація Supabase: особистий акаунт (Free)
 
 ## 1. Інструменти й репо
@@ -41,9 +41,11 @@
 ## 4. Vercel
 
 - [x] Add New → Project → імпорт `SnatchPlay/therapy-scheduling`; preview на кожен PR (бот Vercel у PR #2–#6)
-- [ ] Змінні Production і Preview — лише `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — ще не підтверджено знімком
-- [ ] Deployment Protection → **Require Log In** вимкнено — ще ні: preview 2026-10-20 перенаправляє на `vercel.com/sso-api`
-- [ ] Прод-URL відкривається, вхід як `admin@example.test` — ще не перевірено
+- [x] Змінні Production і Preview — лише `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; `SUPABASE_SECRET_KEY` у Vercel немає — `docs/img/vercel-env.png`
+- [x] Deployment Protection → **Require Log In** вимкнено — `docs/img/vercel-require-login-off.png`; перевірка 2026-10-20:
+      `curl` на `/login` preview з PR #6 → `200` без перенаправлення на `vercel.com/sso-api` (до вимкнення — `302` туди)
+- [x] Прод-URL https://therapy-scheduling-weld.vercel.app відкривається (`curl …/login` → `200`); вхід як `admin@example.test`
+      показує роль `admin` — `docs/img/prod-login-admin.png`
 
 ## 5. База й перший зелений CI
 
@@ -51,7 +53,7 @@
       і `supabase/seed.sql` — https://github.com/SnatchPlay/therapy-scheduling/actions/runs/39438432639
 - [x] `npm run users:demo` (2026-10-20): `admin@example.test — створено, роль admin`, `member1@example.test` і
       `member2@example.test — створено, роль member` (вивід скрипта; пароль не друкується)
-- [ ] Вхід як `admin@example.test` на прод-URL — ще не перевірено
+- [x] Вхід як `admin@example.test` на прод-URL — `docs/img/prod-login-admin.png`
 - [x] CI на `main` зелений: `spec`, `app`, `conformance`, `db-check`, `db-deploy` — https://github.com/SnatchPlay/therapy-scheduling/actions/runs/39438432639
 
 ## 6. Ruleset `solo-main` (після зеленого CI на `main`)
