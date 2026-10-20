@@ -79,4 +79,4 @@
       журнал `docs/spec-reading.md`
 - [x] Переклад у специфікацію: `add-slot-hold` → https://github.com/SnatchPlay/therapy-scheduling/pull/2;
       уточнення `clarify-slot-hold` (MODIFIED / ADDED) → https://github.com/SnatchPlay/therapy-scheduling/pull/4;
-      `npm run ac:coverage` без «вимогу PM ще не перекладено»
+      `npm run ac:coverage` завершилася без повідомлення «вимогу PM ще не перекладено»
