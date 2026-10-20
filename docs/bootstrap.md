@@ -26,8 +26,8 @@
 - [x] Authentication: «Allow new users to sign up» **вимкнено**, «Confirm email» **вимкнено** — `docs/img/auth-signups.png`
 - [ ] Authentication → URL Configuration: Site URL = прод-URL Vercel; Redirect URLs `http://localhost:3000/**`,
       `https://*-snatchplays-projects.vercel.app/**` — ще не підтверджено знімком
-- [ ] `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`,
-      `DEMO_USER_PASSWORD` — `DEMO_USER_PASSWORD` ще не задано (`npm run users:demo` → «Не задано: DEMO_USER_PASSWORD»)
+- [x] `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`,
+      `DEMO_USER_PASSWORD` (лише назви; значень у репо й чаті немає)
 
 ## 3. GitHub: environment `production` і секрети
 
@@ -49,7 +49,9 @@
 
 - [x] Actions → CI → Run workflow (`main`, `include_seed` ✓) → `db-deploy` застосував `20261012000000_profiles_and_roles.sql`
       і `supabase/seed.sql` — https://github.com/SnatchPlay/therapy-scheduling/actions/runs/39438432639
-- [ ] `npm run users:demo` → вхід як `admin@example.test` локально й на прод-URL — ще не зроблено
+- [x] `npm run users:demo` (2026-10-20): `admin@example.test — створено, роль admin`, `member1@example.test` і
+      `member2@example.test — створено, роль member` (вивід скрипта; пароль не друкується)
+- [ ] Вхід як `admin@example.test` на прод-URL — ще не перевірено
 - [x] CI на `main` зелений: `spec`, `app`, `conformance`, `db-check`, `db-deploy` — https://github.com/SnatchPlay/therapy-scheduling/actions/runs/39438432639
 
 ## 6. Ruleset `solo-main` (після зеленого CI на `main`)
