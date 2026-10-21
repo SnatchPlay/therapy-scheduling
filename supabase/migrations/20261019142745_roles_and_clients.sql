@@ -4,8 +4,8 @@
 -- ── Ролі: admin, scheduler, therapist замість member, admin шаблону ─────────
 -- Порядок із заголовка 20261012000000_profiles_and_roles.sql: старий constraint → дані → default → новий constraint.
 alter table public.profiles drop constraint profiles_role_check;
--- Старі демо-акаунти member — найменші права (therapist без рядка в therapists нічого не бачить); ролі ставить users:demo.
-update public.profiles set role = 'therapist' where role = 'member';
+-- design.md Р1: старі демо-акаунти member стають scheduler.
+update public.profiles set role = 'scheduler' where role = 'member';
 -- Найменші права за замовчуванням: терапевт без рядка в therapists не бачить нічого.
 alter table public.profiles alter column role set default 'therapist';
 alter table public.profiles
@@ -32,8 +32,10 @@ create table public.clients (
   email      text not null,
   created_by uuid not null default auth.uid() references public.profiles (id),
   created_at timestamptz not null default now(),
-  -- AC-HOLD-11: порожнє ім'я (зокрема лише з пробілів) не приймаємо.
-  constraint clients_full_name_check check (btrim(full_name) <> ''),
+  -- AC-HOLD-11: порожнє ім'я не приймаємо, зокрема лише з пробілів, табуляцій, переносів чи нерозривних пробілів:
+  -- потрібен хоч один знак поза цим списком. Список Unicode явний, бо [:space:] для не-ASCII залежить від локалі бази.
+  constraint clients_full_name_check
+    check (full_name ~ '[^[:space:]\u00a0\u1680\u2000-\u200b\u2028\u2029\u202f\u205f\u3000\ufeff]'),
   -- AC-HOLD-15: email — один знак @ з текстом до й після, без пробілів.
   constraint clients_email_check check (email ~ '^[^@[:space:]]+@[^@[:space:]]+$'),
   -- AC-HOLD-16: email унікальний; тригер нижче зберігає його у вигляді lower(btrim(email)).

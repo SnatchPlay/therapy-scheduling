@@ -1,10 +1,10 @@
 import { AppShell, buttonClass, inputClass } from "@/app/_components/app-shell";
 import { messageFor } from "@/lib/messages";
-import { requireRole } from "@/lib/supabase/viewer";
+import { requireRole, STAFF } from "@/lib/supabase/viewer";
 import { createClientCard } from "./actions";
 
 export default async function ClientsPage({ searchParams }: PageProps<"/clients">) {
-  const { supabase, role, email } = await requireRole("scheduler", "admin");
+  const { supabase, role, email } = await requireRole(...STAFF);
   const { msg } = await searchParams;
 
   const { data: clients, error } = await supabase.from("clients").select("id, full_name, email").order("full_name");
@@ -33,7 +33,14 @@ export default async function ClientsPage({ searchParams }: PageProps<"/clients"
           </tr>
         </thead>
         <tbody>
-          {(clients ?? []).map((c) => (
+          {clients.length === 0 ? (
+            <tr>
+              <td colSpan={2} className="py-2 text-zinc-500">
+                No clients yet.
+              </td>
+            </tr>
+          ) : null}
+          {clients.map((c) => (
             <tr key={c.id} className="border-t border-zinc-200 dark:border-zinc-800">
               <td className="py-2">{c.full_name}</td>
               <td className="py-2">{c.email}</td>

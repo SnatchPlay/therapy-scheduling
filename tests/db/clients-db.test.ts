@@ -12,6 +12,10 @@ beforeAll(async () => {
   SCHEDULER = t.users["scheduler1@example.test"];
   ADMIN = t.users["admin@example.test"];
   THERAPIST = t.users["therapist1@example.test"];
+  // Кожен тест бере свої дані; спільне — лише client1, який за AC-HOLD-16 «уже існує».
+  await t.asService("insert into public.clients (full_name, email, created_by) values ('Client One', 'client1@example.test', $1)", [
+    ADMIN,
+  ]);
 }, 60_000);
 
 /** Те саме, що робить server action: insert у clients від імені користувача; помилка → текст повідомлення. */
@@ -25,22 +29,36 @@ async function createClientAs(userId: string, fullName: string, email: string) {
 }
 
 describe("Картка клієнта", () => {
-  it("AC-HOLD-10: планувальник створює клієнта Client Three, і його можна вибрати", async () => {
+  it("AC-HOLD-10: планувальник створює клієнта Client Three, і він є у списку клієнтів", async () => {
     expect(await createClientAs(SCHEDULER, "Client Three", "client3@example.test")).toBe("created");
-    const rows = await t.asUser<{ full_name: string }>(
+    const rows = await t.asUser<{ full_name: string; created_by: string }>(
       SCHEDULER,
-      "select full_name from public.clients where email = 'client3@example.test'",
+      "select full_name, created_by from public.clients where email = 'client3@example.test'",
     );
-    expect(rows).toEqual([{ full_name: "Client Three" }]);
+    expect(rows).toEqual([{ full_name: "Client Three", created_by: SCHEDULER }]);
+  });
+
+  it("AC-HOLD-10: адміністратор теж створює клієнта (AC-HOLD-19); ім'я не латиницею приймаємо", async () => {
+    expect(await createClientAs(ADMIN, "Клієнт П'ять", "client5@example.test")).toBe("created");
+  });
+
+  it("автора картки не підробити: created_by ставить база", async () => {
+    await expect(
+      t.asUser(SCHEDULER, "insert into public.clients (full_name, email, created_by) values ('X', 'x6@example.test', $1)", [
+        ADMIN,
+      ]),
+    ).rejects.toThrow(/permission denied/);
   });
 
   it("AC-HOLD-11: порожнє ім'я — клієнта не створено, повідомлення про ім'я та email", async () => {
     expect(await createClientAs(SCHEDULER, "", "client11@example.test")).toBe(
       "Enter the client's name and a valid email.",
     );
-    expect(await createClientAs(SCHEDULER, "   ", "client11@example.test")).toBe(
-      "Enter the client's name and a valid email.",
-    );
+    for (const blank of ["   ", "\t", "\n \r", "\u00a0", "\u00a0\u2007\u3000\ufeff"]) {
+      expect(await createClientAs(SCHEDULER, blank, "client11@example.test")).toBe(
+        "Enter the client's name and a valid email.",
+      );
+    }
     const [{ n }] = await t.asService<{ n: number }>(
       "select count(*)::int as n from public.clients where email = 'client11@example.test'",
     );
@@ -58,7 +76,6 @@ describe("Картка клієнта", () => {
   });
 
   it("AC-HOLD-16: клієнт з email client1@example.test уже існує — другого не створено", async () => {
-    expect(await createClientAs(ADMIN, "Client One", "client1@example.test")).toBe("created");
     expect(await createClientAs(SCHEDULER, "Client One Again", "client1@example.test")).toBe(
       "A client with this email already exists.",
     );

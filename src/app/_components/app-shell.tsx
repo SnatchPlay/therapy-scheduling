@@ -1,11 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { signOut } from "@/app/login/actions";
-import type { Role } from "@/lib/supabase/viewer";
+import { type Role, STAFF } from "@/lib/supabase/viewer";
 
 // Посилання за матрицею прав requirements/product.md: терапевт бачить лише свій розклад.
-const LINKS: { href: string; label: string; roles: Role[] }[] = [
-  { href: "/clients", label: "Clients", roles: ["scheduler", "admin"] },
+const LINKS: { href: string; label: string; roles: readonly Role[] }[] = [
+  { href: "/clients", label: "Clients", roles: STAFF },
 ];
 
 export function AppShell({
@@ -15,7 +15,7 @@ export function AppShell({
   message,
   children,
 }: {
-  role: Role;
+  role: Role | null;
   email: string | null;
   title: string;
   message?: string;
@@ -25,14 +25,14 @@ export function AppShell({
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-8">
       <header className="flex flex-wrap items-center gap-4 border-b border-zinc-200 pb-4 text-sm dark:border-zinc-800">
         <nav className="flex flex-wrap gap-4">
-          {LINKS.filter((l) => l.roles.includes(role)).map((l) => (
+          {LINKS.filter((l) => role && l.roles.includes(role)).map((l) => (
             <Link key={l.href} href={l.href} className="font-medium underline-offset-4 hover:underline">
               {l.label}
             </Link>
           ))}
         </nav>
         <span className="ml-auto text-zinc-500" data-testid="viewer">
-          {email} · {role}
+          {email} · {role ?? "no role"}
         </span>
         <form action={signOut}>
           <button type="submit" className="rounded border border-zinc-300 px-3 py-1 dark:border-zinc-700">

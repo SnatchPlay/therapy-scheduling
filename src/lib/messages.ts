@@ -1,4 +1,4 @@
-// Тексти, які бачить користувач, — дослівно з критеріїв приймання PM (requirements/2-…md).
+// Тексти, які бачить користувач. Ті, що мають AC у коментарі, — дослівно з критеріїв приймання PM (requirements/2-…md).
 // Server actions передають сторінці лише код (?msg=<код>), текст — звідси.
 export const MESSAGES = {
   INVALID_CLIENT: "Enter the client's name and a valid email.", // AC-HOLD-11, AC-HOLD-15
@@ -9,7 +9,7 @@ export const MESSAGES = {
 
 export type MessageCode = keyof typeof MESSAGES;
 
-export function isMessageCode(value: unknown): value is MessageCode {
+function isMessageCode(value: unknown): value is MessageCode {
   return typeof value === "string" && Object.hasOwn(MESSAGES, value);
 }
 

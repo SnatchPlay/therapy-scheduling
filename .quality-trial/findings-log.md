@@ -17,3 +17,46 @@ archive/sync skills; `run.sh` failed open on a bad base; docs described PGlite a
 openspec rule removed → its test failed (before the rule itself was dropped). Not run: stryker on a
 real step (comes with task 1), CodeRabbit (after the PR opens). Would a tool have caught the High? No:
 only running the script did — the reviewer ran it.
+
+## 2026-10-21 · T-1 clients (task 1 of impl-slot-hold)
+
+Ran: gate; `run.sh` (ast-grep hit `viewer.ts` `getClaims()` — noise: an auth error leaves no claims and
+the page redirects to /login, fails closed; rule now skips `auth.getClaims()`, checked on a fixture:
+2 real hits kept, getClaims dropped; fallow: `isMessageCode` exported but used only in its file — real,
+unexported); two blind reviewers (correctness, principles). Real: whitespace-only names with tab,
+newline or NBSP passed the check — Medium, fixed with an explicit Unicode list (`[:space:]` for non-ASCII
+depends on the database locale; PGlite is `C`), hand mutation: old `btrim` check back → AC-HOLD-11
+failed; sign-out lost for therapists on the home page (regression); staff roles copied in 4 places
+(`STAFF` now); the migration mapped `member` to `therapist` against design Р1 (now `scheduler`, as
+designed); order-dependent DB tests (self-seeding now, `--sequence.shuffle` green); forged
+`created_by` untested (test added); a false header comment; dead `?? []`; no error boundary or empty
+state (added). Mutation: the first stryker runs were **not trusted**: 0 killed, then "killed" that were
+timeouts. Cause: `@stryker-mutator/vitest-runner` (9 and 10) never activates a mutant under Vitest 5
+(it still sets the removed `test.poolOptions`): a hand-applied surviving mutant failed 2 tests. Fixed
+`stryker.sh`: command runner, `coverageAnalysis: off`, timeouts reported apart. Control run on the
+commit without unit tests: 11 of 28 killed (the DB tests reach `clientErrorCode` only through two
+constraint paths); with `messages.test.ts`: 27 of 28, the survivor is equivalent (`?? ""` →
+`?? "Stryker was here!"`: neither matches the constraint regex). Not tested: `createClientCard`
+(a thin insert + redirect; the DB tests run the same insert) — checked on the preview after merge.
+Would a tool have caught it? The NBSP case and the role drift: no — reading did; the tool defect:
+only the hand-applied mutant showed it.
+
+Deploy readiness (REQUIRED: migration, `package.json`):
+1. `db-deploy` after merge only. Deployed `main` reads only `profiles`; the new `profiles_role_check`
+   accepts every role it can meet (item 4).
+2. New code before `db-deploy` ends: `/clients` fails on the missing table → `error.tsx` shows
+   "Something went wrong. Try again." for that minute. Old code on the new schema: unaffected.
+3. `node scripts/check-migration-order.mjs` → "нових міграцій 1, усі новіші за 20261012000000
+   (origin/main); застосовані міграції не змінено".
+4. Existing rows (`docs/bootstrap.md` §5: admin, member1, member2): `member` → `scheduler` before the
+   new check; `admin` stays valid. `clients` is new: no rows.
+5. Explicit: `revoke all` + `grant select`, column `grant insert (full_name, email)` to
+   `authenticated`, `service_role` grants; `private.is_scheduler_or_admin()` revoked from public/anon.
+6. `database.types.ts` is still hand-written (known debt) — copied from this PR's `db-check` summary.
+7. No new env names (`git diff main -- .env.example` empty; no new `process.env` in `src`).
+8. `npm run build` → `ƒ /clients`, `ƒ Proxy (Middleware)`.
+9. `demo-users.json`: scheduler1/2 and therapist1/2 replace member1/2 → `npm run users:demo` after
+   merge (a write to the cloud project: ask first).
+10. Red `db-deploy`; `/clients` shows the error boundary.
+11. Revert the code by PR; the schema goes forward: a migration that drops `clients` (its rows are lost)
+    and restores the old role check after mapping `scheduler`/`therapist` back.

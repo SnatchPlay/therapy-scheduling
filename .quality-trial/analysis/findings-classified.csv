@@ -8,3 +8,17 @@ H1-6,2026-10-21,H-1,blind-review,real,FAIL,,running,,,run.sh printed clean resul
 H1-7,2026-10-21,H-1,blind-review,real,DOC,,reading,,,"docs described PGlite, tests/db and roles not yet on main",M
 H1-8,2026-10-21,H-1,blind-review,real,FAIL,,running,,,stryker failure hidden by grep || true,M
 H1-9,2026-10-21,H-1,blind-review,real,TOOLING,,running,,,"13 Low: quoting, word splitting, gh errors, it.each, worktree, --since, case/symlink paths, nested .env, unfailable test",L
+T1-1,2026-10-21,T-1,ast-grep,noise,FAIL,,static,,SG-GETCLAIMS,getClaims read without error: fails closed by redirect,
+T1-2,2026-10-21,T-1,fallow,real,DEAD,,static,,,isMessageCode exported but used only in its file,L
+T1-3,2026-10-21,T-1,blind-review,real,VALIDATION,,reading,,,"names of only tab, newline or NBSP passed clients_full_name_check",M
+T1-4,2026-10-21,T-1,blind-review,real,REGRESSION,,reading,,,home page lost sign-out for therapists,M
+T1-5,2026-10-21,T-1,blind-review,real,DRY,,reading,,,staff roles copied in 4 places,L
+T1-6,2026-10-21,T-1,blind-review,real,DRIFT,,reading,,,migration mapped member to therapist against design R1,L
+T1-7,2026-10-21,T-1,blind-review,real,TEST,,reading,,,DB tests depended on order,L
+T1-8,2026-10-21,T-1,blind-review,real,TEST,,reading,,,forged created_by not tested,L
+T1-9,2026-10-21,T-1,blind-review,real,DOC,,reading,,,header comment claimed every text came from PM,L
+T1-10,2026-10-21,T-1,blind-review,real,UX,,reading,,,no error boundary or empty state on /clients,L
+T1-11,2026-10-21,T-1,blind-review,real,DEAD,,reading,,,dead ?? [] after a thrown error,L
+T1-12,2026-10-21,T-1,stryker,real,TOOLING,,running,,,vitest-runner never activates mutants under Vitest 5: all mutants survive,H
+T1-13,2026-10-21,T-1,stryker,real,TEST,,running,,,clientErrorCode branches and messageFor without unit tests (17 survivors),M
+T1-14,2026-10-21,T-1,stryker,noise,TEST,,running,,STRYKER-EQUIV,equivalent mutant on ?? "" fallback,

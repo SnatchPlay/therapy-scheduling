@@ -1,3 +1,7 @@
 date,step,instrument,diff_lines,tokens,minutes,findings_real,findings_nit,findings_noise,findings_dropped,notes
 2026-10-21,H-1,fallow,1227,,1,1,0,2,0,clone real; entry and CRAP noise
 2026-10-21,H-1,blind-review,1227,152391,9.3,8,0,0,0,tooling reviewer; 18 findings grouped into 6 rows
+2026-10-21,T-1,ast-grep,,,1,0,0,1,0,getClaims fails closed; rule refined
+2026-10-21,T-1,fallow,,,1,1,0,0,0,unused export
+2026-10-21,T-1,blind-review,,,,9,0,0,0,correctness and principles reviewers; findings grouped into 9 rows
+2026-10-21,T-1,stryker,,,15,2,0,1,0,tool defect fixed; 27 of 28 killed after unit tests
