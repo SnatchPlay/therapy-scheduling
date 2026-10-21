@@ -5,7 +5,11 @@ import { redirect } from "next/navigation";
 import { clientErrorCode } from "@/lib/messages";
 import { requireRole, STAFF } from "@/lib/supabase/viewer";
 
-/** AC-HOLD-10, 11, 15, 16: картка клієнта. Перевіряє база (обмеження clients), тут — лише переклад помилки в код. */
+/**
+ * AC-HOLD-10, 11, 15, 16: картка клієнта. Правила (непорожнє ім'я, формат і унікальність email) перевіряє лише база
+ * (обмеження clients): вони діють і для прямого запису через Data API, а друга копія в коді розійшлася б із ними.
+ * Тут — лише тип полів і переклад помилки бази в код повідомлення.
+ */
 export async function createClientCard(formData: FormData) {
   const { supabase } = await requireRole(...STAFF);
 

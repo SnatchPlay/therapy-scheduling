@@ -99,6 +99,8 @@ grant select on table public.clients to authenticated;
 grant insert (full_name, email) on table public.clients to authenticated;
 grant select, insert, update, delete on table public.clients to service_role;
 
+-- Без окремого `(select auth.uid())` у using: private.is_scheduler_or_admin() читає роль через auth.uid()
+-- (private.current_app_role) і для запиту без користувача повертає false. Друга перевірка нічого не додає.
 create policy clients_select_staff
   on public.clients
   for select
