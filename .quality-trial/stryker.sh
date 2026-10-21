@@ -37,18 +37,22 @@ if [ -n "$SINCE" ]; then
   echo "mutating ${MUTATE[*]}"
 fi
 npm ci --ignore-scripts --no-audit --no-fund >/dev/null
-npm i -D --no-save --ignore-scripts --no-audit --no-fund @stryker-mutator/core@9 @stryker-mutator/vitest-runner@9 >/dev/null
+npm i -D --no-save --ignore-scripts --no-audit --no-fund @stryker-mutator/core@10 >/dev/null
 node -e '
 const files = process.argv.slice(1);
 require("fs").writeFileSync("stryker.config.json", JSON.stringify({
-  testRunner: "vitest",
-  plugins: [require.resolve("@stryker-mutator/vitest-runner")],
-  vitest: { configFile: "vitest.config.mts", related: false },
+  // Not @stryker-mutator/vitest-runner: with Vitest 5 it never activates a mutant (it still sets the
+  // removed test.poolOptions), so every mutant "survives" even a unit test that calls the code directly.
+  // The command runner runs the whole suite once per mutant: slower, but each verdict is real.
+  testRunner: "command",
+  commandRunner: { command: "npx vitest run --reporter=dot" },
   mutate: files,
   reporters: ["clear-text", "json"],
   jsonReporter: { fileName: "reports/mutation.json" },
-  concurrency: 4,
-  coverageAnalysis: "perTest",
+  // PGlite tests slow down under load: a short timeout reports a mutant as Timeout, not as killed by a test.
+  concurrency: 2,
+  timeoutMS: 120000,
+  coverageAnalysis: "off",
   // Stryker otherwise prepends // @ts-nocheck to every TS file in its sandbox, fixtures included,
   // which shifts the line numbers tests/scripts/check-spec.test.ts asserts: the dry run fails.
   disableTypeChecks: false
@@ -61,9 +65,9 @@ grep -E '^(All files| [a-z].*\|)|% Mutation|Done in' "$OUT/stryker.log" || true
 
 cp reports/mutation.json "$OUT/stryker.json"
 node -e '
-const r = require(process.argv[1]); let killed = 0, all = 0;
-for (const v of Object.values(r.files)) for (const m of v.mutants) { all++; if (m.status === "Killed" || m.status === "Timeout") killed++; }
-console.log(`\n== killed ${killed} of ${all}`);
+const r = require(process.argv[1]); let killed = 0, timeouts = 0, all = 0;
+for (const v of Object.values(r.files)) for (const m of v.mutants) { all++; if (m.status === "Killed") killed++; if (m.status === "Timeout") timeouts++; }
+console.log(`\n== killed ${killed} of ${all}` + (timeouts ? `; ${timeouts} timed out (not counted: rerun with fewer files)` : ""));
 if (all && !killed) console.log(`== RUN NOT TRUSTED: 0 of ${all} mutants killed, the tests probably did not run`);' "$OUT/stryker.json"
 echo
 echo "== not killed (triage each: test gap, dead branch, equivalent mutant; a survivor that a"
@@ -72,7 +76,7 @@ node -e '
 const r = require(process.argv[1]);
 for (const [f, v] of Object.entries(r.files))
   for (const m of v.mutants)
-    if (m.status === "Survived" || m.status === "NoCoverage") {
+    if (m.status === "Survived" || m.status === "NoCoverage" || m.status === "Timeout") {
       const line = v.source.split("\n")[m.location.start.line - 1].trim();
       console.log(`  ${m.status} ${f}:${m.location.start.line} ${m.mutatorName}: ${line.slice(0, 80)} => ${(m.replacement ?? "").slice(0, 40)}`);
     }' "$OUT/stryker.json"

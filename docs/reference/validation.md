@@ -42,7 +42,8 @@
    `.quality-trial/known-debt.md`. Понад ~150 змінених рядків — рецензент коректності (області self-review)
    і окремий рецензент принципів (`.quality-trial/principles-review.md`); менше — один рецензент з обома.
 4. Мутаційне тестування зміненого TypeScript, що має unit-тести:
-   `.quality-trial/stryker.sh --since <база кроку> <файли>`. Кожен Survived / NoCoverage мутант розібрати.
+   `.quality-trial/stryker.sh --since <база кроку> <файли>`. Кожен Survived / NoCoverage / Timeout мутант розібрати.
+   Прогін, де вбито 0, — недостовірний: перевірити один мутант вручну (внести його й запустити тест).
    Для правил SQL — ручна мутаційна перевірка, записана в PR (скіл `rls-migration`).
 5. Записувати під час розбору: `.quality-trial/findings-log.md`, `analysis/findings-classified.csv`,
    `analysis/runs.csv` (зокрема прогони без знахідок). `python3 -I .quality-trial/analysis/analyze.py`

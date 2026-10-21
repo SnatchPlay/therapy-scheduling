@@ -12,3 +12,7 @@ rule:
     - pattern: "const { data: $D } = await $Q"
     - pattern: "const { data: $D } = $C ? await $Q : $E"
     - pattern: "const [{ data: $A }, { data: $B }] = await Promise.all($$$)"
+  # auth.getClaims(): an error leaves data.claims empty and the caller redirects to /login, so a
+  # failure already fails closed (the template's own proxy.ts reads it the same way).
+  not:
+    pattern: const { data } = await $S.auth.getClaims()
