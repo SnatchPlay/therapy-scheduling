@@ -18,3 +18,5 @@ date,step,instrument,diff_lines,tokens,minutes,findings_real,findings_nit,findin
 2026-10-21,T-4,blind-review,,118000,4,5,4,0,3,one reviewer (app and tests); all Low
 2026-10-21,T-4,stryker,,,6,5,0,0,0,53 mutants 31 killed first run; survivors covered by added tests
 2026-10-21,T-4,fallow,,,1,1,0,0,0,clone of the slot-row mapping; withSlotTimes extracted
+2026-10-21,T-5,blind-review,,113000,4,2,2,0,2,database and tests reviewer; no logic defects
+2026-10-21,T-5,real-postgres-race,,,4,1,0,0,0,client lock with and without (manual mutation); double confirm

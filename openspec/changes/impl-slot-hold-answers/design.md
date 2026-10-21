@@ -15,7 +15,8 @@
   `requirements/product.md`, «Перетин»). Так → `CLIENT_OVERLAP` («This client already has a hold or session at this time.»).
   Прострочені не враховуються (AC-HOLD-26).
 - Одночасні утримання одного клієнта на два слоти, що перетинаються, замки слотів не розрізняють (різні рядки): перед
-  перевіркою тригер блокує рядок клієнта (`select … from public.clients where id = new.client_id for update`).
+  перевіркою тригер блокує рядок клієнта (`select … from public.clients where id = new.client_id for no key update`:
+  не `for update`, щоб не блокувати перевірку зовнішнього ключа інших вставок цього клієнта).
   Порядок замків завжди «слот → клієнт», тож взаємного очікування немає.
 - Перевірка саме в тригері, а не в `hold_slot`: прямий insert через Data API теж не обходить правило.
 

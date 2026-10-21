@@ -80,6 +80,14 @@ describe("Перетин утримань і сеансів клієнта", () 
     expect((await holdAs(t, SCHEDULER, await slotAt(T2, d, "11:00"), client)).id).toBeDefined();
   });
 
+  it("AC-HOLD-25: порядок не важливий — є утримання о 11:00, слот о 10:00 (кінець = початок) утримується, а о 10:30 — відмова", async () => {
+    const d = day();
+    const client = await ensureClient(t, "client1", "client1@example.test");
+    expect((await holdAs(t, SCHEDULER, await slotAt(T1, d, "11:00"), client)).id).toBeDefined();
+    expect((await holdAs(t, SCHEDULER, await slotAt(T2, d, "10:00"), client)).id).toBeDefined();
+    expect(await holdAs(t, SCHEDULER, await slotShifted(T2, d, "10:00", 30), client)).toEqual({ message: OVERLAP });
+  });
+
   it("перетин рахується лише для одного клієнта: client2 на той самий час утримує слот therapist2", async () => {
     const d = day();
     const client1 = await ensureClient(t, "client1", "client1@example.test");

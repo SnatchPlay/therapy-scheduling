@@ -200,3 +200,34 @@ shows the free slot only after picking the day (known-debt; PM period question #
 Dropped: unbounded hold list (declared; PM #9); slot-row markup repeated with `/slots` (about six lines, different content).
 Stryker T-4 (53 mutants, first run, before the added tests): 31 killed; survivors were the unasserted string
 literals of queries, the two error throws, the redirect and the Held/rows guards — the tests added after it cover them.
+
+## 2026-10-21 · T-5 client overlap, re-confirm, email (task 5 of impl-slot-hold-answers)
+
+Ran: gate; `run.sh`; one blind reviewer (database and tests); hand mutations of the migration; two races on real
+Postgres 17 (Docker, `supabase start` in a scratch project, the migrations applied by the CLI); no Stryker (the only
+TypeScript change is string constants in `messages.ts`).
+Hand mutations (each red): overlap check removed (4 tests), touching counted as overlap, expired holds counted,
+`HOLD_ALREADY_CONFIRMED` back to `SLOT_UNAVAILABLE`; the reviewer added: confirmed sessions ignored, any client,
+`ends_at > v_starts_at` removed, `s.starts_at < v_ends_at` removed (survived: every case had the existing hold on the
+earlier slot — a reverse-order test was added and now kills it).
+Races on Postgres 17 (final migration): (1) two schedulers hold different overlapping slots (therapist1 and therapist2,
+same hour) for client1, the first keeps its transaction 3 s — the second gets CLIENT_OVERLAP, 1 hold; the same run
+without `for no key update` on the client row: 2 holds (the mutation); (2) two simultaneous confirms of one hold — the
+second gets HOLD_ALREADY_CONFIRMED, 1 confirmed hold, `confirmed_by` is the first scheduler. The reviewer's F1 (the
+client lock and the simultaneous confirm had no test, task 5.2 was ticked): PGlite has one connection, so the proof is
+this hand check; task 5.2 now says so.
+Reviewer findings: F1 Medium (above), F2 Low (reverse order; fixed), F3 Low (design.md named `for update`, the code and
+the migration comment use `for no key update` so FK checks of other inserts are not blocked; design fixed), F4 Low (the
+AC-HOLD-35 test opened a second PGlite database; now deletes the earlier client3 in the shared one). Dropped: a stale
+`v_now` by the client-lock wait (milliseconds, same pattern as before); no revoke after `create or replace` (ACL kept,
+checked with `pg_proc`).
+Deploy readiness T-5 (REQUIRED: migration): 1. `db-deploy` after merge only; deployed `main` holds slots through
+`hold_slot` and confirms through `confirm_hold`: the new trigger bodies only add a check and a code. 2. New code before
+`db-deploy` ends: the overlap and "already confirmed" messages are missing for that minute — an old code shows the
+generic error page (the codes are unknown to it); old code on the new schema: unaffected. 3. Migration order OK
+(`20261021120000` after `20261019143503`). 4. Existing rows: no table or constraint changes; the trigger checks only
+new inserts. 5. `create or replace` keeps the ACL: `guard_new_hold` and `guard_confirm` are `security definer`,
+`search_path = ''`, executable by nobody but the owner (checked with `pg_proc.proacl`). 6. `database.types.ts`:
+`supabase gen types --local` on the scratch database equals the committed file. 7. No env or dependency change.
+8. `npm run build` unchanged routes. 9. `demo-users.json` unchanged. 10. A red `db-deploy`; a hold or confirm showing
+the error page. 11. Revert the code by PR; the schema goes forward: a migration restoring the old trigger bodies.

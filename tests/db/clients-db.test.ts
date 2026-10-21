@@ -106,18 +106,16 @@ describe("Картка клієнта", () => {
   });
 
   it("AC-HOLD-35: « Client3@Example.TEST » зберігається й показується як client3@example.test", async () => {
-    const fresh = await createTestDb(); // у цій базі client3@example.test ще немає, як у сценарії PM
-    await fresh.asUser(fresh.users["scheduler1@example.test"], "insert into public.clients (full_name, email) values ($1, $2)", [
-      "Client Three",
-      " Client3@Example.TEST ",
-    ]);
-    // Картка й вибір клієнта під час утримання читають email із таблиці: показують те, що збережено.
-    const shown = await fresh.asUser<{ email: string }>(
-      fresh.users["scheduler1@example.test"],
+    // Сценарій PM починається з «клієнта client3 ще немає»: картку з тесту AC-HOLD-10 прибираємо (service_role).
+    await t.asService("delete from public.clients where email = 'client3@example.test'");
+    expect(await createClientAs(SCHEDULER, "Client Three", " Client3@Example.TEST ")).toBe("created");
+    // Картка клієнта і вибір клієнта під час утримання читають email із цієї таблиці: показують те, що збережено.
+    const shown = await t.asUser<{ email: string }>(
+      SCHEDULER,
       "select email from public.clients where full_name = 'Client Three'",
     );
     expect(shown).toEqual([{ email: "client3@example.test" }]);
-  }, 60_000);
+  });
 
   it("запити, запущені разом, ідуть кожен від свого користувача", async () => {
     const [scheduler, therapist] = await Promise.all([
