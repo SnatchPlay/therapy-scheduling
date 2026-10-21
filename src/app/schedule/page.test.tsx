@@ -95,6 +95,21 @@ describe("/schedule", () => {
     expect(rpcCall?.args).toMatchObject({ p_from: "2026-11-02", p_to: "2026-11-09" });
   });
 
+  it("AC-HOLD-30: слот понеділка 23:00 за часом практики (у UTC вже вівторок) — під «Monday 2026-11-02»", async () => {
+    slots = [
+      { slot_id: "late", starts_at: "2026-11-03T07:00:00Z", ends_at: "2026-11-03T08:00:00Z", status: "Free", client_name: null, held_until: null },
+    ];
+    const html = await render({ week: "2026-11-04" });
+    expect(html).toContain("Monday 2026-11-02");
+    expect(html).not.toContain("Tuesday");
+  });
+
+  it("AC-HOLD-30: неділя ввечері за часом практики (у UTC вже понеділок) — ще той самий тиждень", async () => {
+    vi.useFakeTimers({ now: new Date("2026-11-09T05:00:00Z"), toFake: ["Date"] }); // неділя 2026-11-08 21:00 PST
+    await render({});
+    expect(rpcCall?.args).toMatchObject({ p_from: "2026-11-02", p_to: "2026-11-09" });
+  });
+
   it("AC-HOLD-31: наступний тиждень 2026-11-09 – 2026-11-15 із сеансом 2026-11-12 о 10:00 «Confirmed»; посилання між тижнями", async () => {
     slots = [slot("2026-11-12", "10:00", "Confirmed", "client1")];
     const html = await render({ week: "2026-11-09" });

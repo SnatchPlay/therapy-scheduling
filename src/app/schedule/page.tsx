@@ -37,7 +37,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/schedul
         <Link href={`/schedule?week=${previous}`} className="underline">
           Previous week
         </Link>
-        <span className="font-medium" data-testid="week-range">
+        <span className="font-medium">
           {week} – {addDays(week, 6)}
         </span>
         <Link href={`/schedule?week=${next}`} className="underline">

@@ -16,4 +16,3 @@ Add a line when a finding becomes its own refactor or a decision; remove it when
 | `/slots` loads every client and repeats them as options in each holdable slot's form | open, Low — one picker or a searched list when the client count grows |
 | Hold and Create buttons have no pending state: a double click sends two actions, the second reports "no longer available" | open, Low |
 | `/holds` reads `hold_list` without a limit: PM answered #8 (expired holds leave the list when the slot starts, AC-HOLD-29), but confirmed sessions and held rows stay, and PostgREST `max_rows` (1000) would cut the list silently | open, Low — paging or a time window once the list grows |
-| `/schedule` slots section defaults to today: AC-HOLD-21 (hold on 11-05, opened on 11-03) shows the free slot only after the day is picked | open, Low — wait for PM's answer on the period (#9); a default of the nearest day with a hold would be an own invention |

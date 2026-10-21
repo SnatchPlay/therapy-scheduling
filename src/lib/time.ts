@@ -35,10 +35,11 @@ export function practiceDate(value: string | Date = new Date()): string {
 
 /**
  * Існуюча календарна дата «РРРР-ММ-ДД» (Date.parse приймає й «2026-02-31», тож звіряємо туди й назад).
- * Рік 0000 JavaScript приймає, а тип date у Postgres — ні: day_slots упав би з помилкою.
+ * Рік 0000 JavaScript приймає, а тип date у Postgres — ні: day_slots упав би з помилкою. Рік 9999 — ні для addDays:
+ * через 7 днів toISOString дає «+010000-01…», і запит тижня теж упав би.
  */
 export function isIsoDate(value: unknown): value is string {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value) || value.startsWith("0000")) return false;
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value) || /^(0000|9999)/.test(value)) return false;
   const time = Date.parse(`${value}T00:00:00Z`);
   return !Number.isNaN(time) && new Date(time).toISOString().slice(0, 10) === value;
 }

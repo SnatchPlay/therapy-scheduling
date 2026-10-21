@@ -7,6 +7,7 @@ import { createTestDb, type TestDb } from "./supabase-pglite";
 
 let t: TestDb;
 let SCHEDULER: string, THERAPIST1: string, THERAPIST2: string;
+let ID1: string, ID2: string; // id рядків therapists: передаємо як параметр, а не підзапитом від імені терапевта (RLS дала б NULL)
 const T1 = "therapist1@example.test";
 const T2 = "therapist2@example.test";
 
@@ -15,6 +16,9 @@ beforeAll(async () => {
   SCHEDULER = t.users["scheduler1@example.test"];
   THERAPIST1 = t.users[T1];
   THERAPIST2 = t.users[T2];
+  [ID1, ID2] = (
+    await t.asService<{ id: string }>("select id from public.therapists where email in ($1, $2) order by email", [T1, T2])
+  ).map((r) => r.id);
 }, 60_000);
 
 // Окремий тиждень на тест: понеділок після неділі без початкових слотів (сид — лише будні, щонайменше за 400 днів).
@@ -26,9 +30,8 @@ type Item = { slot_id: string; starts_at: string; status: string; client_name: s
 const weekOf = (userId: string, therapistEmail: string, monday: string) =>
   t.asUser<Item>(
     userId,
-    `select slot_id, starts_at, status, client_name, held_until
-     from public.slots_between((select id from public.therapists where email = $1), $2, $3)`,
-    [therapistEmail, monday, addDays(monday, 7)],
+    `select slot_id, starts_at, status, client_name, held_until from public.slots_between($1, $2, $3)`,
+    [therapistEmail === T1 ? ID1 : ID2, monday, addDays(monday, 7)],
   );
 // Сеанс — підтверджене утримання.
 const confirmedHold = async (slotId: string, clientId: string) => {
@@ -101,7 +104,7 @@ describe("Розклад терапевта на тиждень", () => {
     expect(mine).toHaveLength(1);
     expect(mine[0]).toMatchObject({ slot_id: own, status: "Held", client_name: "client8" });
     expect(mine[0].held_until).not.toBeNull();
-    // Слоти й розклад чужого терапевта порожні, навіть якщо передати його id: RLS slots.
+    // Слоти й розклад чужого терапевта порожні, навіть коли передати його id: RLS slots (функція — security invoker).
     expect(await weekOf(THERAPIST1, T2, monday)).toEqual([]);
     // Таблиця slots закрита власною політикою: join із therapists у slot_board її б не замінив.
     expect(await t.asUser(THERAPIST1, "select id from public.slots where id = $1", [other])).toEqual([]);
@@ -116,7 +119,7 @@ describe("Розклад терапевта на тиждень", () => {
     expect(theirs.map((r) => r.slot_id)).toEqual([other]);
   });
 
-  it("«його сеанси»: підтверджене утримання лишається в розкладі після 24 годин, з ім'ям клієнта", async () => {
+  it("AC-HOLD-09: «його сеанси» — підтверджене утримання лишається в розкладі після 24 годин, з ім'ям клієнта", async () => {
     const monday = mondayOfNewWeek();
     const client = await ensureClient(t, "client4", "client4@example.test");
     const slot = await createSlot(t, T1, practiceTime(monday, "10:00"));
@@ -128,7 +131,7 @@ describe("Розклад терапевта на тиждень", () => {
     ]);
   });
 
-  it("сеанс іншого терапевта не видно", async () => {
+  it("AC-HOLD-09: сеанс іншого терапевта не видно", async () => {
     const monday = mondayOfNewWeek();
     const client = await ensureClient(t, "client5", "client5@example.test");
     const slot = await createSlot(t, T2, practiceTime(monday, "10:00"));
@@ -151,7 +154,7 @@ describe("Розклад терапевта на тиждень", () => {
     expect(await t.asUser(THERAPIST1, "select 1 from public.clients where id = $1", [client])).toEqual([]);
   });
 
-  it("межа AC-HOLD-21: о 1439-й хвилині утримання ще в розкладі «Held», о 1440-й — слот «Free»", async () => {
+  it("AC-HOLD-21: межа — о 1439-й хвилині утримання ще в розкладі «Held», о 1440-й — слот «Free»", async () => {
     const monday = mondayOfNewWeek();
     const client = await ensureClient(t, "client7", "client7@example.test");
     const slot = await createSlot(t, T1, practiceTime(addDays(monday, 3), "10:00"));
@@ -161,6 +164,21 @@ describe("Розклад терапевта на тиждень", () => {
     expect(statusOf(await weekOf(THERAPIST1, T1, monday), slot)).toBe("Held");
     await ageHold(t, hold.id!, 1440);
     expect(statusOf(await weekOf(THERAPIST1, T1, monday), slot)).toBe("Free");
+  });
+});
+
+describe("Межі тижня на переході літнього/зимового часу (America/Los_Angeles)", () => {
+  // Фіксовані тижні, а не quietDay: дати 400 днів уперед з часом потрапляють у різні сезони. 2026-11-01 — кінець
+  // літнього часу (тиждень 169 годин), 2027-03-14 — початок (167). Північ понеділка й 23:00 неділі — всередині, наступна
+  // північ — зовні, хоч би що був зсув UTC.
+  it.each(["2026-10-26", "2027-03-08"])("AC-HOLD-30: тиждень з понеділка %s — слоти 00:00 понеділка й 23:00 неділі всередині, 00:00 наступного понеділка ні", async (monday) => {
+    const first = await createSlot(t, T1, practiceTime(monday, "00:00"));
+    const last = await createSlot(t, T1, practiceTime(addDays(monday, 6), "23:00"));
+    const nextFirst = await createSlot(t, T1, practiceTime(addDays(monday, 7), "00:00"));
+    const ids = (await weekOf(THERAPIST1, T1, monday)).map((r) => r.slot_id);
+    expect(ids[0]).toBe(first);
+    expect(ids.at(-1)).toBe(last);
+    expect(ids).not.toContain(nextFirst);
   });
 });
 
@@ -177,9 +195,9 @@ describe("Слоти за діапазон днів", () => {
     expect(day.map((r) => r.slot_id)).toEqual([a]);
   });
 
-  it("анонім не викликає slots_between", async () => {
-    await expect(
-      t.asAnon("select * from public.slots_between((select id from public.therapists limit 1), '2027-01-04', '2027-01-11')"),
-    ).rejects.toThrow();
+  it("анонім не викликає slots_between: revoke execute від public і anon", async () => {
+    await expect(t.asAnon("select * from public.slots_between($1, '2027-01-04', '2027-01-11')", [ID1])).rejects.toThrow(
+      /permission denied for function slots_between/,
+    );
   });
 });
