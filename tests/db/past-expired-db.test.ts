@@ -88,7 +88,7 @@ describe("Статус «Past»", () => {
     expect(hasHoldableSlot(await boardFor(SCHEDULER, [past1, free]))).toBe(true);
   });
 
-  it("«Past» однаковий для терапевта: власний слот, що почався, — «Past»", async () => {
+  it("AC-HOLD-32: власний слот терапевта, що почався, — «Past» (однаково для всіх ролей)", async () => {
     const slot = await createSlot(t, T1, "now() - interval '30 minutes'");
     expect(await boardFor(THERAPIST, [slot])).toEqual([{ slot_id: slot, status: "Past", holdable: false }]);
   });

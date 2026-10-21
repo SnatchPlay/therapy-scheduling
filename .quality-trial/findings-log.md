@@ -243,7 +243,8 @@ transaction and read the view in the next, where `now()` is larger, so it only p
 `< now()` in the views stayed green): the boundary is now pinned where it lives, `private.slot_started(now(), now())`,
 and the test title no longer overclaims; T2 Low — the page test line "no «Started»" passed against the old page too
 (the label became dead code once the view stopped returning `Free` with `holdable = false`): removed; D1 Low — the Q1–Q4
-rows of `docs/spec-reading.md` still said "очікуємо" after the PM answers: updated; N1 Low — a second `boardOf` in a test
+rows of `docs/spec-reading.md` still said "очікуємо" after the PM answers: the update goes in its own «Специфікація» PR
+(`docs/spec-reading.md` is not a «Реалізація» file — CodeRabbit on this PR); N1 Low — a second `boardOf` in a test
 file shadowed the fixture of the same name: renamed. Flake found while stacking task 7: two slots of one therapist moved
 to the same `now() - 10 minutes` in separate calls hit `slots_therapist_start_key` (PGlite can return the same `now()`):
 start offsets are distinct now. Dropped: hiding in the view while the table stays readable (design Р10, the view is the
