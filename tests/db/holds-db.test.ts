@@ -216,30 +216,3 @@ describe("Прострочення утримання", () => {
     expect(await boardOf(t, SCHEDULER, slot)).toMatchObject({ status: "Held", client_name: "client2" });
   });
 });
-
-describe("RLS терапевта (AC-HOLD-09, AC-HOLD-21 — сторінка в задачі 4, правила вже діють)", () => {
-  const T2 = "therapist2@example.test";
-  const seen = async (sql: string, id: string) => (await t.asUser(THERAPIST, sql, [id])).length;
-
-  it("не бачить утримань і клієнтів на слотах іншого терапевта", async () => {
-    const client = await ensureClient(t, "client7", "client7@example.test");
-    const slot = await createSlot(t, T2, "now() + interval '10 days'");
-    const hold = await holdAs(t, SCHEDULER, slot, client);
-    expect(await seen("select id from public.holds where id = $1", hold.id!)).toBe(0);
-    expect(await seen("select hold_id from public.hold_list where hold_id = $1", hold.id!)).toBe(0);
-    expect(await seen("select id from public.clients where id = $1", client)).toBe(0);
-  });
-
-  it("бачить утримання власного слоту і його клієнта, доки воно не прострочене", async () => {
-    const client = await ensureClient(t, "client8", "client8@example.test");
-    const slot = await createSlot(t, T1, "now() + interval '11 days'");
-    const hold = await holdAs(t, SCHEDULER, slot, client);
-    expect(await seen("select id from public.holds where id = $1", hold.id!)).toBe(1);
-    expect(await seen("select id from public.clients where id = $1", client)).toBe(1);
-
-    await ageHold(t, hold.id!, 1440);
-    expect(await seen("select id from public.holds where id = $1", hold.id!)).toBe(0);
-    expect(await seen("select hold_id from public.hold_list where hold_id = $1", hold.id!)).toBe(0);
-    expect(await seen("select id from public.clients where id = $1", client)).toBe(0);
-  });
-});

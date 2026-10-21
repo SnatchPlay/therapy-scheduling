@@ -1,6 +1,6 @@
 import { AppShell, buttonClass, inputClass } from "@/app/_components/app-shell";
 import { MESSAGES, messageFor } from "@/lib/messages";
-import { hasHoldableSlot } from "@/lib/slots";
+import { hasHoldableSlot, withSlotTimes } from "@/lib/slots";
 import { requireRole, STAFF } from "@/lib/supabase/viewer";
 import { formatPracticeDateTime, formatPracticeTime, isIsoDate, practiceDate } from "@/lib/time";
 import { holdSlot } from "./actions";
@@ -26,10 +26,7 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
     ? await supabase.rpc("day_slots", { p_therapist_id: therapistId, p_day: day })
     : { data: [], error: null };
   if (error) throw error;
-  // Колонки представлення в типах Supabase nullable; у slot_board вони завжди є (з таблиці slots).
-  const rows = (slots ?? []).flatMap(({ slot_id, starts_at, ends_at, ...rest }) =>
-    slot_id && starts_at && ends_at ? [{ ...rest, slot_id, starts_at, ends_at }] : [],
-  );
+  const rows = withSlotTimes(slots);
 
   return (
     <AppShell role={role} email={email} title="Slots" message={messageFor(params.msg)}>
