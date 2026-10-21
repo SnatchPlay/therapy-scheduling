@@ -2,9 +2,9 @@
 
 ## 5. Перетин клієнта, повторне підтвердження, email (PR `task/overlap-confirm`)
 
-- [ ] 5.1 Міграція: `CLIENT_OVERLAP` у `guard_new_hold` із замком клієнта, `HOLD_ALREADY_CONFIRMED` у `guard_confirm`
-- [ ] 5.2 Тести бази: перетин (в іншого терапевта, прострочене, межа «кінець = початок»), підтвердження іншим планувальником, повторне й одночасне підтвердження, email з регістром і пробілами
-- [ ] 5.3 Повідомлення PM у `src/lib/messages.ts` і server actions
+- [x] 5.1 Міграція: `CLIENT_OVERLAP` у `guard_new_hold` із замком клієнта, `HOLD_ALREADY_CONFIRMED` у `guard_confirm`
+- [x] 5.2 Тести бази: перетин (в іншого терапевта, прострочене, межа «кінець = початок»), підтвердження іншим планувальником, повторне й одночасне підтвердження, email з регістром і пробілами
+- [x] 5.3 Повідомлення PM у `src/lib/messages.ts` і server actions
 
 Done when: AC-HOLD-25, AC-HOLD-26, AC-HOLD-27, AC-HOLD-34, AC-HOLD-35, AC-HOLD-36
 
