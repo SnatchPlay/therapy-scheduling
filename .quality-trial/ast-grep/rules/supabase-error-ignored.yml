@@ -1,0 +1,14 @@
+# Fired on a real smell: the blind app-code review of slice 1 (2026-10-19, Medium) found
+# /slots, /holds, /schedule, /clients and viewer.ts reading `{ data }` without `error`, so a failed
+# query rendered as "No free slots on this day." / an empty list. Fixed in the same branch.
+id: supabase-error-ignored
+language: tsx
+severity: warning
+message: "Supabase result read without its `error`: a failed query looks like an empty result."
+note: "Destructure `error` and throw it (an error boundary shows it) or map it to a message code."
+rule:
+  any:
+    - pattern: const { data } = await $Q
+    - pattern: "const { data: $D } = await $Q"
+    - pattern: "const { data: $D } = $C ? await $Q : $E"
+    - pattern: "const [{ data: $A }, { data: $B }] = await Promise.all($$$)"

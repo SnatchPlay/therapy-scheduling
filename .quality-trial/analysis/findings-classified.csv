@@ -1,0 +1,10 @@
+id,date,step,found_by,verdict,category,secondary,how_found,same_defect_as,recurrence_class,finding,severity
+H1-1,2026-10-21,H-1,fallow,real,DRY,,static,,,hooks repeated payload parsing and path logic,
+H1-2,2026-10-21,H-1,fallow,noise,DEAD,,static,,FALLOW-ENTRY,hook files reported unused: Claude Code entry points,
+H1-3,2026-10-21,H-1,fallow,noise,TEST,,static,,FALLOW-CRAP,CRAP score without coverage data,
+H1-4,2026-10-21,H-1,blind-review,real,TOOLING,,running,,,stryker dry run fails: @ts-nocheck shifts fixture lines,H
+H1-5,2026-10-21,H-1,blind-review,real,TOOLING,,reading,,,protect-files blocked the template archive/sync skills writing openspec/specs,M
+H1-6,2026-10-21,H-1,blind-review,real,FAIL,,running,,,run.sh printed clean results when the base did not resolve,M
+H1-7,2026-10-21,H-1,blind-review,real,DOC,,reading,,,"docs described PGlite, tests/db and roles not yet on main",M
+H1-8,2026-10-21,H-1,blind-review,real,FAIL,,running,,,stryker failure hidden by grep || true,M
+H1-9,2026-10-21,H-1,blind-review,real,TOOLING,,running,,,"13 Low: quoting, word splitting, gh errors, it.each, worktree, --since, case/symlink paths, nested .env, unfailable test",L

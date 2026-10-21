@@ -1,0 +1,15 @@
+{
+  "entry": [
+    "scripts/hooks/*.mjs",
+    "scripts/*.mjs"
+  ],
+  "ignorePatterns": [
+    "src/lib/supabase/database.types.ts",
+    "tests/fixtures/**",
+    ".quality-trial/**",
+    ".next/**"
+  ],
+  "health": {
+    "maxCrap": 100000
+  }
+}
