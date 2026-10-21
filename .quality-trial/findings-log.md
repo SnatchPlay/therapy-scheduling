@@ -81,3 +81,11 @@ Stryker after the self-review fixes (`--since main`, command runner): `actions.t
 42 of 47 killed; 4 real test gaps in `actions.test.ts` (table name, empty form fields, revalidated path:
 the fake client ignored them), closed → `actions.ts` 19 of 19; the `messages.ts` survivor is the
 equivalent `?? ""` mutant from above.
+
+CodeRabbit (PR #12): 5 comments. Accepted: form fields must be strings (a file became "[object File]"),
+table caption, index on `created_by`. Declined with evidence: `reset` instead of `retry` (wrong for Next
+16.4: `retry` is stable since v16.3.0 per the bundled docs and types), client-side `console.error`
+(Next's own example; production redacts server errors). Pre-merge warnings: PR boundaries (PGlite is in
+the merged plan; `.quality-trial` holds only this step's records) and the select policy without a
+literal `auth.uid()` (the helper already depends on it) — answered in the PR and in code comments.
+`database.types.ts` replaced with the `db-check` summary of run 39575970424 (SHA-256 of the text matches).

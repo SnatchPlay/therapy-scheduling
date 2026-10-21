@@ -7,3 +7,4 @@ date,step,instrument,diff_lines,tokens,minutes,findings_real,findings_nit,findin
 2026-10-21,T-1,stryker,,,15,2,0,1,0,tool defect fixed; 27 of 28 killed after unit tests
 2026-10-21,T-1,self-review,,203870,6.3,12,0,0,6,database and app reviewers on the full branch; dropped findings listed by the reviewer
 2026-10-21,T-1,stryker,,,5,1,0,1,0,actions.ts 19 of 19 after closing 4 gaps; messages survivor equivalent
+2026-10-21,T-1,coderabbit,,,,3,0,1,1,5 inline comments; 2 pre-merge warnings answered
