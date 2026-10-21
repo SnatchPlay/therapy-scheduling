@@ -2,9 +2,9 @@
 
 ## 1. Ролі й картка клієнта (PR `task/clients`)
 
-- [ ] 1.1 Міграція: ролі `admin` / `scheduler` / `therapist`, таблиця `clients` з обмеженнями, GRANT і RLS; `supabase/demo-users.json`
-- [ ] 1.2 Тестова база PGlite (`tests/db/supabase-pglite.ts`, з посиланням на джерело) і тести бази для клієнта
-- [ ] 1.3 Сторінка `/clients` і server action створення клієнта з повідомленнями PM
+- [x] 1.1 Міграція: ролі `admin` / `scheduler` / `therapist`, таблиця `clients` з обмеженнями, GRANT і RLS; `supabase/demo-users.json`
+- [x] 1.2 Тестова база PGlite (`tests/db/supabase-pglite.ts`, з посиланням на джерело) і тести бази для клієнта
+- [x] 1.3 Сторінка `/clients` і server action створення клієнта з повідомленнями PM
 
 Done when: AC-HOLD-10, AC-HOLD-11, AC-HOLD-15, AC-HOLD-16
 

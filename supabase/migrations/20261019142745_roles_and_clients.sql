@@ -36,9 +36,28 @@ create table public.clients (
   constraint clients_full_name_check check (btrim(full_name) <> ''),
   -- AC-HOLD-15: email — один знак @ з текстом до й після, без пробілів.
   constraint clients_email_check check (email ~ '^[^@[:space:]]+@[^@[:space:]]+$'),
-  -- AC-HOLD-16: email унікальний (точне порівняння, як у вимозі PM; регістр — питання Q2).
+  -- AC-HOLD-16: email унікальний; тригер нижче зберігає його у вигляді lower(btrim(email)).
   constraint clients_email_key unique (email)
 );
+
+-- AC-HOLD-16: Client1@Example.test і « client1@example.test » — той самий email (нормалізація даних,
+-- docs/spec-reading.md «Власні припущення»). Тригер, а не код застосунку: прямий insert через Data API теж.
+create or replace function private.normalize_client_email()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.email := lower(btrim(new.email));
+  return new;
+end;
+$$;
+
+revoke execute on function private.normalize_client_email() from public, anon, authenticated;
+
+create trigger clients_normalize_email
+  before insert on public.clients
+  for each row execute function private.normalize_client_email();
 
 comment on table public.clients is
   'Картка клієнта зрізу 1: лише ім''я та email. Створює планувальник або адміністратор.';

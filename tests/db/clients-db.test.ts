@@ -68,6 +68,27 @@ describe("Картка клієнта", () => {
     expect(n).toBe(1);
   });
 
+  it("AC-HOLD-16: Client1@Example.TEST і « client1@example.test » — дубль client1@example.test", async () => {
+    expect(await createClientAs(SCHEDULER, "Client One Upper", "Client1@Example.TEST")).toBe(
+      "A client with this email already exists.",
+    );
+    expect(await createClientAs(SCHEDULER, "Client One Spaces", " client1@example.test ")).toBe(
+      "A client with this email already exists.",
+    );
+    expect(await createClientAs(SCHEDULER, "Client Four", " Client4@Example.TEST ")).toBe("created");
+    const [row] = await t.asService<{ email: string }>(
+      "select email from public.clients where full_name = 'Client Four'",
+    );
+    expect(row.email).toBe("client4@example.test");
+  });
+
+  it("без входу (anon) клієнтів не видно й не створити", async () => {
+    await expect(t.asAnon("select id from public.clients")).rejects.toThrow(/permission denied/);
+    await expect(
+      t.asAnon("insert into public.clients (full_name, email) values ('X', 'anon@example.test')"),
+    ).rejects.toThrow(/permission denied/);
+  });
+
   it("терапевт не створює клієнтів і не бачить картки без своїх утримань (матриця прав)", async () => {
     await expect(
       t.asUser(THERAPIST, "insert into public.clients (full_name, email) values ('X', 'x@example.test')"),
