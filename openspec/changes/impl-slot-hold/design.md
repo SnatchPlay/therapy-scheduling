@@ -76,6 +76,8 @@ and a valid email.», `23505` → «A client with this email already exists.».
   перевірок і для `confirmed_at` — `v_now := clock_timestamp()` після блокування: транзакція могла чекати на
   замок довше за межу 24 годин. Ставить `confirmed_at = v_now`, `confirmed_by = auth.uid()`. Останній запобіжник подвійного сеансу —
   `unique (slot_id) where confirmed_at is not null`.
+- Тригерні й допоміжні функції — лише в схемі `private`, `security definer` з `set search_path = ''` і
+  `revoke execute … from public, anon, authenticated`; публічні RPC — `security invoker`.
 - GRANT: `select`, `insert (slot_id, client_id)`, `update (confirmed_at)`; політики insert/update — лише
   `admin`/`scheduler` (AC-HOLD-19: admin = scheduler).
 - Коди помилок — текст `raise exception`; `src/lib/messages.ts` — єдине місце, де код стає текстом PM.
