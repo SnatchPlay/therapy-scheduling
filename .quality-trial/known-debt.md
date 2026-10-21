@@ -17,3 +17,4 @@ Add a line when a finding becomes its own refactor or a decision; remove it when
 | `/slots` loads every client and repeats them as options in each holdable slot's form | open, Low — one picker or a searched list when the client count grows |
 | Hold and Create buttons have no pending state: a double click sends two actions, the second reports "no longer available" | open, Low |
 | "No free slots on this day." does not count a started, unheld slot as free (it cannot be held, AC-HOLD-07); PM left this sub-case open (`docs/spec-reading.md`) | own assumption — candidate question to the PM |
+| `/holds` reads `hold_list` without a limit; expired holds never leave it while PM issue #8 is open, and PostgREST `max_rows` (1000) would cut the list silently | open, Low — a "recent N" view or paging once the PM answers #8 |

@@ -57,3 +57,7 @@ T2-14,2026-10-21,T-2,blind-review,real,GUESS,,reading,,,started unheld slot and 
 T2-15,2026-10-21,T-2,self-review,real,FAIL,,reading,,,hold action swallowed unexpected errors,M
 T2-16,2026-10-21,T-2,coderabbit,real,A11Y,,static,,,client select in each slot row without an accessible name,L
 T2-17,2026-10-21,T-2,coderabbit,dropped,RLS,,reading,,,read policies without a literal (select auth.uid()) (helper depends on it; anon has no grant),L
+T3-1,2026-10-21,T-3,blind-review,real,TEST,,reading,,,Expired page fixture had held_until null: Held-until guard unpinned,M
+T3-2,2026-10-21,T-3,blind-review,real,UX,,reading,,,identical accessible name on every Confirm button; empty header cell,L
+T3-3,2026-10-21,T-3,blind-review,real,LOAD,,reading,,,hold_list read without limit and without tie-break,L
+T3-4,2026-10-21,T-3,blind-review,real,TEST,,reading,,,failed query path of /holds untested,L

@@ -136,3 +136,16 @@ CodeRabbit (PR #13): 1 inline comment — accepted (the client `select` in each 
 `aria-label` with the slot time, asserted in the page test). Pre-merge warnings: PR type (records of this step in
 `.quality-trial/`, same as PR #12) and "no `(select auth.uid())` in the read policies" — answered in the PR and with
 a comment over the policies (both branches already depend on `auth.uid()`, anon has no grant, tested).
+
+## 2026-10-21 · T-3 confirm holds (task 3 of impl-slot-hold)
+
+Ran: gate; `run.sh`; blind reviewers (database, app); a race of two confirms of one hold on real Postgres 17
+(first session holds its transaction 3 s: the second gets SLOT_UNAVAILABLE, 1 confirmed hold); stryker.
+The lessons of tasks 1 and 2 were applied before the first review: `STAFF`, text-only form fields, thrown
+unexpected errors, the forbidden message shown on `/` (a therapist cannot open `/holds`), a page test, an action test.
+App findings, all real: the "Expired" page fixture had `held_until: null` while the real `hold_list` returns it
+for every unconfirmed hold, so nothing pinned the `status === "Held"` guard (Medium; mutation now red);
+the failed-query path of the page was untested (mutation red); every Confirm button had the same accessible
+name (now client and slot time); empty header cell; no tie-break in the order.
+Left open (known-debt): `hold_list` read without a limit while PM issue #8 is open (PostgREST `max_rows` = 1000
+truncates silently).
