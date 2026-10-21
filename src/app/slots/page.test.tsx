@@ -62,6 +62,20 @@ describe("/slots", () => {
     expect(html).not.toContain(">Hold<");
   });
 
+  it("AC-HOLD-33: слоти «Past», «Past», «Held», «Confirmed» — повідомлення, під ним усі чотири слоти зі статусами, без кнопок Hold", async () => {
+    slots = [slot("10:00", "Past", false), slot("11:00", "Past", false), slot("13:00", "Held", false), slot("14:00", "Confirmed", false)];
+    const html = await render();
+    const message = html.indexOf(NO_FREE);
+    expect(message).toBeGreaterThan(-1);
+    expect(html.indexOf('data-testid="slot"')).toBeGreaterThan(message);
+    expect(html.match(/data-testid="slot-status">(\w+)</g)).toEqual(
+      ["Past", "Past", "Held", "Confirmed"].map((st) => `data-testid="slot-status">${st}<`),
+    );
+    expect(html).not.toContain(">Hold<");
+    // Підпис «Started» замінив сам статус «Past» (AC-HOLD-32).
+    expect(html).not.toContain("Started");
+  });
+
   it("AC-HOLD-24: день без жодного слоту — лише повідомлення", async () => {
     const html = await render();
     expect(html).toContain(NO_FREE);

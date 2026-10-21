@@ -15,6 +15,5 @@ Add a line when a finding becomes its own refactor or a decision; remove it when
 | `/clients` form keeps no values after an error; the success message uses the alert style | open, Low |
 | `/slots` loads every client and repeats them as options in each holdable slot's form | open, Low — one picker or a searched list when the client count grows |
 | Hold and Create buttons have no pending state: a double click sends two actions, the second reports "no longer available" | open, Low |
-| "No free slots on this day." does not count a started, unheld slot as free (it cannot be held, AC-HOLD-07); PM left this sub-case open (`docs/spec-reading.md`) | own assumption — candidate question to the PM |
-| `/holds` reads `hold_list` without a limit; expired holds never leave it while PM issue #8 is open, and PostgREST `max_rows` (1000) would cut the list silently | open, Low — a "recent N" view or paging once the PM answers #8 |
+| `/holds` reads `hold_list` without a limit: PM answered #8 (expired holds leave the list when the slot starts, AC-HOLD-29), but confirmed sessions and held rows stay, and PostgREST `max_rows` (1000) would cut the list silently | open, Low — paging or a time window once the list grows |
 | `/schedule` slots section defaults to today: AC-HOLD-21 (hold on 11-05, opened on 11-03) shows the free slot only after the day is picked | open, Low — wait for PM's answer on the period (#9); a default of the nearest day with a hold would be an own invention |
