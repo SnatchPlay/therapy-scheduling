@@ -14,8 +14,11 @@ AC-HOLD-05/06; початок слоту — AC-HOLD-07, AC-HOLD-22/23) і ви�
 
 Нова міграція за правилом шаблону: зняти `profiles_role_check` → `member` → `scheduler` → default `therapist`
 (найменші права: новий користувач без рядка терапевта не бачить нічого) → новий `profiles_role_check`.
-`supabase/demo-users.json`: `admin@example.test`, `scheduler1@`, `scheduler2@`, `therapist1@`, `therapist2@`.
-Роль — лише з `profiles.role` через `private.current_app_role()`.
+`supabase/demo-users.json`: `admin@example.test`, `scheduler1@example.test`, `scheduler2@example.test`,
+`therapist1@example.test`, `therapist2@example.test`.
+Роль — лише з `profiles.role` через `private.current_app_role()`. Колонковий `grant update (full_name)` з міграції
+шаблону лишається: `authenticated` не змінює `role` нікому, зокрема собі. Призначення ролей у зрізі 1 — лише
+`npm run users:demo` (service role, локально); екрана керування ролями немає (його AC — не в цьому зрізі).
 
 ### Р2. Картка клієнта — `public.clients` (AC-HOLD-10, 11, 15, 16)
 
