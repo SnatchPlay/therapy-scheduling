@@ -77,3 +77,7 @@ T4-06,2026-10-21,T-4,blind-review,real,TEST,,reading,,,DB tests depended on test
 T4-07,2026-10-21,T-4,blind-review,real,GUESS,,reading,,,slots section defaults to today; AC-HOLD-21 walk-through needs the day picked (known-debt),L
 T4-08,2026-10-21,T-4,hand-mutation,real,TEST,,mutation,,,slots_select open stayed green: day_slots joins therapists; direct slots assertion added,M
 T4-09,2026-10-21,T-4,stryker,real,TEST,,mutation,,,home redirect for therapist untested,L
+T5-01,2026-10-21,T-5,blind-review,real,TEST,,mutation,,,client lock and simultaneous confirm untested in PGlite; task ticked (proved by a Postgres 17 race),M
+T5-02,2026-10-21,T-5,blind-review,real,TEST,,mutation,,,overlap tests only in one order (starts_at bound survived),L
+T5-03,2026-10-21,T-5,blind-review,nit,DOC,,reading,,,design.md named for update; code uses for no key update,L
+T5-04,2026-10-21,T-5,blind-review,nit,TEST,,reading,,,AC-HOLD-35 test opened a second database,L

@@ -57,15 +57,15 @@
 | AC-HOLD-22 | слот почався — не підтверджується, лишається «Held» | `supabase/migrations/20261019143503_confirm_holds.sql` (guard_confirm), `src/lib/messages.ts` | `tests/db/confirm-db.test.ts`, `src/app/holds/actions.test.ts` | реалізовано |
 | AC-HOLD-23 | за хвилину до початку — підтверджується | `supabase/migrations/20261019143503_confirm_holds.sql` (guard_confirm) | `tests/db/confirm-db.test.ts` | реалізовано |
 | AC-HOLD-24 | день без жодного слоту — лише повідомлення | `src/app/slots/page.tsx`, `src/lib/slots.ts`, `supabase/migrations/20261019143036_slots_and_holds.sql` (day_slots) | `tests/db/holds-db.test.ts` | реалізовано |
-| AC-HOLD-25 | перетин часу клієнта в іншого терапевта — відмова | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-26 | прострочене утримання не рахується перетином | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-27 | інший планувальник підтверджує утримання | — | — | відкладено (чекає реалізації) |
+| AC-HOLD-25 | перетин часу клієнта в іншого терапевта — відмова | `supabase/migrations/20261021120000_client_overlap_and_reconfirm.sql` (guard_new_hold), `src/lib/messages.ts` | `tests/db/overlap-db.test.ts`, `src/app/slots/actions.test.ts` | реалізовано |
+| AC-HOLD-26 | прострочене утримання не рахується перетином | `supabase/migrations/20261021120000_client_overlap_and_reconfirm.sql` (guard_new_hold) | `tests/db/overlap-db.test.ts` | реалізовано |
+| AC-HOLD-27 | інший планувальник підтверджує утримання | `supabase/migrations/20261019143503_confirm_holds.sql` (holds_update_staff) | `tests/db/overlap-db.test.ts` | реалізовано |
 | AC-HOLD-28 | прострочене утримання видно планувальнику до початку слоту | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-29 | прострочене утримання не показано з початку слоту | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-30 | розклад терапевта — поточний тиждень пн–нд зі слотами й статусами | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-31 | перемикання на наступний тиждень | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-32 | слот, що почався, — «Past», не вільний | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-33 | «Past» не рахується вільним у «No free slots on this day.» | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-34 | email з іншим регістром і пробілами — дубль | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-35 | email зберігається й показується нормалізованим | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-36 | повторне підтвердження — «This hold is already confirmed.» | — | — | відкладено (чекає реалізації) |
+| AC-HOLD-34 | email з іншим регістром і пробілами — дубль | `supabase/migrations/20261019142745_roles_and_clients.sql` (normalize_client_email, clients_email_key) | `tests/db/clients-db.test.ts` | реалізовано |
+| AC-HOLD-35 | email зберігається й показується нормалізованим | `supabase/migrations/20261019142745_roles_and_clients.sql` (normalize_client_email) | `tests/db/clients-db.test.ts` | реалізовано |
+| AC-HOLD-36 | повторне підтвердження — «This hold is already confirmed.» | `supabase/migrations/20261021120000_client_overlap_and_reconfirm.sql` (guard_confirm), `src/lib/messages.ts` | `tests/db/confirm-db.test.ts`, `src/app/holds/actions.test.ts` | реалізовано |

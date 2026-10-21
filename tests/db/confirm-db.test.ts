@@ -112,7 +112,7 @@ describe("Підтвердження: гонки й межі", () => {
     expect(await confirmAs(t.users["scheduler2@example.test"], h2.id!)).toBe("confirmed");
   });
 
-  it("повторне підтвердження відмовляє й не перезаписує, хто й коли підтвердив", async () => {
+  it("AC-HOLD-36: повторне підтвердження — «This hold is already confirmed.», слот лишається «Confirmed», хто й коли підтвердив не перезаписано", async () => {
     const slot = await createSlot(t, T1, "now() + interval '12 days'");
     const hold = await holdAs(t, SCHEDULER, slot, CLIENT1);
     expect(await confirmAs(SCHEDULER, hold.id!)).toBe("confirmed");
@@ -124,7 +124,7 @@ describe("Підтвердження: гонки й межі", () => {
     const [first] = await confirmed();
     expect(first.confirmed_by).toBe(SCHEDULER);
 
-    expect(await confirmAs(ADMIN, hold.id!)).toBe("This slot is no longer available.");
+    expect(await confirmAs(ADMIN, hold.id!)).toBe("This hold is already confirmed.");
     expect(await confirmed()).toEqual([first]);
   });
 

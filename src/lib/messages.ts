@@ -6,9 +6,11 @@ export const MESSAGES = {
   CLIENT_CREATED: "Client created.",
   SLOT_UNAVAILABLE: "This slot is no longer available.", // AC-HOLD-03, AC-HOLD-04, AC-HOLD-17
   SLOT_STARTED: "This slot has already started and cannot be held.", // AC-HOLD-07
+  CLIENT_OVERLAP: "This client already has a hold or session at this time.", // AC-HOLD-25
   HOLD_FORBIDDEN: "Only schedulers and admins can hold slots.", // AC-HOLD-08
   NO_FREE_SLOTS: "No free slots on this day.", // AC-HOLD-18
   HOLD_EXPIRED: "This hold has expired. Hold the slot again.", // AC-HOLD-13
+  HOLD_ALREADY_CONFIRMED: "This hold is already confirmed.", // AC-HOLD-36
   CONFIRM_FORBIDDEN: "Only schedulers and admins can confirm holds.", // AC-HOLD-14
   CONFIRM_SLOT_STARTED: "This slot has already started and cannot be confirmed.", // AC-HOLD-22
   HELD: "Slot held.",

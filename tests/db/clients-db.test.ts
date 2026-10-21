@@ -89,18 +89,32 @@ describe("Картка клієнта", () => {
     expect(n).toBe(1);
   });
 
-  it("AC-HOLD-16: Client1@Example.TEST і « client1@example.test » — дубль client1@example.test", async () => {
+  it("AC-HOLD-34: « Client1@Example.TEST » (великі літери, пробіли по краях) — дубль client1@example.test, клієнта не створено", async () => {
+    expect(await createClientAs(SCHEDULER, "Client One", " Client1@Example.TEST ")).toBe(
+      "A client with this email already exists.",
+    );
     expect(await createClientAs(SCHEDULER, "Client One Upper", "Client1@Example.TEST")).toBe(
       "A client with this email already exists.",
     );
-    for (const variant of [" client1@example.test ", "client1@example.test\u00a0", "\tclient1@example.test\n"]) {
+    for (const variant of ["client1@example.test\u00a0", "\tclient1@example.test\n"]) {
       expect(await createClientAs(SCHEDULER, "Client One Again", variant)).toBe("A client with this email already exists.");
     }
-    expect(await createClientAs(SCHEDULER, "Client Four", " Client4@Example.TEST ")).toBe("created");
-    const [row] = await t.asService<{ email: string }>(
-      "select email from public.clients where full_name = 'Client Four'",
+    const [{ n }] = await t.asService<{ n: number }>(
+      "select count(*)::int as n from public.clients where lower(btrim(email)) = 'client1@example.test'",
     );
-    expect(row.email).toBe("client4@example.test");
+    expect(n).toBe(1);
+  });
+
+  it("AC-HOLD-35: « Client3@Example.TEST » зберігається й показується як client3@example.test", async () => {
+    // Сценарій PM починається з «клієнта client3 ще немає»: картку з тесту AC-HOLD-10 прибираємо (service_role).
+    await t.asService("delete from public.clients where email = 'client3@example.test'");
+    expect(await createClientAs(SCHEDULER, "Client Three", " Client3@Example.TEST ")).toBe("created");
+    // Картка клієнта і вибір клієнта під час утримання читають email із цієї таблиці: показують те, що збережено.
+    const shown = await t.asUser<{ email: string }>(
+      SCHEDULER,
+      "select email from public.clients where full_name = 'Client Three'",
+    );
+    expect(shown).toEqual([{ email: "client3@example.test" }]);
   });
 
   it("запити, запущені разом, ідуть кожен від свого користувача", async () => {

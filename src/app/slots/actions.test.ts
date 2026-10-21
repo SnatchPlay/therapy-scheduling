@@ -46,13 +46,17 @@ describe("holdSlot", () => {
     expect(revalidatePath).toHaveBeenCalledWith("/slots");
   });
 
-  it("AC-HOLD-03: код помилки бази → його повідомлення", async () => {
-    rpc.mockResolvedValue({ error: { code: "P0001", message: "SLOT_UNAVAILABLE" } });
+  // Роль staff бачить повідомлення бази на /slots, а не на головній.
+  const messageOnSlots = async (code: string) => {
+    rpc.mockResolvedValue({ error: { code: "P0001", message: code } });
     const url = await redirectOf(holdSlot(form(FIELDS)));
-    // Роль staff бачить повідомлення на /slots, а не на головній.
     expect(url.pathname).toBe("/slots");
-    expect(url.searchParams.get("msg")).toBe("SLOT_UNAVAILABLE");
-  });
+    expect(url.searchParams.get("msg")).toBe(code);
+  };
+
+  it("AC-HOLD-03: код помилки бази → його повідомлення", () => messageOnSlots("SLOT_UNAVAILABLE"));
+
+  it("AC-HOLD-25: перетин у часі клієнта → його повідомлення", () => messageOnSlots("CLIENT_OVERLAP"));
 
   it("непередбачена помилка бази кидається далі (лог сервера, error.tsx)", async () => {
     const failure = { code: "22P02", message: 'invalid input syntax for type uuid: "x"' };
