@@ -55,3 +55,5 @@ T2-12,2026-10-21,T-2,blind-review,real,LOAD,,reading,,,every client repeated in 
 T2-13,2026-10-21,T-2,blind-review,real,UX,,reading,,,no pending state on Hold (double click),L
 T2-14,2026-10-21,T-2,blind-review,real,GUESS,,reading,,,started unheld slot and "No free slots" is an open PM sub-case,L
 T2-15,2026-10-21,T-2,self-review,real,FAIL,,reading,,,hold action swallowed unexpected errors,M
+T2-16,2026-10-21,T-2,coderabbit,real,A11Y,,static,,,client select in each slot row without an accessible name,L
+T2-17,2026-10-21,T-2,coderabbit,dropped,RLS,,reading,,,read policies without a literal (select auth.uid()) (helper depends on it; anon has no grant),L

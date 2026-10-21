@@ -131,3 +131,8 @@ both views and both functions; `revoke … from anon` checked by the anon test. 
 `ƒ /slots` and `ƒ Proxy (Middleware)`. 9. `demo-users.json` unchanged: therapist1/2 already exist in the cloud project
 (2026-10-21) — the therapist link is by email. 10. A red `db-deploy`; `/slots` shows the error boundary. 11. Revert
 the code by PR; the schema goes forward: a migration dropping `holds`, `slots`, `therapists` and the policy (the holds are lost).
+
+CodeRabbit (PR #13): 1 inline comment — accepted (the client `select` in each slot row had no accessible name;
+`aria-label` with the slot time, asserted in the page test). Pre-merge warnings: PR type (records of this step in
+`.quality-trial/`, same as PR #12) and "no `(select auth.uid())` in the read policies" — answered in the PR and with
+a comment over the policies (both branches already depend on `auth.uid()`, anon has no grant, tested).

@@ -84,7 +84,13 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
                 <input type="hidden" name="therapist" value={therapistId ?? ""} />
                 <input type="hidden" name="day" value={day} />
                 {/* Порожній перший пункт: інакше required нічого не вимагає, і слот утримали б за першим клієнтом списку. */}
-                <select name="client_id" required defaultValue="" className={inputClass}>
+                <select
+                  name="client_id"
+                  required
+                  defaultValue=""
+                  aria-label={`Client for ${formatPracticeTime(s.starts_at)}`}
+                  className={inputClass}
+                >
                   <option value="" disabled>
                     Choose a client
                   </option>

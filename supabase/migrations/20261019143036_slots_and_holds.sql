@@ -112,6 +112,9 @@ grant select on table public.holds to authenticated;
 grant insert (slot_id, client_id) on table public.holds to authenticated;
 grant select, insert, update, delete on table public.therapists, public.slots, public.holds to service_role;
 
+-- Політики читання нижче не містять окремого `(select auth.uid()) is not null`: обидві гілки вже залежать від auth.uid()
+-- (private.is_scheduler_or_admin і private.current_therapist_id беруть роль через нього), а без користувача — false;
+-- анонім узагалі не має grant на ці таблиці (тест «Без входу (anon)»). Друга перевірка повторила б ту саму умову.
 create policy therapists_select
   on public.therapists
   for select
