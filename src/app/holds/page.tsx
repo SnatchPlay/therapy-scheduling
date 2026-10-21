@@ -13,7 +13,9 @@ export default async function HoldsPage({ searchParams }: PageProps<"/holds">) {
   const { data: holds, error } = await supabase
     .from("hold_list")
     .select("hold_id, therapist_name, starts_at, client_name, held_until, status")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    // Рівні created_at (утримання в одну хвилину): без другого ключа порядок між перезавантаженнями міг би мінятися.
+    .order("hold_id");
   if (error) throw error;
 
   return (
@@ -26,7 +28,9 @@ export default async function HoldsPage({ searchParams }: PageProps<"/holds">) {
             <th className="py-2">Therapist</th>
             <th className="py-2">Client</th>
             <th className="py-2">Status</th>
-            <th className="py-2" />
+            <th className="py-2">
+              <span className="sr-only">Actions</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -52,7 +56,11 @@ export default async function HoldsPage({ searchParams }: PageProps<"/holds">) {
                 {h.status === "Held" && h.hold_id ? (
                   <form action={confirmHold}>
                     <input type="hidden" name="hold_id" value={h.hold_id} />
-                    <button type="submit" className={buttonClass}>
+                    <button
+                      type="submit"
+                      aria-label={`Confirm hold for ${h.client_name} at ${h.starts_at ? formatPracticeDateTime(h.starts_at) : ""}`}
+                      className={buttonClass}
+                    >
                       Confirm
                     </button>
                   </form>

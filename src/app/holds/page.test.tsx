@@ -4,7 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // Сторінка без Next і бази: requireRole дає фейковий Supabase; server actions і Link — заглушки.
 type Hold = { hold_id: string; therapist_name: string; starts_at: string; client_name: string; held_until: string | null; status: string };
 let holds: Hold[] = [];
-const supabase = { from: () => ({ select: () => ({ order: async () => ({ data: holds, error: null }) }) }) };
+let failure: unknown = null;
+// select().order().order(): сторінка сортує за часом створення й за id.
+const supabase = {
+  from: () => ({
+    select: () => ({ order: () => ({ order: async () => ({ data: failure ? null : holds, error: failure }) }) }),
+  }),
+};
 vi.mock("@/lib/supabase/viewer", async (importActual) => ({
   ...(await importActual<typeof import("@/lib/supabase/viewer")>()),
   requireRole: async () => ({ supabase, role: "scheduler", email: "scheduler1@example.test" }),
@@ -30,15 +36,18 @@ const hold = (id: string, status: string, heldUntil: string | null): Hold => ({
 
 beforeEach(() => {
   holds = [];
+  failure = null;
 });
 
 describe("/holds", () => {
   it("AC-HOLD-20: прострочене утримання client1 видно зі статусом «Expired», без кнопки підтвердження", async () => {
-    holds = [hold("h1", "Expired", null)];
+    // hold_list віддає held_until для кожного непідтвердженого утримання, зокрема прострочених: «Held until» лише в «Held».
+    holds = [hold("h1", "Expired", "2026-11-03T14:30:00-08:00")];
     const html = await render();
     expect(html).toContain('data-testid="hold-status">Expired<');
     expect(html).toContain("client1");
     expect(html).not.toContain(">Confirm<");
+    expect(html).not.toContain("Held until");
   });
 
   it("AC-HOLD-12: «Held» — з «Held until» і кнопкою; «Confirmed» — без «Held until» і без кнопки", async () => {
@@ -47,7 +56,14 @@ describe("/holds", () => {
     expect(html).toContain("Held until 2026-11-03 14:30");
     expect(html.match(/Held until/g)).toHaveLength(1);
     expect(html.match(/>Confirm</g)).toHaveLength(1);
+    // Кнопки в різних рядках розрізняються за клієнтом і слотом.
+    expect(html).toContain('aria-label="Confirm hold for client1 at 2026-11-05 10:00"');
     expect(html).toContain('data-testid="hold-status">Confirmed<');
+  });
+
+  it("збій запиту до бази кидається, а не показується як порожній список", async () => {
+    failure = { code: "42501", message: "permission denied for view hold_list" };
+    await expect(render()).rejects.toBe(failure);
   });
 
   it("повідомлення з ?msg= показано, порожній список — «No holds yet.»", async () => {
