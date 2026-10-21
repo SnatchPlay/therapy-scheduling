@@ -231,3 +231,29 @@ new inserts. 5. `create or replace` keeps the ACL: `guard_new_hold` and `guard_c
 `supabase gen types --local` on the scratch database equals the committed file. 7. No env or dependency change.
 8. `npm run build` unchanged routes. 9. `demo-users.json` unchanged. 10. A red `db-deploy`; a hold or confirm showing
 the error page. 11. Revert the code by PR; the schema goes forward: a migration restoring the old trigger bodies.
+
+## 2026-10-21 · T-6 «Past» and expired holds until the slot starts (task 6 of impl-slot-hold-answers)
+
+Ran: gate; `run.sh`; one blind reviewer (views, page, tests); hand mutations of the migration; no Stryker (the page change
+only removes a label). Hand mutations (each red): no `Past`; `Past` checked before an active hold; the `hold_list` filter
+removed; widened to hide every started hold; widened to hide every expired hold; `holdable` ignoring the start.
+Reviewer evidence: a PGlite probe shows both views keep the same columns, order, types, `security_invoker`, owner and
+grants after `create or replace`. Findings: T1 Medium — the "(включно)" boundary test set `starts_at = now()` in one
+transaction and read the view in the next, where `now()` is larger, so it only proved "started in the past" (inlining
+`< now()` in the views stayed green): the boundary is now pinned where it lives, `private.slot_started(now(), now())`,
+and the test title no longer overclaims; T2 Low — the page test line "no «Started»" passed against the old page too
+(the label became dead code once the view stopped returning `Free` with `holdable = false`): removed; D1 Low — the Q1–Q4
+rows of `docs/spec-reading.md` still said "очікуємо" after the PM answers: updated; N1 Low — a second `boardOf` in a test
+file shadowed the fixture of the same name: renamed. Flake found while stacking task 7: two slots of one therapist moved
+to the same `now() - 10 minutes` in separate calls hit `slots_therapist_start_key` (PGlite can return the same `now()`):
+start offsets are distinct now. Dropped: hiding in the view while the table stays readable (design Р10, the view is the
+list), non-sargable per-row calls in the `hold_list` filter (small list; known-debt row on the unbounded `/holds` read).
+Deploy readiness T-6 (REQUIRED: migration): 1. `db-deploy` after merge only; the deployed code reads `slot_board` and
+`hold_list`: the same columns, only the `status` text of a started free slot changes to `Past` and the old `/slots` page
+(the label "Started") still works. 2. New code before `db-deploy` ends: the page shows "Free" for a started slot for that
+minute and does not show "Past" — cosmetic. 3. Migration order OK (`20261021130000` after `20261021120000`).
+4. Existing rows: views only, no data change. 5. `create or replace view` keeps the grants and `security_invoker`
+(probe: `reloptions`, `relacl` equal). 6. `database.types.ts` equals `supabase gen types --local` on a scratch database
+with the migration applied. 7. No env or dependency change. 8. Build unchanged. 9. `demo-users.json` unchanged.
+10. A red `db-deploy`; `/slots` or `/holds` error page. 11. Revert the code by PR; the schema goes forward: a migration
+restoring the two view bodies.

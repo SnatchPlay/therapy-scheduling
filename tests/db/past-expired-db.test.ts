@@ -16,9 +16,9 @@ beforeAll(async () => {
   CLIENT1 = await ensureClient(t, "client1", "client1@example.test");
 }, 60_000);
 
-type Board = { slot_id: string; status: string; holdable: boolean };
-const boardOf = (userId: string, slotIds: string[]) =>
-  t.asUser<Board>(
+type BoardItem = { slot_id: string; status: string; holdable: boolean };
+const boardFor = (userId: string, slotIds: string[]) =>
+  t.asUser<BoardItem>(
     userId,
     "select slot_id, status, holdable from public.slot_board where slot_id = any($1::uuid[]) order by starts_at",
     [slotIds],
@@ -37,7 +37,7 @@ describe("Статус «Past»", () => {
     await ageHold(t, hold.id!, 1500);
     await startSlotAt(withExpired, "now() - interval '90 minutes'");
 
-    const rows = await boardOf(SCHEDULER, [free, withExpired]);
+    const rows = await boardFor(SCHEDULER, [free, withExpired]);
     expect(rows).toEqual([
       { slot_id: free, status: "Past", holdable: false },
       { slot_id: withExpired, status: "Past", holdable: false },
@@ -61,7 +61,7 @@ describe("Статус «Past»", () => {
     await startSlotAt(held, "now() - interval '10 minutes'");
     await startSlotAt(confirmed, "now() - interval '20 minutes'");
 
-    const rows = await boardOf(SCHEDULER, [future, held, confirmed]);
+    const rows = await boardFor(SCHEDULER, [future, held, confirmed]);
     expect(Object.fromEntries(rows.map((r) => [r.slot_id, r.status]))).toEqual({
       [future]: "Free",
       [held]: "Held",
@@ -80,17 +80,28 @@ describe("Статус «Past»", () => {
     const hold = await holdAs(t, SCHEDULER, confirmed, client4);
     await t.asUser(SCHEDULER, "select public.confirm_hold($1)", [hold.id]);
 
-    const rows = await boardOf(SCHEDULER, [past1, past2, held, confirmed]);
+    const rows = await boardFor(SCHEDULER, [past1, past2, held, confirmed]);
     expect(rows.map((r) => r.status).sort()).toEqual(["Confirmed", "Held", "Past", "Past"]);
     expect(hasHoldableSlot(rows)).toBe(false);
     // Контраст: з вільним слотом повідомлення б не було.
     const free = await createSlot(t, T1, "now() + interval '9 days'");
-    expect(hasHoldableSlot(await boardOf(SCHEDULER, [past1, free]))).toBe(true);
+    expect(hasHoldableSlot(await boardFor(SCHEDULER, [past1, free]))).toBe(true);
   });
 
   it("«Past» однаковий для терапевта: власний слот, що почався, — «Past»", async () => {
     const slot = await createSlot(t, T1, "now() - interval '30 minutes'");
-    expect(await boardOf(THERAPIST, [slot])).toEqual([{ slot_id: slot, status: "Past", holdable: false }]);
+    expect(await boardFor(THERAPIST, [slot])).toEqual([{ slot_id: slot, status: "Past", holdable: false }]);
+  });
+});
+
+describe("Межа початку слоту", () => {
+  // Обидва представлення беруть «слот почався» з private.slot_started: межу «з моменту початку включно» (AC-HOLD-29,
+  // AC-HOLD-32) закріплюємо тут, бо тест нижче читає представлення вже в наступній транзакції, де now() більший.
+  it("AC-HOLD-29, AC-HOLD-32: рівно в момент початку слот уже почався, за мікросекунду до початку — ще ні", async () => {
+    const [row] = await t.asOwner<{ at: boolean; before: boolean }>(
+      "select private.slot_started(now(), now()) as at, private.slot_started(now() + interval '1 microsecond', now()) as before",
+    );
+    expect(row).toEqual({ at: true, before: false });
   });
 });
 
@@ -103,7 +114,7 @@ describe("Прострочене утримання в списку утрима
     expect(await inHoldList(SCHEDULER, hold.id!)).toBe("Expired");
   });
 
-  it("AC-HOLD-29: з моменту початку слоту (включно) і пізніше прострочене утримання в списку немає", async () => {
+  it("AC-HOLD-29: у момент початку слоту і пізніше прострочене утримання в списку немає", async () => {
     const slot = await createSlot(t, T1, "now() + interval '6 days'");
     const hold = await holdAs(t, SCHEDULER, slot, CLIENT1);
     await ageHold(t, hold.id!, 1500);

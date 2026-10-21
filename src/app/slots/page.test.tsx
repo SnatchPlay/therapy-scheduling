@@ -72,8 +72,6 @@ describe("/slots", () => {
       ["Past", "Past", "Held", "Confirmed"].map((st) => `data-testid="slot-status">${st}<`),
     );
     expect(html).not.toContain(">Hold<");
-    // Підпис «Started» замінив сам статус «Past» (AC-HOLD-32).
-    expect(html).not.toContain("Started");
   });
 
   it("AC-HOLD-24: день без жодного слоту — лише повідомлення", async () => {
