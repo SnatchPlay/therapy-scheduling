@@ -61,3 +61,10 @@ T3-1,2026-10-21,T-3,blind-review,real,TEST,,reading,,,Expired page fixture had h
 T3-2,2026-10-21,T-3,blind-review,real,UX,,reading,,,identical accessible name on every Confirm button; empty header cell,L
 T3-3,2026-10-21,T-3,blind-review,real,LOAD,,reading,,,hold_list read without limit and without tie-break,L
 T3-4,2026-10-21,T-3,blind-review,real,TEST,,reading,,,failed query path of /holds untested,L
+T3-5,2026-10-21,T-3,blind-review,real,TEST,,running,,,column grant on holds untested (widening stayed green),M
+T3-6,2026-10-21,T-3,blind-review,real,TEST,,running,,,second confirm overwrite and audit values untested,M
+T3-7,2026-10-21,T-3,blind-review,real,DRIFT,,running,,,expired hold on a re-held slot got "no longer available" against AC-HOLD-13,L
+T3-8,2026-10-21,T-3,blind-review,real,TEST,,running,,,race test built an impossible state,L
+T3-9,2026-10-21,T-3,blind-review,real,TEST,,running,,,unique index one session per slot untested,L
+T3-10,2026-10-21,T-3,blind-review,real,TEST,,running,,,anon test passed for another reason; revoke unpinned,L
+T3-11,2026-10-21,T-3,tooling,real,TOOLING,,running,,,shared scratch file name: first mutation run used another script and stayed green,L

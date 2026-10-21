@@ -26,16 +26,14 @@ begin
   -- Час після замка: транзакція могла чекати на інше утримання довше за межу 24 годин.
   v_now := clock_timestamp();
 
-  -- Вже сеанс, або поки ця транзакція чекала, слот утримав хтось інший (утримання прострочилось на межі):
-  -- без цього на одному слоті опинялись два «Confirmed» (рев'ю бази, High).
-  if old.confirmed_at is not null or exists (
-    select 1 from public.holds as h
-    where h.slot_id = old.slot_id and h.id <> old.id
-      and private.hold_status(h.confirmed_at, h.created_at, v_now) <> 'Expired'
-  ) then
+  -- Вже сеанс: повторне підтвердження не перезаписує, хто й коли підтвердив.
+  if old.confirmed_at is not null then
     raise exception 'SLOT_UNAVAILABLE';
   end if;
-  -- AC-HOLD-13. Прострочене раніше за «слот почався»: утримання вже не діє (власне припущення, spec-reading).
+  -- AC-HOLD-13: будь-яке прострочене утримання, навіть якщо слот уже утримали знову, — «Hold the slot again».
+  -- Прострочене раніше за «слот почався»: утримання вже не діє (власне припущення, spec-reading). Перевірка саме тут
+  -- закриває гонку «слот утримали за іншим клієнтом, поки це підтвердження чекало на замок»: на момент після замка
+  -- старе утримання прострочене, тож двох «Confirmed» на слоті бути не може; unique-індекс нижче — останній запобіжник.
   if private.hold_status(old.confirmed_at, old.created_at, v_now) = 'Expired' then
     raise exception 'HOLD_EXPIRED';
   end if;

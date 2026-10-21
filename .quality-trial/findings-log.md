@@ -149,3 +149,18 @@ the failed-query path of the page was untested (mutation red); every Confirm but
 name (now client and slot time); empty header cell; no tie-break in the order.
 Left open (known-debt): `hold_list` read without a limit while PM issue #8 is open (PostgREST `max_rows` = 1000
 truncates silently).
+Database findings (T-3, reviewer mutations in a copy of `supabase/` and `tests/db/`): the column grant was never
+tested (widening it to table-wide stayed green — a scheduler could PATCH `slot_id`, `created_at`, `confirmed_by`:
+Medium; now a test per column); a second confirm overwriting who and when, and the audit values, were untested
+(Medium; 3 tests); the `holds_one_session_per_slot` index was untested (needs a way past the triggers:
+`TestDb.asOwner` + `session_replication_role = replica`); the anon test passed for another reason (`permission
+denied for schema private`), so the explicit `revoke` was unpinned (grants asserted with
+`has_function_privilege`, for `confirm_hold`, `hold_slot`, `day_slots`); the race test built a state that
+cannot occur (`created_at` moved forward). Design change: the AC-HOLD-13 check now comes before the
+"another active hold" check, which made the latter dead code (an expired hold on a slot held again got "no
+longer available", against AC-HOLD-13): removed; the expiry check after the lock covers the race and the unique
+index is the last safeguard. My seven hand mutations of the new rules (grant widened, no confirmed guard, no
+`confirmed_by`, client `confirmed_at` kept, no unique index, no revoke, no expiry check) each turn a test red.
+Tooling note: a reviewer and I both wrote `scratchpad/mut.py`; my first run of the mutations executed the
+reviewer's script and "passed" — an all-green run of 7 mutations is the signal to check the tool, not the tests.
+
