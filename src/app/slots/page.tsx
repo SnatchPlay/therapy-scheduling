@@ -50,9 +50,8 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
         </button>
       </form>
 
-      {/* AC-HOLD-18, AC-HOLD-24 (відповідь PM Sofiia-pm/therapy-scheduling-spec#4): повідомлення, коли немає слоту,
-          який ще можна утримати; слоти дня лишаються в списку. Слот, що вже почався й не утриманий, вільним для
-          повідомлення не рахуємо — його не утримати (AC-HOLD-07); PM цей підвипадок не визначила (docs/spec-reading.md). */}
+      {/* AC-HOLD-18, AC-HOLD-24, AC-HOLD-33: повідомлення, коли немає слоту, який ще можна утримати; слоти дня лишаються
+          в списку. Слот, що вже почався й не утриманий, — «Past» (AC-HOLD-32): не вільний, його не утримати (AC-HOLD-07). */}
       {hasHoldableSlot(rows) ? null : <p data-testid="no-free-slots">{MESSAGES.NO_FREE_SLOTS}</p>}
 
       <ul className="flex flex-col divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
@@ -102,7 +101,6 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
                 </button>
               </form>
             ) : null}
-            {s.status === "Free" && !s.holdable ? <span className="text-zinc-500">Started</span> : null}
           </li>
         ))}
       </ul>

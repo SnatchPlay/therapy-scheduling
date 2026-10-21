@@ -81,3 +81,8 @@ T5-01,2026-10-21,T-5,blind-review,real,TEST,,mutation,,,client lock and simultan
 T5-02,2026-10-21,T-5,blind-review,real,TEST,,mutation,,,overlap tests only in one order (starts_at bound survived),L
 T5-03,2026-10-21,T-5,blind-review,nit,DOC,,reading,,,design.md named for update; code uses for no key update,L
 T5-04,2026-10-21,T-5,blind-review,nit,TEST,,reading,,,AC-HOLD-35 test opened a second database,L
+T6-01,2026-10-21,T-6,blind-review,real,TEST,,mutation,,,inclusive start boundary untested: both views could inline < now() and stay green,M
+T6-02,2026-10-21,T-6,blind-review,nit,TEST,,mutation,,,page assertion no Started passed against the old page,L
+T6-03,2026-10-21,T-6,blind-review,nit,DOC,,reading,,,spec-reading Q1-Q4 still waiting after PM answers,L
+T6-04,2026-10-21,T-6,blind-review,nit,DUP,,reading,,,test helper shadowed fixture boardOf,L
+T6-05,2026-10-21,T-6,self-review,real,TEST,,static,,,flaky test: two slots at the same now() offset hit slots_therapist_start_key,M

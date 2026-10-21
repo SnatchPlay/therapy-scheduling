@@ -4,8 +4,8 @@ import { requireRole, STAFF } from "@/lib/supabase/viewer";
 import { formatPracticeDateTime } from "@/lib/time";
 import { confirmHold } from "./actions";
 
-// AC-HOLD-20: планувальник і адміністратор бачать усі утримання, зокрема «Expired». Скільки часу прострочене лишається
-// у списку, PM відповісти ще не встигла (Sofiia-pm/therapy-scheduling-spec#8): до відповіді воно не зникає.
+// AC-HOLD-20, AC-HOLD-28, AC-HOLD-29: планувальник і адміністратор бачать усі утримання, зокрема «Expired», але
+// прострочене — лише до початку слоту (так вирішила PM, Sofiia-pm/therapy-scheduling-spec#8): це робить hold_list.
 export default async function HoldsPage({ searchParams }: PageProps<"/holds">) {
   const { supabase, role, email } = await requireRole(...STAFF);
   const { msg } = await searchParams;

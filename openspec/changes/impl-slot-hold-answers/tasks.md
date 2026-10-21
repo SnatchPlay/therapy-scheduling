@@ -10,8 +10,8 @@ Done when: AC-HOLD-25, AC-HOLD-26, AC-HOLD-27, AC-HOLD-34, AC-HOLD-35, AC-HOLD-3
 
 ## 6. «Past» і прострочене до початку слоту (PR `task/past-expired`)
 
-- [ ] 6.1 Міграція: статус «Past» у `slot_board`, прострочене в `hold_list` лише до початку слоту
-- [ ] 6.2 Тести бази й сторінка `/slots`: «Past» замість «Started», «No free slots on this day.» без «Past»
+- [x] 6.1 Міграція: статус «Past» у `slot_board`, прострочене в `hold_list` лише до початку слоту
+- [x] 6.2 Тести бази й сторінка `/slots`: «Past» замість «Started», «No free slots on this day.» без «Past»
 
 Done when: AC-HOLD-28, AC-HOLD-29, AC-HOLD-32, AC-HOLD-33
 
