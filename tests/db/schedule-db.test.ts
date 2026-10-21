@@ -71,7 +71,7 @@ describe("Розклад терапевта", () => {
     expect(theirs).not.toContain(ownHold.id);
   });
 
-  it("«його сеанси»: підтверджене утримання лишається в розкладі після 24 годин, з ім'ям клієнта", async () => {
+  it("AC-HOLD-09: «його сеанси» — підтверджене утримання лишається в розкладі після 24 годин, з ім'ям клієнта", async () => {
     const client = await ensureClient(t, "client3", "client3@example.test");
     const slot = await createSlot(t, T1, "now() + interval '12 days'");
     const holdId = await confirmedHold(slot, client);
@@ -81,7 +81,7 @@ describe("Розклад терапевта", () => {
     expect(item).toMatchObject({ client_name: "client3", status: "Confirmed", held_until: null });
   });
 
-  it("сеанс іншого терапевта не видно", async () => {
+  it("AC-HOLD-09: сеанс іншого терапевта не видно", async () => {
     const client = await ensureClient(t, "client4", "client4@example.test");
     const slot = await createSlot(t, T2, "now() + interval '13 days'");
     const holdId = await confirmedHold(slot, client);
@@ -102,7 +102,7 @@ describe("Розклад терапевта", () => {
     expect(await t.asUser(THERAPIST1, "select 1 from public.clients where id = $1", [client])).toEqual([]);
   });
 
-  it("межа AC-HOLD-21: о 1439-й хвилині утримання ще в розкладі, о 1440-й — уже ні", async () => {
+  it("AC-HOLD-21: межа — о 1439-й хвилині утримання ще в розкладі, о 1440-й — уже ні", async () => {
     const client = await ensureClient(t, "client6", "client6@example.test");
     const slot = await createSlot(t, T1, "now() + interval '14 days'");
     const hold = await holdAs(t, SCHEDULER, slot, client);

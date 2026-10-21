@@ -80,7 +80,7 @@ describe("/schedule", () => {
     expect(requireRole).toHaveBeenCalledWith("therapist");
   });
 
-  it("утримання — з клієнтом і «Held until», сеанс — без «Held until»; список із hold_list за часом слоту", async () => {
+  it("AC-HOLD-09: утримання — з клієнтом і «Held until», сеанс — без «Held until»; список із hold_list за часом слоту", async () => {
     holds = [hold("h1", "Held", "2026-11-03T14:30:00-08:00"), hold("h2", "Confirmed", null)];
     const html = await render();
     expect(html).toContain("client1");
@@ -93,7 +93,7 @@ describe("/schedule", () => {
     expect(holdsQuery).toEqual({ table: "hold_list", order: ["starts_at"] });
   });
 
-  it("слоти питаються за власним терапевтом і обраним днем; рядок слота показано", async () => {
+  it("AC-HOLD-09: слоти питаються за власним терапевтом і обраним днем; рядок слота показано", async () => {
     slots = [slot("Confirmed", "client1")];
     const html = await render({ day: "2026-11-05" });
     expect(rpcCall).toEqual({ name: "day_slots", args: { p_therapist_id: "t1", p_day: "2026-11-05" } });
