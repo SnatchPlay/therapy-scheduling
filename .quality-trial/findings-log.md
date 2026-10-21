@@ -120,3 +120,14 @@ with two sessions: with the lock the second gets SLOT_UNAVAILABLE (1 hold); the 
 Stryker T-2 (`--since main`, 4 files): 102 of 107 killed. Survivors: `if (code === "HOLD_FORBIDDEN")` → `true` — real gap
 (the AC-HOLD-03 test did not check the path), closed, mutant now red; four on `isIsoDate` — equivalent:
 the regex only pre-filters, the round trip through `Date.parse` rejects the same strings.
+
+Deploy readiness T-2 (REQUIRED: migration, types): 1. `db-deploy` after merge only; deployed `main` never reads the new
+tables, `clients` gets one more policy (staff reads unchanged: `clients_select_staff`). 2. New code before `db-deploy`
+ends: `/slots` fails on the missing tables → `error.tsx`; old code on the new schema: unaffected. 3. migration order OK
+(`check-migration-order.mjs`). 4. Existing rows: the migration only adds tables, a policy and seed rows
+(`on conflict do nothing`); users from `users:demo` untouched. 5. Explicit grants for `therapists`, `slots`, `holds`,
+both views and both functions; `revoke … from anon` checked by the anon test. 6. `database.types.ts` is
+`supabase gen types --local` of this schema. 7. No new env names; no dependency changes. 8. `npm run build` shows
+`ƒ /slots` and `ƒ Proxy (Middleware)`. 9. `demo-users.json` unchanged: therapist1/2 already exist in the cloud project
+(2026-10-21) — the therapist link is by email. 10. A red `db-deploy`; `/slots` shows the error boundary. 11. Revert
+the code by PR; the schema goes forward: a migration dropping `holds`, `slots`, `therapists` and the policy (the holds are lost).
