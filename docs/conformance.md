@@ -29,7 +29,7 @@
 | AC-LEAVE-10 | діапазон лише із заблокованих днів | — | — | відкладено (чекає реалізації) |
 -->
 
-Вимоги: https://github.com/Sofiia-pm/therapy-scheduling-spec · джерело: issues · знімок 2026-10-19
+Вимоги: https://github.com/Sofiia-pm/therapy-scheduling-spec · джерело: issues · знімок 2026-10-21
 
 | AC | Що перевіряє | Код | Тест | Статус |
 |---|---|---|---|---|
