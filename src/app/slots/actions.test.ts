@@ -57,12 +57,26 @@ describe("holdSlot", () => {
     await expect(holdSlot(form(FIELDS))).rejects.toBe(failure);
   });
 
+  it("AC-HOLD-08: терапевт — повідомлення на головній, бо /slots його туди перенаправляє", async () => {
+    rpc.mockResolvedValue({ error: { code: "42501", message: "HOLD_FORBIDDEN" } });
+    const url = await redirectOf(holdSlot(form(FIELDS)));
+    expect(url.pathname + url.search).toBe("/?msg=HOLD_FORBIDDEN");
+  });
+
   it("поле без значення чи файл замість тексту — без запиту до бази", async () => {
+    const noSlot = { therapist: FIELDS.therapist, day: FIELDS.day, client_id: FIELDS.client_id };
     const withFile = form(FIELDS);
     withFile.set("client_id", new File(["x"], "c.txt"));
-    for (const data of [form({ therapist: "t1", day: "2026-11-03" }), withFile]) {
-      expect((await redirectOf(holdSlot(data))).searchParams.get("msg")).toBe("UNEXPECTED");
+    for (const data of [form(noSlot), withFile]) {
+      const url = await redirectOf(holdSlot(data));
+      expect(Object.fromEntries(url.searchParams)).toEqual({ therapist: "t1", day: "2026-11-03", msg: "UNEXPECTED" });
     }
     expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("без терапевта й дня в формі — порожні параметри, сторінка візьме типові", async () => {
+    rpc.mockResolvedValue({ error: null });
+    const url = await redirectOf(holdSlot(form({ slot_id: "s1", client_id: "c1" })));
+    expect(Object.fromEntries(url.searchParams)).toEqual({ therapist: "", day: "", msg: "HELD" });
   });
 });

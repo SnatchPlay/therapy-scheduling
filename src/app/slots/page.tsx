@@ -53,7 +53,9 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
         </button>
       </form>
 
-      {/* AC-HOLD-18 (Q4): повідомлення, коли немає слоту, який ще можна утримати; слоти дня лишаються в списку. */}
+      {/* AC-HOLD-18, AC-HOLD-24 (відповідь PM Sofiia-pm/therapy-scheduling-spec#4): повідомлення, коли немає слоту,
+          який ще можна утримати; слоти дня лишаються в списку. Слот, що вже почався й не утриманий, вільним для
+          повідомлення не рахуємо — його не утримати (AC-HOLD-07); PM цей підвипадок не визначила (docs/spec-reading.md). */}
       {hasHoldableSlot(rows) ? null : <p data-testid="no-free-slots">{MESSAGES.NO_FREE_SLOTS}</p>}
 
       <ul className="flex flex-col divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
@@ -81,7 +83,11 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
                 <input type="hidden" name="slot_id" value={s.slot_id} />
                 <input type="hidden" name="therapist" value={therapistId ?? ""} />
                 <input type="hidden" name="day" value={day} />
-                <select name="client_id" required className={inputClass}>
+                {/* Порожній перший пункт: інакше required нічого не вимагає, і слот утримали б за першим клієнтом списку. */}
+                <select name="client_id" required defaultValue="" className={inputClass}>
+                  <option value="" disabled>
+                    Choose a client
+                  </option>
                   {clients.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.full_name} ({c.email})

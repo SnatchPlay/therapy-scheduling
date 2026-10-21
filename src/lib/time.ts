@@ -33,9 +33,12 @@ export function practiceDate(value: string | Date = new Date()): string {
   return `${p.year}-${p.month}-${p.day}`;
 }
 
-/** Існуюча календарна дата «РРРР-ММ-ДД» (Date.parse приймає й «2026-02-31», тож звіряємо туди й назад). */
+/**
+ * Існуюча календарна дата «РРРР-ММ-ДД» (Date.parse приймає й «2026-02-31», тож звіряємо туди й назад).
+ * Рік 0000 JavaScript приймає, а тип date у Postgres — ні: day_slots упав би з помилкою.
+ */
 export function isIsoDate(value: unknown): value is string {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value) || value.startsWith("0000")) return false;
   const time = Date.parse(`${value}T00:00:00Z`);
   return !Number.isNaN(time) && new Date(time).toISOString().slice(0, 10) === value;
 }

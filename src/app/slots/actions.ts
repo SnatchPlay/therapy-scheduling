@@ -29,6 +29,8 @@ export async function holdSlot(formData: FormData) {
     const code = dbMessageCode(error);
     // Непередбачена помилка — у лог сервера й на сторінку помилки (error.tsx), а не лише загальний текст.
     if (code === "UNEXPECTED") throw error;
+    // /slots лише для staff: терапевта звідти перенаправило б на головну без тексту, тож текст — одразу там.
+    if (code === "HOLD_FORBIDDEN") redirect(`/?msg=${code}`);
     back.set("msg", code);
   } else {
     back.set("msg", "HELD");

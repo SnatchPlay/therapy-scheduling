@@ -92,42 +92,11 @@ as $$
   where p.id = (select auth.uid()) and p.role = 'therapist';
 $$;
 
-create or replace function private.slot_is_mine(p_slot_id uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select exists (
-    select 1 from public.slots as s
-    where s.id = p_slot_id and s.therapist_id = (select private.current_therapist_id())
-  );
-$$;
-
--- Клієнт непростроченого утримання чи сеансу на слоті поточного терапевта («лише власні» клієнти).
-create or replace function private.client_is_mine(p_client_id uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select exists (
-    select 1
-    from public.holds as h
-    join public.slots as s on s.id = h.slot_id
-    where h.client_id = p_client_id
-      and s.therapist_id = (select private.current_therapist_id())
-      and private.hold_status(h.confirmed_at, h.created_at) <> 'Expired'
-  );
-$$;
-
 revoke execute on function private.hold_expires_at(timestamptz), private.slot_started(timestamptz, timestamptz),
-  private.hold_status(timestamptz, timestamptz, timestamptz), private.current_therapist_id(), private.slot_is_mine(uuid), private.client_is_mine(uuid)
+  private.hold_status(timestamptz, timestamptz, timestamptz), private.current_therapist_id()
   from public, anon;
 grant execute on function private.hold_expires_at(timestamptz), private.slot_started(timestamptz, timestamptz),
-  private.hold_status(timestamptz, timestamptz, timestamptz), private.current_therapist_id(), private.slot_is_mine(uuid), private.client_is_mine(uuid)
+  private.hold_status(timestamptz, timestamptz, timestamptz), private.current_therapist_id()
   to authenticated;
 
 -- ── RLS і права ─────────────────────────────────────────────────────────────
@@ -156,13 +125,17 @@ create policy slots_select
   using ((select private.is_scheduler_or_admin()) or therapist_id = (select private.current_therapist_id()));
 
 -- Терапевт бачить лише утримання власних слотів і без прострочених (AC-HOLD-09, AC-HOLD-21).
+-- Підзапит, а не функція на кожен рядок: множину власних слотів Postgres рахує один раз.
 create policy holds_select
   on public.holds
   for select
   to authenticated
   using (
     (select private.is_scheduler_or_admin())
-    or (private.slot_is_mine(slot_id) and private.hold_status(confirmed_at, created_at) <> 'Expired')
+    or (
+      slot_id in (select s.id from public.slots as s where s.therapist_id = (select private.current_therapist_id()))
+      and private.hold_status(confirmed_at, created_at) <> 'Expired'
+    )
   );
 
 create policy holds_insert_staff
@@ -171,11 +144,13 @@ create policy holds_insert_staff
   to authenticated
   with check ((select private.is_scheduler_or_admin()) and created_by = (select auth.uid()));
 
+-- Терапевт бачить лише клієнтів утримань, які бачить сам: RLS holds уже лишає власні непрострочені.
+-- Для staff ця політика нічого не додає (clients_select_staff), і множину клієнтів Postgres рахує один раз.
 create policy clients_select_therapist
   on public.clients
   for select
   to authenticated
-  using (private.client_is_mine(id));
+  using (id in (select h.client_id from public.holds as h));
 
 -- ── Правила утримання (останні ворота і для прямих запитів Data API) ────────
 create or replace function private.guard_new_hold()
@@ -207,7 +182,9 @@ begin
     raise exception 'SLOT_UNAVAILABLE';
   end if;
 
-  new.created_at := v_now;
+  -- Час рахуємо з точністю до хвилини (припущення PM): утримання о 14:30:45 прострочується 14:30 наступного дня,
+  -- як і показує «Held until».
+  new.created_at := date_trunc('minute', v_now);
   new.created_by := coalesce((select auth.uid()), new.created_by);
   new.confirmed_at := null;
   new.confirmed_by := null;

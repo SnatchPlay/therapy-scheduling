@@ -1,5 +1,6 @@
 // Підготовка даних для тестів бази: слоти й клієнти через service_role, дії — від імені користувачів.
 import { dbMessageCode, MESSAGES } from "@/lib/messages";
+import { practiceDate } from "@/lib/time";
 import type { TestDb } from "./supabase-pglite";
 
 /** Слот терапевта; startsAt — SQL-вираз timestamptz (наприклад, "now() + interval '1 day'"). */
@@ -59,4 +60,14 @@ export type BoardRow = {
 export async function boardOf(t: TestDb, userId: string, slotId: string): Promise<BoardRow | undefined> {
   const [row] = await t.asUser<BoardRow>(userId, "select * from public.slot_board where slot_id = $1", [slotId]);
   return row;
+}
+
+/**
+ * День без початкових слотів, хоч би коли запускали тести: неділя (сид — лише будні) щонайменше за 400 днів.
+ * Фіксована дата колись стала б минулим, і утримання там відмовило б як «слот почався».
+ */
+export function quietDay(week = 0): string {
+  const day = new Date(`${practiceDate(new Date(Date.now() + 400 * 86_400_000))}T12:00:00Z`);
+  day.setUTCDate(day.getUTCDate() + ((7 - day.getUTCDay()) % 7) + 7 * week);
+  return day.toISOString().slice(0, 10);
 }
