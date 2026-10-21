@@ -39,8 +39,12 @@
 
 ### Р11. Розклад терапевта — тиждень (AC-HOLD-30, 31; AC-HOLD-09 і 21 лишаються) — задача 7
 
-- `public.week_slots(p_therapist_id, p_week_start date)`: слоти `slot_board` від понеділка 00:00 America/Los_Angeles
-  до наступного понеділка (security invoker, як `day_slots`: терапевт із чужим id отримує порожній список).
+- `public.slots_between(p_therapist_id, p_from date, p_to date)`: слоти `slot_board` за дні [from, to) часу практики
+  America/Los_Angeles; що таке «тиждень» (понеділок–неділя), вирішує застосунок (`src/lib/time.ts`), база лише віддає
+  діапазон. `security invoker`, як `day_slots`: діє RLS (`slots_select`, `holds_select`, `clients_select_therapist`,
+  `security_invoker` представлення `slot_board`), тож терапевт із чужим id отримує порожній список. Міграція відкликає
+  `execute` від `public` і `anon` і дає його лише `authenticated`. `day_slots` стає діапазоном з одного дня: одне
+  визначення замість двох копій предиката.
 - `/schedule?week=РРРР-ММ-ДД`: будь-яка дата → понеділок її тижня (чиста арифметика дат у `src/lib/time.ts`, без
   часових поясів: дата практики вже локальна); за замовчуванням — поточний тиждень; посилання «Previous week» /
   «Next week». Одна таблиця: слоти тижня за днями зі статусами (вільні, «Held» з клієнтом і «Held until», «Confirmed»
