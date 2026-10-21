@@ -1,12 +1,13 @@
 import { AppShell, buttonClass } from "@/app/_components/app-shell";
 import { messageFor } from "@/lib/messages";
-import { requireRole } from "@/lib/supabase/viewer";
+import { requireRole, STAFF } from "@/lib/supabase/viewer";
 import { formatPracticeDateTime } from "@/lib/time";
 import { confirmHold } from "./actions";
 
-// AC-HOLD-20: планувальник і адміністратор бачать усі утримання, зокрема «Expired».
+// AC-HOLD-20: планувальник і адміністратор бачать усі утримання, зокрема «Expired». Скільки часу прострочене лишається
+// у списку, PM відповісти ще не встигла (Sofiia-pm/therapy-scheduling-spec#8): до відповіді воно не зникає.
 export default async function HoldsPage({ searchParams }: PageProps<"/holds">) {
-  const { supabase, role, email } = await requireRole("scheduler", "admin");
+  const { supabase, role, email } = await requireRole(...STAFF);
   const { msg } = await searchParams;
 
   const { data: holds, error } = await supabase
@@ -18,6 +19,7 @@ export default async function HoldsPage({ searchParams }: PageProps<"/holds">) {
   return (
     <AppShell role={role} email={email} title="Holds" message={messageFor(msg)}>
       <table className="w-full text-left text-sm">
+        <caption className="sr-only">Holds</caption>
         <thead className="text-zinc-500">
           <tr>
             <th className="py-2">Slot</th>
@@ -28,6 +30,13 @@ export default async function HoldsPage({ searchParams }: PageProps<"/holds">) {
           </tr>
         </thead>
         <tbody>
+          {holds.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="py-2 text-zinc-500">
+                No holds yet.
+              </td>
+            </tr>
+          ) : null}
           {holds.map((h) => (
             <tr key={h.hold_id} className="border-t border-zinc-200 dark:border-zinc-800" data-testid="hold">
               <td className="py-2 font-mono">{h.starts_at ? formatPracticeDateTime(h.starts_at) : ""}</td>

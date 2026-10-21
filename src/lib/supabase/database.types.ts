@@ -193,7 +193,10 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "day_slots":
+            "confirm_hold":
+{ Args: { "p_hold_id": string }; Returns: undefined
+                           },
+"day_slots":
 { Args: { "p_day": string,"p_therapist_id": string }; Returns: {
               "client_id": string | null,
 "client_name": string | null,
