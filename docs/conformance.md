@@ -42,13 +42,13 @@
 | AC-HOLD-07 | слот почався — «This slot has already started and cannot be held.» | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-08 | терапевт не утримує слот | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-09 | терапевт бачить лише власний розклад | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-10 | створення клієнта з ім'ям і email | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-11 | порожнє ім'я — відмова | — | — | відкладено (чекає реалізації) |
+| AC-HOLD-10 | створення клієнта з ім'ям і email | `src/app/clients/actions.ts` (createClientCard), `supabase/migrations/20261019142745_roles_and_clients.sql` | `tests/db/clients-db.test.ts`, `src/app/clients/actions.test.ts` | реалізовано |
+| AC-HOLD-11 | порожнє ім'я — відмова | `supabase/migrations/20261019142745_roles_and_clients.sql` (clients_full_name_check), `src/lib/messages.ts` | `tests/db/clients-db.test.ts` | реалізовано |
 | AC-HOLD-12 | підтвердження — «Confirmed», без Held until | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-13 | прострочене не підтверджується | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-14 | терапевт не підтверджує утримання | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-15 | email без @ — відмова | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-16 | дубль email — відмова | — | — | відкладено (чекає реалізації) |
+| AC-HOLD-15 | email без @ — відмова | `supabase/migrations/20261019142745_roles_and_clients.sql` (clients_email_check), `src/lib/messages.ts` | `tests/db/clients-db.test.ts` | реалізовано |
+| AC-HOLD-16 | дубль email — відмова | `supabase/migrations/20261019142745_roles_and_clients.sql` (clients_email_key, normalize_client_email), `src/lib/messages.ts` | `tests/db/clients-db.test.ts`, `src/app/clients/actions.test.ts` | реалізовано |
 | AC-HOLD-17 | повторне утримання за тим самим клієнтом — відмова | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-18 | немає вільних слотів — «No free slots on this day.» і під ним усі слоти зі статусами | — | — | відкладено (рішення PM: Sofiia-pm/therapy-scheduling-spec#4 — перекладено зміною clarify-slot-hold; реалізацію зрізу 1 перенесено на тиждень WS7, рішення курсу) |
 | AC-HOLD-19 | адміністратор утримує й підтверджує | — | — | відкладено (чекає реалізації) |

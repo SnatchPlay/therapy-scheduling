@@ -8,6 +8,9 @@ Add a line when a finding becomes its own refactor or a decision; remove it when
 | Item | Status (source) |
 |---|---|
 | Concurrency of "one active hold per slot" is tested only sequentially on PGlite (one connection); the guarantee is the row lock in the trigger | decision: a two-connection test needs real Postgres in CI (`.github` change, ask first) — slice 1 database review |
-| `src/lib/supabase/database.types.ts` is hand-written until a `db-check` summary is copied in | replace with the generated file in the PR that adds the schema |
 | Therapist ↔ user link by `profiles.email = therapists.email` | decision for slice 1 (therapists are seed data); depends on sign-up staying disabled in the cloud project |
 | Foreign keys `created_by`, `confirmed_by`, `client_id` without a deliberate `on delete` | open — slice 1 database review, Low |
+| Demo accounts `member1@`, `member2@example.test` in the cloud project became `scheduler` (design Р1) and are no longer in `demo-users.json` | open — removing them is a write to the cloud project: the owner does it in the dashboard |
+| App UI texts in English (PM's acceptance texts are English), while `/login` and `<html lang>` are Ukrainian | open, Low — one language for the whole UI |
+| `/clients` form keeps no values after an error; the success message uses the alert style | open, Low |
+| design.md Р2 still names `btrim(full_name) <> ''` and the old email regex; the migration is stricter | update with the plan's archive (last PR of the slice) |
