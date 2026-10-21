@@ -8,6 +8,7 @@ const LINKS: { href: string; label: string; roles: readonly Role[] }[] = [
   { href: "/slots", label: "Slots", roles: STAFF },
   { href: "/holds", label: "Holds", roles: STAFF },
   { href: "/clients", label: "Clients", roles: STAFF },
+  { href: "/schedule", label: "Schedule", roles: ["therapist"] },
 ];
 
 export function AppShell({

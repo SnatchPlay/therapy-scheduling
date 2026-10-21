@@ -13,8 +13,8 @@ Add a line when a finding becomes its own refactor or a decision; remove it when
 | Demo accounts `member1@`, `member2@example.test` in the cloud project became `scheduler` (design Р1) and are no longer in `demo-users.json` | open — removing them is a write to the cloud project: the owner does it in the dashboard |
 | App UI texts in English (PM's acceptance texts are English), while `/login` and `<html lang>` are Ukrainian | open, Low — one language for the whole UI |
 | `/clients` form keeps no values after an error; the success message uses the alert style | open, Low |
-| design.md Р2 still names `btrim(full_name) <> ''` and the old email regex; the migration is stricter | update with the plan's archive (last PR of the slice) |
 | `/slots` loads every client and repeats them as options in each holdable slot's form | open, Low — one picker or a searched list when the client count grows |
 | Hold and Create buttons have no pending state: a double click sends two actions, the second reports "no longer available" | open, Low |
 | "No free slots on this day." does not count a started, unheld slot as free (it cannot be held, AC-HOLD-07); PM left this sub-case open (`docs/spec-reading.md`) | own assumption — candidate question to the PM |
 | `/holds` reads `hold_list` without a limit; expired holds never leave it while PM issue #8 is open, and PostgREST `max_rows` (1000) would cut the list silently | open, Low — a "recent N" view or paging once the PM answers #8 |
+| `/schedule` slots section defaults to today: AC-HOLD-21 (hold on 11-05, opened on 11-03) shows the free slot only after the day is picked | open, Low — wait for PM's answer on the period (#9); a default of the nearest day with a hold would be an own invention |

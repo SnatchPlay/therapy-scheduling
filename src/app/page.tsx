@@ -7,13 +7,14 @@ import { getViewer, STAFF } from "@/lib/supabase/viewer";
 export default async function Home({ searchParams }: PageProps<"/">) {
   const { role, email } = await getViewer();
   const { msg } = await searchParams;
-  // design.md Р6: планувальник починає зі слотів.
+  // design.md Р6: планувальник починає зі слотів, терапевт — з розкладу.
   if (role && STAFF.includes(role)) redirect("/slots");
+  if (role === "therapist") redirect("/schedule");
 
   return (
     <AppShell role={role} email={email} title="Therapy scheduling" message={messageFor(msg)}>
-      <p className="text-sm text-zinc-500" data-testid="user-role">
-        {role ? `Role: ${role}. Nothing to show yet.` : "Profile not found."}
+      <p className="text-sm text-zinc-500">
+        Profile not found.
       </p>
     </AppShell>
   );

@@ -15,3 +15,6 @@ date,step,instrument,diff_lines,tokens,minutes,findings_real,findings_nit,findin
 2026-10-21,T-3,stryker,,,3,0,0,0,0,actions.ts and messages.ts 24 of 24 killed
 2026-10-21,T-3,real-postgres-race,,,2,0,0,0,0,two simultaneous confirms: second gets SLOT_UNAVAILABLE
 2026-10-21,T-3,blind-review,,108671,4.6,6,0,0,0,database reviewer; 7 mutations by hand afterwards
+2026-10-21,T-4,blind-review,,118000,4,5,4,0,3,one reviewer (app and tests); all Low
+2026-10-21,T-4,stryker,,,6,5,0,0,0,53 mutants 31 killed first run; survivors covered by added tests
+2026-10-21,T-4,fallow,,,1,1,0,0,0,clone of the slot-row mapping; withSlotTimes extracted

@@ -178,3 +178,25 @@ inserts holds, never updates them: the new grant and policy do not touch that pa
 unchanged. 10. Red `db-deploy`; `/holds` error boundary. 11. Revert the code by PR; the schema goes forward: a
 migration dropping the policy, the trigger, the index and the function (confirmed sessions would stay as rows).
 
+## 2026-10-21 · T-4 therapist schedule (task 4 of impl-slot-hold)
+
+Ran: gate; `run.sh`; one blind reviewer (app and tests; no migration in this task); Stryker `--since origin/main`;
+hand mutations of the visibility policies. No new SQL: AC-HOLD-09 and AC-HOLD-21 are already enforced by the policies
+of task 2, so this task proves them with the queries the page makes, as the therapist.
+`run.sh` found a real clone (the nullable-column mapping of `slot_board` rows, in `/slots` and `/schedule`): extracted
+`withSlotTimes` into `src/lib/slots.ts` with its own test. Two RLS tests moved from `holds-db.test.ts` into
+`schedule-db.test.ts` and strengthened (listed by `run.sh` as removed tests; the new file pins the same rules through
+`hold_list`, `day_slots`, `slots`, `therapists`, `clients`).
+Hand mutations of the policies (each red): `holds_select` without the own-slot check, without the Expired check;
+`slots_select` open (first survived: `day_slots` joins `therapists`, which hid the leak — a direct `select from slots`
+assertion was added); the reviewer added `therapists_select` open, `clients_select_therapist = true`, 24 h → 25 h.
+Reviewer findings (all Low, no High or Medium): two of three failure paths and the role gate of the page were untested
+(mutations survived: now tested); page tests carried AC ids while only rendering mock data (renamed, the DB tests keep
+the ids); `h.status === "Held" &&` and the second `.order("hold_id")` were redundant (removed); the "no therapist"
+message had no `role`, an empty `<ul>` was rendered, a dead `data-testid` on `/` (fixed); DB tests depended on test order
+(fixed). Stryker also showed that the home redirect for a therapist was untested: `src/app/page.test.tsx` added.
+Left open: the slots section defaults to today, so the literal AC-HOLD-21 walk-through (open on 11-03, slot on 11-05)
+shows the free slot only after picking the day (known-debt; PM period question #9 is open).
+Dropped: unbounded hold list (declared; PM #9); slot-row markup repeated with `/slots` (about six lines, different content).
+Stryker T-4 (53 mutants, first run, before the added tests): 31 killed; survivors were the unasserted string
+literals of queries, the two error throws, the redirect and the Held/rows guards — the tests added after it cover them.
