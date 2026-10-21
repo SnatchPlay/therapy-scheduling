@@ -1,0 +1,64 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Server action без Next і бази: requireRole дає фейковий клієнт Supabase, redirect кидає ціль (як у Next).
+const insert = vi.fn();
+const requireRole = vi.fn<(...roles: string[]) => Promise<unknown>>(async () => ({ supabase: { from: () => ({ insert }) } }));
+vi.mock("@/lib/supabase/viewer", async (importActual) => ({
+  ...(await importActual<typeof import("@/lib/supabase/viewer")>()),
+  requireRole,
+}));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("next/navigation", () => ({
+  redirect: (url: string) => {
+    throw new Redirect(url);
+  },
+}));
+class Redirect extends Error {
+  constructor(readonly url: string) {
+    super(url);
+  }
+}
+
+const { createClientCard } = await import("./actions");
+
+function form(fullName: string, email: string) {
+  const data = new FormData();
+  data.set("full_name", fullName);
+  data.set("email", email);
+  return data;
+}
+
+async function redirectOf(action: Promise<unknown>) {
+  const error = await action.then(() => null, (e: unknown) => e);
+  expect(error).toBeInstanceOf(Redirect);
+  return (error as Redirect).url;
+}
+
+beforeEach(() => {
+  insert.mockReset();
+  requireRole.mockClear();
+});
+
+describe("createClientCard", () => {
+  it("AC-HOLD-10: поля форми йдуть у свої колонки, успіх → повідомлення про створення", async () => {
+    insert.mockResolvedValue({ error: null });
+    expect(await redirectOf(createClientCard(form("Client Three", "client3@example.test")))).toBe(
+      "/clients?msg=CLIENT_CREATED",
+    );
+    expect(insert).toHaveBeenCalledWith({ full_name: "Client Three", email: "client3@example.test" });
+    expect(requireRole).toHaveBeenCalledWith("scheduler", "admin");
+  });
+
+  it("AC-HOLD-16: помилка обмеження бази → код повідомлення, а не «створено»", async () => {
+    insert.mockResolvedValue({ error: { code: "23505", message: 'violates unique constraint "clients_email_key"' } });
+    expect(await redirectOf(createClientCard(form("Client One", "client1@example.test")))).toBe(
+      "/clients?msg=CLIENT_EXISTS",
+    );
+  });
+
+  it("непередбачена помилка бази кидається далі (лог сервера, error.tsx)", async () => {
+    const failure = { code: "42501", message: "permission denied for table clients" };
+    insert.mockResolvedValue({ error: failure });
+    await expect(createClientCard(form("Client Three", "client3@example.test"))).rejects.toBe(failure);
+  });
+});

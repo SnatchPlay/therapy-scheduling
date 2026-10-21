@@ -69,6 +69,10 @@ describe("Картка клієнта", () => {
     expect(await createClientAs(SCHEDULER, "Client Three", "client3example.test")).toBe(
       "Enter the client's name and a valid email.",
     );
+    // Невидимий знак усередині — теж не email.
+    expect(await createClientAs(SCHEDULER, "Client Three", "client3\u00a0x@example.test")).toBe(
+      "Enter the client's name and a valid email.",
+    );
     const [{ n }] = await t.asService<{ n: number }>(
       "select count(*)::int as n from public.clients where email = 'client3example.test'",
     );
@@ -89,14 +93,51 @@ describe("Картка клієнта", () => {
     expect(await createClientAs(SCHEDULER, "Client One Upper", "Client1@Example.TEST")).toBe(
       "A client with this email already exists.",
     );
-    expect(await createClientAs(SCHEDULER, "Client One Spaces", " client1@example.test ")).toBe(
-      "A client with this email already exists.",
-    );
+    for (const variant of [" client1@example.test ", "client1@example.test\u00a0", "\tclient1@example.test\n"]) {
+      expect(await createClientAs(SCHEDULER, "Client One Again", variant)).toBe("A client with this email already exists.");
+    }
     expect(await createClientAs(SCHEDULER, "Client Four", " Client4@Example.TEST ")).toBe("created");
     const [row] = await t.asService<{ email: string }>(
       "select email from public.clients where full_name = 'Client Four'",
     );
     expect(row.email).toBe("client4@example.test");
+  });
+
+  it("запити, запущені разом, ідуть кожен від свого користувача", async () => {
+    const [scheduler, therapist] = await Promise.all([
+      t.asUser<{ uid: string }>(SCHEDULER, "select auth.uid() as uid"),
+      t.asUser<{ uid: string }>(THERAPIST, "select auth.uid() as uid"),
+    ]);
+    expect([scheduler[0].uid, therapist[0].uid]).toEqual([SCHEDULER, THERAPIST]);
+    const [therapistInsert] = await Promise.allSettled([
+      t.asUser(THERAPIST, "insert into public.clients (full_name, email) values ('X', 'x7@example.test')"),
+      t.asUser(SCHEDULER, "select 1"),
+    ]);
+    expect(therapistInsert.status).toBe("rejected");
+  });
+
+  it("AC-HOLD-16: зміна email тим, хто обходить RLS (виправлення даних), теж нормалізується", async () => {
+    await t.asService(
+      "insert into public.clients (full_name, email, created_by) values ('Client Eight', 'client8@example.test', $1)",
+      [ADMIN],
+    );
+    await expect(
+      t.asService("update public.clients set email = ' Client1@Example.TEST ' where email = 'client8@example.test'"),
+    ).rejects.toThrow(/clients_email_key/);
+  });
+
+  it("адміністратор бачить усі картки клієнтів (матриця прав)", async () => {
+    const rows = await t.asUser<{ email: string }>(ADMIN, "select email from public.clients where email = 'client1@example.test'");
+    expect(rows).toEqual([{ email: "client1@example.test" }]);
+  });
+
+  it("новий користувач без ролі отримує найменші права: therapist, карток не бачить і не створює", async () => {
+    const id = await t.createAuthUser("newcomer@example.test");
+    expect(await t.asService("select role from public.profiles where id = $1", [id])).toEqual([{ role: "therapist" }]);
+    expect(await t.asUser(id, "select id from public.clients")).toEqual([]);
+    await expect(
+      t.asUser(id, "insert into public.clients (full_name, email) values ('X', 'x9@example.test')"),
+    ).rejects.toThrow(/row-level security/);
   });
 
   it("без входу (anon) клієнтів не видно й не створити", async () => {

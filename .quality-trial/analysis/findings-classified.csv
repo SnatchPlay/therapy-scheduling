@@ -22,3 +22,15 @@ T1-11,2026-10-21,T-1,blind-review,real,DEAD,,reading,,,dead ?? [] after a thrown
 T1-12,2026-10-21,T-1,stryker,real,TOOLING,,running,,,vitest-runner never activates mutants under Vitest 5: all mutants survive,H
 T1-13,2026-10-21,T-1,stryker,real,TEST,,running,,,clientErrorCode branches and messageFor without unit tests (17 survivors),M
 T1-14,2026-10-21,T-1,stryker,noise,TEST,,running,,STRYKER-EQUIV,equivalent mutant on ?? "" fallback,
+T1-15,2026-10-21,T-1,self-review,real,VALIDATION,,running,,,email with a trailing NBSP stored as a new client,M
+T1-16,2026-10-21,T-1,self-review,real,TEST,,running,,,overlapping PGlite helper calls ran under the last user's uid,M
+T1-17,2026-10-21,T-1,self-review,real,VALIDATION,,running,,,zero-width-only names accepted,L
+T1-18,2026-10-21,T-1,self-review,real,TEST,,reading,,,"default role, admin read and update normalization untested",L
+T1-19,2026-10-21,T-1,self-review,real,DEPLOY,,reading,,,migration alters profiles without lock_timeout,L
+T1-20,2026-10-21,T-1,self-review,real,TEST,,reading,,,server action createClientCard untested,M
+T1-21,2026-10-21,T-1,self-review,real,FAIL,,reading,,,unexpected insert errors swallowed without a log,M
+T1-22,2026-10-21,T-1,self-review,real,TOOLING,,running,,,ast-grep getClaims exemption hid mixed Promise.all,L
+T1-23,2026-10-21,T-1,self-review,real,UX,,reading,,,error page without sign-out,L
+T1-24,2026-10-21,T-1,self-review,real,DATA,,reading,,,member1/2 promoted to scheduler and no longer managed by users:demo,L
+T1-25,2026-10-21,T-1,self-review,real,UX,,reading,,,"English app UI, Ukrainian login and lang=uk",L
+T1-26,2026-10-21,T-1,self-review,real,UX,,reading,,,form keeps no values after an error; success styled as alert,L

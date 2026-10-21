@@ -60,3 +60,19 @@ Deploy readiness (REQUIRED: migration, `package.json`):
 10. Red `db-deploy`; `/clients` shows the error boundary.
 11. Revert the code by PR; the schema goes forward: a migration that drops `clients` (its rows are lost)
     and restores the old role check after mapping `scheduler`/`therapist` back.
+
+Self-review (two blind reviewers on the whole branch, after the fixes above). Database: an email with a
+trailing NBSP was stored as a new client — Medium, real (the trigger's `btrim` and the check's `[:space:]`
+miss non-ASCII spaces); now one list `private.blank_chars()` feeds the name check, the email check and
+the trim. Two overlapping helper calls on PGlite ran under the last user's `auth.uid()` — Medium, real
+(reproduced: a therapist insert passed as the scheduler); `db.transaction` now, regression test fails
+on the old helper. Low, real: zero-width-only names (list extended); no test of the default role, the
+admin read, update normalization (tests added); no `lock_timeout` (added). Hand mutations, each turned a
+test red: trigger back to insert-only; default `scheduler`; NBSP dropped from the list; trim back to
+ASCII spaces. App: the server action had no test — Medium, real (`actions.test.ts`; hand mutations:
+no throw on UNEXPECTED, swapped field, wrong roles — each red); UNEXPECTED errors were swallowed —
+Medium, real (thrown now: server log + `error.tsx`); the getClaims exemption hid a `Promise.all` that
+mixes it with a query — Low, real (exact statement now, checked on the reviewer's probe); the error page
+had no sign-out — Low, real (added). Left open (known-debt): orphan member1/2 accounts, UI language,
+form state after an error, design.md Р2 wording. Hand-written `database.types.ts`: replaced from the
+`db-check` summary of this PR.

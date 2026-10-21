@@ -14,7 +14,12 @@ export async function createClientCard(formData: FormData) {
     email: String(formData.get("email") ?? ""),
   });
 
-  if (error) redirect(`/clients?msg=${clientErrorCode(error)}`);
+  if (error) {
+    const code = clientErrorCode(error);
+    // Непередбачена помилка — у лог сервера й на сторінку помилки (error.tsx), а не лише загальний текст.
+    if (code === "UNEXPECTED") throw error;
+    redirect(`/clients?msg=${code}`);
+  }
 
   revalidatePath("/clients");
   redirect("/clients?msg=CLIENT_CREATED");

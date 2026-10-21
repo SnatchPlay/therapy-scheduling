@@ -5,3 +5,4 @@ date,step,instrument,diff_lines,tokens,minutes,findings_real,findings_nit,findin
 2026-10-21,T-1,fallow,,,1,1,0,0,0,unused export
 2026-10-21,T-1,blind-review,,,,9,0,0,0,correctness and principles reviewers; findings grouped into 9 rows
 2026-10-21,T-1,stryker,,,15,2,0,1,0,tool defect fixed; 27 of 28 killed after unit tests
+2026-10-21,T-1,self-review,,203816,6.3,12,0,0,6,database and app reviewers on the full branch; dropped findings listed by the reviewer

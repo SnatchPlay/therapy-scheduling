@@ -42,21 +42,20 @@ export interface TestDb {
   asUser<T = Record<string, unknown>>(userId: string, sql: string, params?: unknown[]): Promise<T[]>;
   /** SQL без входу (role anon — запит лише з публічним ключем) в окремій транзакції. */
   asAnon<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
+  /** Користувач Auth без ролі від users:demo (як новий вхід): профіль створює тригер on_auth_user_created. */
+  createAuthUser(email: string): Promise<string>;
   /** SQL в обхід RLS (як service_role) — для підготовки даних і перевірки результату. */
   asService<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
 }
 
+// db.transaction тримає з'єднання PGlite на весь колбек: два виклики, запущені разом (Promise.all), не змішують
+// ролі й auth.uid() один одного, а йдуть по черзі, як дві транзакції в Postgres.
 async function inTransaction<T>(db: PGlite, role: string, userId: string | null, sql: string, params: unknown[]) {
-  await db.exec(`begin; set local role ${role};`);
-  try {
-    if (userId) await db.query("select set_config('request.jwt.claim.sub', $1, true)", [userId]);
-    const result = await db.query<T>(sql, params);
-    await db.exec("commit");
-    return result.rows;
-  } catch (error) {
-    await db.exec("rollback").catch(() => {});
-    throw error;
-  }
+  return db.transaction(async (tx) => {
+    await tx.exec(`set local role ${role};`);
+    if (userId) await tx.query("select set_config('request.jwt.claim.sub', $1, true)", [userId]);
+    return (await tx.query<T>(sql, params)).rows;
+  });
 }
 
 export async function createTestDb(): Promise<TestDb> {
@@ -93,6 +92,16 @@ export async function createTestDb(): Promise<TestDb> {
     asUser: <T,>(userId: string, sql: string, params: unknown[] = []) =>
       inTransaction<T>(db, "authenticated", userId, sql, params),
     asAnon: <T,>(sql: string, params: unknown[] = []) => inTransaction<T>(db, "anon", null, sql, params),
+    createAuthUser: async (email: string) => {
+      const [row] = await inTransaction<{ id: string }>(
+        db,
+        "supabase_auth_admin",
+        null,
+        "insert into auth.users (id, email, raw_user_meta_data) values (gen_random_uuid(), $1, '{}') returning id",
+        [email],
+      );
+      return row.id;
+    },
     asService: <T,>(sql: string, params: unknown[] = []) => inTransaction<T>(db, "service_role", null, sql, params),
   };
 }
