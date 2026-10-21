@@ -28,6 +28,6 @@ Done when: AC-HOLD-12, AC-HOLD-13, AC-HOLD-14, AC-HOLD-19, AC-HOLD-20, AC-HOLD-2
 
 - [x] 4.1 Сторінка `/schedule`: власні утримання й сеанси без прострочених, слоти обраного дня
 - [x] 4.2 Тести бази: лише власний розклад, прострочене не показано
-- [ ] 4.3 Archive `impl-slot-hold`, запис екрана з прод-URL
+- [x] 4.3 Archive `impl-slot-hold` (запис екрана з прод-URL — матеріал для здачі, не зміна в репо)
 
 Done when: AC-HOLD-09, AC-HOLD-21

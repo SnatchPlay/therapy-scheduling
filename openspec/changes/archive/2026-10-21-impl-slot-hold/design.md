@@ -25,9 +25,10 @@ AC-HOLD-05/06; початок слоту — AC-HOLD-07, AC-HOLD-22/23) і ви�
 `id`, `full_name`, `email`, `created_by` (default `auth.uid()`), `created_at`. Правила — обмеження таблиці, одне
 джерело правди для форми й Data API:
 
-- `clients_full_name_check`: `btrim(full_name) <> ''` (AC-HOLD-11);
-- `clients_email_check`: `email ~ '^[^@\s]+@[^@\s]+$'` (AC-HOLD-15);
-- email нормалізує тригер `before insert` (`lower(btrim(email))`), далі `clients_email_key`: `unique (email)` —
+- `clients_full_name_check`: у імені є хоч один знак, що не з `private.blank_chars()` (пробіли, табуляції, переноси,
+  нерозривні й нульової ширини; один список для імені й email) (AC-HOLD-11);
+- `clients_email_check`: `email ~ '^[^@<blank_chars>]+@[^@<blank_chars>]+$'`, де `<blank_chars>` — той самий список (AC-HOLD-15);
+- email нормалізує тригер `before insert or update of email` (прибирає ті самі знаки з країв і `lower`), далі `clients_email_key`: `unique (email)` —
   `Client1@Example.test` і « client1@example.test » — дубль client1@example.test (AC-HOLD-16; власне припущення в
   `docs/spec-reading.md`: нормалізація даних, а не бізнес-рішення).
 
