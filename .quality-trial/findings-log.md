@@ -88,4 +88,6 @@ table caption, index on `created_by`. Declined with evidence: `reset` instead of
 (Next's own example; production redacts server errors). Pre-merge warnings: PR boundaries (PGlite is in
 the merged plan; `.quality-trial` holds only this step's records) and the select policy without a
 literal `auth.uid()` (the helper already depends on it) — answered in the PR and in code comments.
-`database.types.ts` replaced with the `db-check` summary of run 39575970424 (SHA-256 of the text matches).
+`database.types.ts`: the rendered `db-check` summary drops the file's leading blank line, so a copy
+from the page still differed; the file is now `supabase gen types typescript --local` (CLI 2.120.0) run on a
+scratch local database, and `db-check` no longer reports a difference (run on e6cc1f0).
