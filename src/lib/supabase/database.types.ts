@@ -43,6 +43,50 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"holds": {
+                  Row: {
+                    "client_id": string,"confirmed_at": string | null,"confirmed_by": string | null,"created_at": string,"created_by": string,"id": string,"slot_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "client_id": string,"confirmed_at"?: string | null,"confirmed_by"?: string | null,"created_at"?: string,"created_by"?: string,"id"?: string,"slot_id": string
+                  }
+                  Update: {
+                    "client_id"?: string,"confirmed_at"?: string | null,"confirmed_by"?: string | null,"created_at"?: string,"created_by"?: string,"id"?: string,"slot_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "holds_client_id_fkey"
+      columns: ["client_id"]
+isOneToOne: false
+      referencedRelation: "clients"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "holds_confirmed_by_fkey"
+      columns: ["confirmed_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "holds_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "holds_slot_id_fkey"
+      columns: ["slot_id"]
+isOneToOne: false
+      referencedRelation: "slot_board"
+      referencedColumns: ["slot_id"]
+    },{
+      foreignKeyName: "holds_slot_id_fkey"
+      columns: ["slot_id"]
+isOneToOne: false
+      referencedRelation: "slots"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profiles": {
                   Row: {
                     "created_at": string,"email": string | null,"full_name": string | null,"id": string,"role": string
@@ -57,13 +101,121 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"slots": {
+                  Row: {
+                    "ends_at": string,"id": string,"starts_at": string,"therapist_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "ends_at": string,"id"?: string,"starts_at": string,"therapist_id": string
+                  }
+                  Update: {
+                    "ends_at"?: string,"id"?: string,"starts_at"?: string,"therapist_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "slots_therapist_id_fkey"
+      columns: ["therapist_id"]
+isOneToOne: false
+      referencedRelation: "therapists"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"therapists": {
+                  Row: {
+                    "email": string,"full_name": string,"id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "email": string,"full_name": string,"id"?: string
+                  }
+                  Update: {
+                    "email"?: string,"full_name"?: string,"id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 }
           }
           Views: {
-            [_ in never]: never
+            "hold_list": {
+                  Row: {
+                    "client_id": string | null,"client_name": string | null,"confirmed_at": string | null,"created_at": string | null,"ends_at": string | null,"held_until": string | null,"hold_id": string | null,"slot_id": string | null,"starts_at": string | null,"status": string | null,"therapist_id": string | null,"therapist_name": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "holds_client_id_fkey"
+      columns: ["client_id"]
+isOneToOne: false
+      referencedRelation: "clients"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "holds_slot_id_fkey"
+      columns: ["slot_id"]
+isOneToOne: false
+      referencedRelation: "slot_board"
+      referencedColumns: ["slot_id"]
+    },{
+      foreignKeyName: "holds_slot_id_fkey"
+      columns: ["slot_id"]
+isOneToOne: false
+      referencedRelation: "slots"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "slots_therapist_id_fkey"
+      columns: ["therapist_id"]
+isOneToOne: false
+      referencedRelation: "therapists"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"slot_board": {
+                  Row: {
+                    "client_id": string | null,"client_name": string | null,"ends_at": string | null,"held_until": string | null,"hold_id": string | null,"holdable": boolean | null,"slot_id": string | null,"starts_at": string | null,"status": string | null,"therapist_id": string | null,"therapist_name": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "holds_client_id_fkey"
+      columns: ["client_id"]
+isOneToOne: false
+      referencedRelation: "clients"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "slots_therapist_id_fkey"
+      columns: ["therapist_id"]
+isOneToOne: false
+      referencedRelation: "therapists"
+      referencedColumns: ["id"]
+    }
+                  ]
+                }
           }
           Functions: {
-            [_ in never]: never
+            "day_slots":
+{ Args: { "p_day": string,"p_therapist_id": string }; Returns: {
+              "client_id": string | null,
+"client_name": string | null,
+"ends_at": string | null,
+"held_until": string | null,
+"hold_id": string | null,
+"holdable": boolean | null,
+"slot_id": string | null,
+"starts_at": string | null,
+"status": string | null,
+"therapist_id": string | null,
+"therapist_name": string | null
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "slot_board"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"hold_slot":
+{ Args: { "p_client_id": string,"p_slot_id": string }; Returns: string
+                           }
           }
           Enums: {
             [_ in never]: never

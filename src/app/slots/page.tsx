@@ -1,12 +1,12 @@
 import { AppShell, buttonClass, inputClass } from "@/app/_components/app-shell";
 import { MESSAGES, messageFor } from "@/lib/messages";
 import { hasHoldableSlot } from "@/lib/slots";
-import { requireRole } from "@/lib/supabase/viewer";
+import { requireRole, STAFF } from "@/lib/supabase/viewer";
 import { formatPracticeDateTime, formatPracticeTime, isIsoDate, practiceDate } from "@/lib/time";
 import { holdSlot } from "./actions";
 
 export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
-  const { supabase, role, email } = await requireRole("scheduler", "admin");
+  const { supabase, role, email } = await requireRole(...STAFF);
   const params = await searchParams;
 
   const [therapistsResult, clientsResult] = await Promise.all([

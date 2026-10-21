@@ -1,6 +1,9 @@
 -- Терапевти, слоти й утримання слоту за клієнтом (impl-slot-hold, design.md Р3–Р5).
 -- AC-HOLD-01…08, AC-HOLD-17, AC-HOLD-18; видимість терапевта — AC-HOLD-09, AC-HOLD-21.
 
+-- Політика нижче змінює public.clients, яку читає кожна сторінка планувальника: не чекати чужого замка довше 5 с.
+set lock_timeout = '5s';
+
 -- ── Таблиці ─────────────────────────────────────────────────────────────────
 create table public.therapists (
   id        uuid primary key default gen_random_uuid(),
