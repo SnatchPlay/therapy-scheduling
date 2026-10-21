@@ -53,10 +53,19 @@ describe("createClientCard", () => {
     expect(revalidatePath).toHaveBeenCalledWith("/clients");
   });
 
-  it("AC-HOLD-11: поля без значень ідуть у базу порожніми — її обмеження відмовляють", async () => {
+  it("AC-HOLD-11: порожнє ім'я йде в базу як є — її обмеження відмовляють", async () => {
     insert.mockResolvedValue({ error: { code: "23514", message: 'violates check constraint "clients_full_name_check"' } });
-    expect(await redirectOf(createClientCard(new FormData()))).toBe("/clients?msg=INVALID_CLIENT");
-    expect(insert).toHaveBeenCalledWith({ full_name: "", email: "" });
+    expect(await redirectOf(createClientCard(form("", "client11@example.test")))).toBe("/clients?msg=INVALID_CLIENT");
+    expect(insert).toHaveBeenCalledWith({ full_name: "", email: "client11@example.test" });
+  });
+
+  it("AC-HOLD-11: поля без значень чи файл замість тексту — відмова без запиту до бази", async () => {
+    const withFile = form("Client Three", "client3@example.test");
+    withFile.set("full_name", new File(["x"], "name.txt"));
+    for (const data of [new FormData(), withFile]) {
+      expect(await redirectOf(createClientCard(data))).toBe("/clients?msg=INVALID_CLIENT");
+    }
+    expect(insert).not.toHaveBeenCalled();
   });
 
   it("AC-HOLD-16: помилка обмеження бази → код повідомлення, а не «створено»", async () => {

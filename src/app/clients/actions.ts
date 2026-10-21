@@ -9,10 +9,12 @@ import { requireRole, STAFF } from "@/lib/supabase/viewer";
 export async function createClientCard(formData: FormData) {
   const { supabase } = await requireRole(...STAFF);
 
-  const { error } = await supabase.from("clients").insert({
-    full_name: String(formData.get("full_name") ?? ""),
-    email: String(formData.get("email") ?? ""),
-  });
+  // Поля — лише текст: файл у полі форми інакше став би іменем «[object File]».
+  const fullName = formData.get("full_name");
+  const email = formData.get("email");
+  if (typeof fullName !== "string" || typeof email !== "string") redirect("/clients?msg=INVALID_CLIENT");
+
+  const { error } = await supabase.from("clients").insert({ full_name: fullName, email });
 
   if (error) {
     const code = clientErrorCode(error);

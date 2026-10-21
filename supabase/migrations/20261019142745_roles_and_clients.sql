@@ -85,6 +85,9 @@ create trigger clients_normalize_email
   before insert or update of email on public.clients
   for each row execute function private.normalize_client_email();
 
+-- Зовнішній ключ без індексу: видалення профілю сканувало б усю таблицю.
+create index clients_created_by_idx on public.clients (created_by);
+
 comment on table public.clients is
   'Картка клієнта зрізу 1: лише ім''я та email. Створює планувальник або адміністратор.';
 

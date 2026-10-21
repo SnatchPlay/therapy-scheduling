@@ -26,6 +26,7 @@ export default async function ClientsPage({ searchParams }: PageProps<"/clients"
         </button>
       </form>
       <table className="w-full text-left text-sm">
+        <caption className="sr-only">Clients</caption>
         <thead className="text-zinc-500">
           <tr>
             <th className="py-2">Name</th>
