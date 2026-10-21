@@ -69,6 +69,16 @@ describe("protect-files", () => {
     expect(edit("SUPABASE/migrations/20261012000000_APPLIED.sql").code).toBe(2);
   });
 
+  it("не діє на файли іншого git-репозиторію", () => {
+    const other = mkdtempSync(path.join(os.tmpdir(), "protect-files-other-"));
+    git(other, "init", "-q");
+    try {
+      expect(hook(JSON.stringify({ tool_input: { file_path: path.join(other, ".env.local") } })).code).toBe(0);
+    } finally {
+      rmSync(other, { recursive: true, force: true });
+    }
+  });
+
   it("пропускає payload, який не розібрати", () => {
     expect(hook("not json").code).toBe(0);
     expect(hook(JSON.stringify({ tool_input: {} })).code).toBe(0);

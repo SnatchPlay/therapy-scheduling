@@ -1,9 +1,23 @@
-// Shared input of the Claude Code file hooks: the edited file as a path relative to the git root of
-// the file itself (realpath, so symlinks and macOS letter case resolve to the real name), or null
-// when there is nothing to check: unparsable payload, no file_path, or a file outside a git repo.
+// Shared input of the Claude Code file hooks: the edited file as a path relative to the project's git
+// root (realpath, so symlinks and macOS letter case resolve to the real name), or null when there is
+// nothing to check: unparsable payload, no file_path, or a file outside this project's repository —
+// the hooks never act on (or run tooling from) another repository.
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
+
+function gitRoot(dir) {
+  try {
+    return realpathSync.native(
+      execFileSync("git", ["-C", dir, "rev-parse", "--show-toplevel"], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }).trim(),
+    );
+  } catch {
+    return null;
+  }
+}
 
 function realExisting(p) {
   // The file may not exist yet (Write creates it): resolve the nearest existing ancestor.
@@ -31,16 +45,7 @@ export function editedFile() {
   const abs = realExisting(path.resolve(base, filePath));
   let dir = path.dirname(abs);
   while (!existsSync(dir) && path.dirname(dir) !== dir) dir = path.dirname(dir);
-  let root;
-  try {
-    root = realpathSync.native(
-      execFileSync("git", ["-C", dir, "rev-parse", "--show-toplevel"], {
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "ignore"],
-      }).trim(),
-    );
-  } catch {
-    return null;
-  }
+  const root = gitRoot(dir);
+  if (root === null || root !== gitRoot(base)) return null;
   return { root, rel: path.relative(root, abs).split(path.sep).join("/") };
 }
