@@ -33,14 +33,14 @@
 
 | AC | Що перевіряє | Код | Тест | Статус |
 |---|---|---|---|---|
-| AC-HOLD-01 | слоти дня: вільний, «Held», «Confirmed»; утримати лише вільний | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-02 | утримання вільного слоту: «Held», клієнт, Held until +24 год | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-03 | слот уже утримано — «This slot is no longer available.» | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-04 | два одночасні утримання — рівно одне | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-05 | за хвилину до 24 год — досі «Held» | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-06 | через 24 год — «Expired», слот вільний | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-07 | слот почався — «This slot has already started and cannot be held.» | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-08 | терапевт не утримує слот | — | — | відкладено (чекає реалізації) |
+| AC-HOLD-01 | слоти дня: вільний, «Held», «Confirmed»; утримати лише вільний | `supabase/migrations/20261019143036_slots_and_holds.sql` (slot_board, day_slots), `src/app/slots/page.tsx` | `tests/db/holds-db.test.ts` | реалізовано |
+| AC-HOLD-02 | утримання вільного слоту: «Held», клієнт, Held until +24 год | `supabase/migrations/20261019143036_slots_and_holds.sql` (hold_slot, guard_new_hold), `src/app/slots/actions.ts`, `src/lib/time.ts` | `tests/db/holds-db.test.ts`, `src/lib/time.test.ts`, `src/app/slots/actions.test.ts` | реалізовано |
+| AC-HOLD-03 | слот уже утримано — «This slot is no longer available.» | `supabase/migrations/20261019143036_slots_and_holds.sql` (guard_new_hold), `src/lib/messages.ts` | `tests/db/holds-db.test.ts`, `src/app/slots/actions.test.ts` | реалізовано |
+| AC-HOLD-04 | два одночасні утримання — рівно одне | `supabase/migrations/20261019143036_slots_and_holds.sql` (guard_new_hold: `for update` на слоті) | `tests/db/holds-db.test.ts` | реалізовано |
+| AC-HOLD-05 | за хвилину до 24 год — досі «Held» | `supabase/migrations/20261019143036_slots_and_holds.sql` (hold_status, hold_expires_at) | `tests/db/holds-db.test.ts` | реалізовано |
+| AC-HOLD-06 | через 24 год — «Expired», слот вільний | `supabase/migrations/20261019143036_slots_and_holds.sql` (hold_status, slot_board) | `tests/db/holds-db.test.ts` | реалізовано |
+| AC-HOLD-07 | слот почався — «This slot has already started and cannot be held.» | `supabase/migrations/20261019143036_slots_and_holds.sql` (slot_started у guard_new_hold) | `tests/db/holds-db.test.ts` | реалізовано |
+| AC-HOLD-08 | терапевт не утримує слот | `supabase/migrations/20261019143036_slots_and_holds.sql` (hold_slot, holds_insert_staff) | `tests/db/holds-db.test.ts` | реалізовано |
 | AC-HOLD-09 | терапевт бачить лише власний розклад | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-10 | створення клієнта з ім'ям і email | `src/app/clients/actions.ts` (createClientCard), `supabase/migrations/20261019142745_roles_and_clients.sql` | `tests/db/clients-db.test.ts`, `src/app/clients/actions.test.ts` | реалізовано |
 | AC-HOLD-11 | порожнє ім'я — відмова | `supabase/migrations/20261019142745_roles_and_clients.sql` (clients_full_name_check), `src/lib/messages.ts` | `tests/db/clients-db.test.ts` | реалізовано |
@@ -49,11 +49,11 @@
 | AC-HOLD-14 | терапевт не підтверджує утримання | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-15 | email без @ — відмова | `supabase/migrations/20261019142745_roles_and_clients.sql` (clients_email_check), `src/lib/messages.ts` | `tests/db/clients-db.test.ts` | реалізовано |
 | AC-HOLD-16 | дубль email — відмова | `supabase/migrations/20261019142745_roles_and_clients.sql` (clients_email_key, normalize_client_email), `src/lib/messages.ts` | `tests/db/clients-db.test.ts`, `src/app/clients/actions.test.ts` | реалізовано |
-| AC-HOLD-17 | повторне утримання за тим самим клієнтом — відмова | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-18 | немає вільних слотів — «No free slots on this day.» і під ним усі слоти зі статусами | — | — | відкладено (рішення PM: Sofiia-pm/therapy-scheduling-spec#4 — перекладено зміною clarify-slot-hold; реалізацію зрізу 1 перенесено на тиждень WS7, рішення курсу) |
+| AC-HOLD-17 | повторне утримання за тим самим клієнтом — відмова | `supabase/migrations/20261019143036_slots_and_holds.sql` (guard_new_hold) | `tests/db/holds-db.test.ts` | реалізовано |
+| AC-HOLD-18 | немає вільних слотів — «No free slots on this day.» і під ним усі слоти зі статусами | `src/app/slots/page.tsx`, `src/lib/slots.ts` | `tests/db/holds-db.test.ts` | реалізовано |
 | AC-HOLD-19 | адміністратор утримує й підтверджує | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-20 | «Expired» в утриманнях планувальника | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-21 | прострочене не в розкладі терапевта | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-22 | слот почався — не підтверджується, лишається «Held» | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-23 | за хвилину до початку — підтверджується | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-24 | день без жодного слоту — лише повідомлення | — | — | відкладено (рішення PM: Sofiia-pm/therapy-scheduling-spec#4 — перекладено зміною clarify-slot-hold; реалізацію зрізу 1 перенесено на тиждень WS7, рішення курсу) |
+| AC-HOLD-24 | день без жодного слоту — лише повідомлення | `src/app/slots/page.tsx`, `src/lib/slots.ts`, `supabase/migrations/20261019143036_slots_and_holds.sql` (day_slots) | `tests/db/holds-db.test.ts` | реалізовано |

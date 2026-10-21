@@ -91,3 +91,48 @@ literal `auth.uid()` (the helper already depends on it) — answered in the PR a
 `database.types.ts`: the rendered `db-check` summary drops the file's leading blank line, so a copy
 from the page still differed; the file is now `supabase gen types typescript --local` (CLI 2.120.0) run on a
 scratch local database, and `db-check` no longer reports a difference (run on e6cc1f0).
+
+## 2026-10-21 · T-2 slots and holds (task 2 of impl-slot-hold)
+
+Ran: gate; `run.sh`; two blind reviewers (database, app; the database one stopped on a usage limit and was
+resumed); mutation checks of the SQL by hand; the race on real Postgres 17 (Docker); stryker.
+Real, database: the therapist branch of `holds_select` and the expiry filter were untested — mutating
+either left 25/25 green (Medium; negative tests added, mutations now red); both therapist policies called a
+security-definer helper per row (Medium; `EXPLAIN` showed it ran before the cheap initplan, so every
+staff read of `clients` paid for it): now set-based subqueries, helpers removed; the 24-hour boundary
+was never read at exactly 1440 minutes (`>=` → `>` stayed green; tests now call `hold_status` at
+explicit instants); `created_at` kept seconds while the PM counts to the minute (a hold at 14:30:45
+stayed "Held" after the displayed 14:30; now `date_trunc('minute')`); the AC-HOLD-02 test held by
+construction (an hour-early `created_at` stayed green; now checked against the minute before and after
+the call); fixed 2027 dates would turn red from 2027-03-02 (rolling `quietDay()`).
+Real, app: AC-HOLD-08's message was unreachable (the redirect to `/slots` sent a therapist to `/`
+without the text) — now `/?msg=HOLD_FORBIDDEN`, tested; `required` on the client select did nothing
+(empty first option); `isIsoDate("0000-01-01")` passed and `day_slots` threw (rejected); the action
+swallowed unexpected errors (thrown now); AC-HOLD-18/24 rows cited a test that compared a constant with
+itself (a render test of `/slots` now checks the order and the rows); the DST/24 h time tests claimed an
+AC but computed the value inside the test (renamed as formatting; the rule is tested in SQL).
+Open, Low (known-debt): all clients in every form, no pending state on the button, started-but-unheld
+slot vs. "No free slots" (own assumption, candidate PM question). Concurrency: by hand on Postgres 17
+with two sessions: with the lock the second gets SLOT_UNAVAILABLE (1 hold); the mutant without
+`for update` leaves 2 holds. Would a tool have caught the helper-per-row cost? `EXPLAIN` did; the
+`rls-migration` skill names the pattern.
+
+Stryker T-2 (`--since main`, 4 files): 102 of 107 killed. Survivors: `if (code === "HOLD_FORBIDDEN")` → `true` — real gap
+(the AC-HOLD-03 test did not check the path), closed, mutant now red; four on `isIsoDate` — equivalent:
+the regex only pre-filters, the round trip through `Date.parse` rejects the same strings.
+
+Deploy readiness T-2 (REQUIRED: migration, types): 1. `db-deploy` after merge only; deployed `main` never reads the new
+tables, `clients` gets one more policy (staff reads unchanged: `clients_select_staff`). 2. New code before `db-deploy`
+ends: `/slots` fails on the missing tables → `error.tsx`; old code on the new schema: unaffected. 3. migration order OK
+(`check-migration-order.mjs`). 4. Existing rows: the migration only adds tables, a policy and seed rows
+(`on conflict do nothing`); users from `users:demo` untouched. 5. Explicit grants for `therapists`, `slots`, `holds`,
+both views and both functions; `revoke … from anon` checked by the anon test. 6. `database.types.ts` is
+`supabase gen types --local` of this schema. 7. No new env names; no dependency changes. 8. `npm run build` shows
+`ƒ /slots` and `ƒ Proxy (Middleware)`. 9. `demo-users.json` unchanged: therapist1/2 already exist in the cloud project
+(2026-10-21) — the therapist link is by email. 10. A red `db-deploy`; `/slots` shows the error boundary. 11. Revert
+the code by PR; the schema goes forward: a migration dropping `holds`, `slots`, `therapists` and the policy (the holds are lost).
+
+CodeRabbit (PR #13): 1 inline comment — accepted (the client `select` in each slot row had no accessible name;
+`aria-label` with the slot time, asserted in the page test). Pre-merge warnings: PR type (records of this step in
+`.quality-trial/`, same as PR #12) and "no `(select auth.uid())` in the read policies" — answered in the PR and with
+a comment over the policies (both branches already depend on `auth.uid()`, anon has no grant, tested).

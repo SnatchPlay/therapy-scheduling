@@ -40,3 +40,20 @@ T1-29,2026-10-21,T-1,coderabbit,real,UX,,static,,,table without an accessible na
 T1-30,2026-10-21,T-1,coderabbit,real,PERF,,reading,,,foreign key created_by without an index,L
 T1-31,2026-10-21,T-1,coderabbit,noise,API,,reading,,CR-STALE-API,claimed Next error boundary has reset not retry (wrong for 16.4),
 T1-32,2026-10-21,T-1,coderabbit,dropped,LOG,,reading,,,client-side console.error of the error,
+T2-1,2026-10-21,T-2,blind-review,real,TEST,,running,,,therapist branch of holds_select and expiry filter untested (mutants green),M
+T2-2,2026-10-21,T-2,blind-review,real,PERF,,running,,,security-definer helper per row in therapist RLS policies (EXPLAIN),M
+T2-3,2026-10-21,T-2,blind-review,real,TEST,,running,,,24h boundary never read at exactly 1440 minutes,M
+T2-4,2026-10-21,T-2,blind-review,real,DRIFT,,reading,,,created_at kept seconds while PM counts to the minute,L
+T2-5,2026-10-21,T-2,blind-review,real,TEST,,running,,,AC-HOLD-02 held_until check true by construction,L
+T2-6,2026-10-21,T-2,blind-review,real,TEST,,running,,,fixed 2027 test dates turn red once they pass,L
+T2-7,2026-10-21,T-2,blind-review,real,FAIL,,reading,,,forbidden hold message unreachable for a therapist,M
+T2-8,2026-10-21,T-2,blind-review,real,UX,,reading,,,required on a select with no empty option,L
+T2-9,2026-10-21,T-2,blind-review,real,VALIDATION,,running,,,isIsoDate accepts year 0000 that Postgres rejects,L
+T2-10,2026-10-21,T-2,blind-review,real,TEST,,reading,,,AC-HOLD-18/24 rows cite a test comparing a constant with itself,L
+T2-11,2026-10-21,T-2,blind-review,real,TEST,,reading,,,DST and 24h tests compute the value inside the test,L
+T2-12,2026-10-21,T-2,blind-review,real,LOAD,,reading,,,every client repeated in each slot form,L
+T2-13,2026-10-21,T-2,blind-review,real,UX,,reading,,,no pending state on Hold (double click),L
+T2-14,2026-10-21,T-2,blind-review,real,GUESS,,reading,,,started unheld slot and "No free slots" is an open PM sub-case,L
+T2-15,2026-10-21,T-2,self-review,real,FAIL,,reading,,,hold action swallowed unexpected errors,M
+T2-16,2026-10-21,T-2,coderabbit,real,A11Y,,static,,,client select in each slot row without an accessible name,L
+T2-17,2026-10-21,T-2,coderabbit,dropped,RLS,,reading,,,read policies without a literal (select auth.uid()) (helper depends on it; anon has no grant),L

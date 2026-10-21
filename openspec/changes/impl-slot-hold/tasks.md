@@ -10,9 +10,9 @@ Done when: AC-HOLD-10, AC-HOLD-11, AC-HOLD-15, AC-HOLD-16
 
 ## 2. Слоти й утримання (PR `task/slot-holds`)
 
-- [ ] 2.1 Міграція: `therapists`, `slots` з початковими даними, `holds`, тригер утримання з блокуванням слоту, `hold_slot`, `slot_board`, `day_slots`, RLS терапевта
-- [ ] 2.2 Тести бази: статуси дня, утримання, зайнятий і розпочатий слот, роль, межа 24 годин
-- [ ] 2.3 Сторінка `/slots` (терапевт + день, утримання за клієнтом, «No free slots on this day.»), формат часу
+- [x] 2.1 Міграція: `therapists`, `slots` з початковими даними, `holds`, тригер утримання з блокуванням слоту, `hold_slot`, `slot_board`, `day_slots`, RLS терапевта
+- [x] 2.2 Тести бази: статуси дня, утримання, зайнятий і розпочатий слот, роль, межа 24 годин
+- [x] 2.3 Сторінка `/slots` (терапевт + день, утримання за клієнтом, «No free slots on this day.»), формат часу
 
 Done when: AC-HOLD-01, AC-HOLD-02, AC-HOLD-03, AC-HOLD-04, AC-HOLD-05, AC-HOLD-06, AC-HOLD-07, AC-HOLD-08, AC-HOLD-17, AC-HOLD-18, AC-HOLD-24
 

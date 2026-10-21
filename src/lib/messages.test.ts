@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clientErrorCode, MESSAGES, messageFor } from "./messages";
+import { clientErrorCode, dbMessageCode, MESSAGES, messageFor } from "./messages";
 
 // Коди й тексти помилок Postgres — як їх повертає PostgREST для обмежень міграції roles_and_clients.
 describe("clientErrorCode", () => {
@@ -28,5 +28,19 @@ describe("messageFor", () => {
 
   it("невідомий код, код з прототипу чи не рядок → нічого", () => {
     for (const value of ["NOPE", "toString", "", undefined, ["CLIENT_EXISTS"]]) expect(messageFor(value)).toBeUndefined();
+  });
+});
+
+describe("dbMessageCode", () => {
+  it("код, який кидає функція бази (raise exception '<КОД>'), → цей код", () => {
+    for (const code of ["SLOT_UNAVAILABLE", "SLOT_STARTED", "HOLD_FORBIDDEN"] as const) {
+      expect(dbMessageCode({ message: code })).toBe(code);
+    }
+  });
+
+  it("інший текст, код з прототипу чи порожньо → UNEXPECTED", () => {
+    for (const message of ["SLOT_NOT_FOUND", "permission denied for table holds", "toString", undefined]) {
+      expect(dbMessageCode({ message })).toBe("UNEXPECTED");
+    }
   });
 });
