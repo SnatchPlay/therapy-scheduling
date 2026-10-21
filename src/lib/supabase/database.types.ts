@@ -218,7 +218,27 @@ isOneToOne: false
       } },
 "hold_slot":
 { Args: { "p_client_id": string,"p_slot_id": string }; Returns: string
-                           }
+                           },
+"slots_between":
+{ Args: { "p_from": string,"p_therapist_id": string,"p_to": string }; Returns: {
+              "client_id": string | null,
+"client_name": string | null,
+"ends_at": string | null,
+"held_until": string | null,
+"hold_id": string | null,
+"holdable": boolean | null,
+"slot_id": string | null,
+"starts_at": string | null,
+"status": string | null,
+"therapist_id": string | null,
+"therapist_name": string | null
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "slot_board"
+        isOneToOne: false
+        isSetofReturn: true
+      } }
           }
           Enums: {
             [_ in never]: never

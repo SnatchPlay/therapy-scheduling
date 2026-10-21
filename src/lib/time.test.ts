@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPracticeDateTime, formatPracticeTime, isIsoDate, practiceDate } from "./time";
+import { addDays, formatPracticeDateTime, formatPracticeTime, isIsoDate, practiceDate, weekdayName, weekStart } from "./time";
 
 describe("Час практики America/Los_Angeles", () => {
   // Самі 24 години рахує база (private.hold_expires_at, tests/db/holds-db.test.ts); тут — лише формат показу.
@@ -20,8 +20,31 @@ describe("Час практики America/Los_Angeles", () => {
 
   it("неіснуюча дата в адресі не приймається", () => {
     expect(isIsoDate("2026-11-03")).toBe(true);
-    for (const value of ["2026-02-31", "2026-11-3", "x2026-11-03", "2026-11-03x", "0000-01-01", 20261103, undefined]) {
+    for (const value of ["2026-02-31", "2026-11-3", "x2026-11-03", "2026-11-03x", "0000-01-01", "9999-12-31", 20261103, undefined]) {
       expect(isIsoDate(value)).toBe(false);
     }
+  });
+});
+
+describe("тиждень", () => {
+  it("AC-HOLD-30: середа 2026-11-04 → тиждень з понеділка 2026-11-02; понеділок і неділя належать своєму тижню", () => {
+    expect(weekStart("2026-11-04")).toBe("2026-11-02");
+    expect(weekStart("2026-11-02")).toBe("2026-11-02");
+    expect(weekStart("2026-11-08")).toBe("2026-11-02");
+    expect(weekStart("2026-11-09")).toBe("2026-11-09");
+  });
+
+  it("AC-HOLD-31: наступний тиждень — +7 днів, через межу місяця, року й перехід на зимовий час", () => {
+    expect(addDays("2026-11-02", 7)).toBe("2026-11-09");
+    expect(addDays("2026-11-02", -7)).toBe("2026-10-26");
+    expect(addDays("2026-12-28", 7)).toBe("2027-01-04");
+    expect(weekStart("2027-01-01")).toBe("2026-12-28");
+    // Календарна арифметика: перехід на зимовий час 2026-11-01 дні не зсуває (години тижня рахує база, tests/db).
+    expect(addDays("2026-10-30", 3)).toBe("2026-11-02");
+  });
+
+  it("назва дня тижня для заголовка", () => {
+    expect(weekdayName("2026-11-02")).toBe("Monday");
+    expect(weekdayName("2026-11-08")).toBe("Sunday");
   });
 });
