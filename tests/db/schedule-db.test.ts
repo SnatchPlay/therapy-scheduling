@@ -46,9 +46,9 @@ describe("Розклад терапевта", () => {
     const otherHold = await holdAs(t, SCHEDULER, other, client2);
 
     const mine = await scheduleOf(THERAPIST1);
-    expect(mine.map((h) => h.hold_id)).toEqual([ownHold.id]);
-    expect(mine[0]).toMatchObject({ client_name: "client1", status: "Held" });
-    expect(mine[0].held_until).not.toBeNull();
+    const ownItem = mine.find((h) => h.hold_id === ownHold.id);
+    expect(ownItem).toMatchObject({ client_name: "client1", status: "Held" });
+    expect(ownItem?.held_until).not.toBeNull();
     expect(mine.some((h) => h.hold_id === otherHold.id)).toBe(false);
 
     // Слоти дня чужого терапевта порожні, навіть якщо передати його id: RLS slots.
@@ -62,10 +62,13 @@ describe("Розклад терапевта", () => {
     // Клієнтів видно так само: свого — так, чужого — ні.
     const clientsSeen = async (userId: string) =>
       (await t.asUser<{ id: string }>(userId, "select id from public.clients")).map((c) => c.id);
-    expect(await clientsSeen(THERAPIST1)).toEqual([client1]);
+    expect(await clientsSeen(THERAPIST1)).toContain(client1);
+    expect(await clientsSeen(THERAPIST1)).not.toContain(client2);
 
     // Дзеркально: therapist2 бачить лише своє.
-    expect((await scheduleOf(THERAPIST2)).map((h) => h.hold_id)).toEqual([otherHold.id]);
+    const theirs = (await scheduleOf(THERAPIST2)).map((h) => h.hold_id);
+    expect(theirs).toContain(otherHold.id);
+    expect(theirs).not.toContain(ownHold.id);
   });
 
   it("«його сеанси»: підтверджене утримання лишається в розкладі після 24 годин, з ім'ям клієнта", async () => {

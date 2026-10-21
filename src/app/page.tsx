@@ -13,7 +13,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
   return (
     <AppShell role={role} email={email} title="Therapy scheduling" message={messageFor(msg)}>
-      <p className="text-sm text-zinc-500" data-testid="user-role">
+      <p className="text-sm text-zinc-500">
         Profile not found.
       </p>
     </AppShell>

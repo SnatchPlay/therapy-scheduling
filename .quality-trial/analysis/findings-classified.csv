@@ -68,3 +68,12 @@ T3-8,2026-10-21,T-3,blind-review,real,TEST,,running,,,race test built an impossi
 T3-9,2026-10-21,T-3,blind-review,real,TEST,,running,,,unique index one session per slot untested,L
 T3-10,2026-10-21,T-3,blind-review,real,TEST,,running,,,anon test passed for another reason; revoke unpinned,L
 T3-11,2026-10-21,T-3,tooling,real,TOOLING,,running,,,shared scratch file name: first mutation run used another script and stayed green,L
+T4-01,2026-10-21,T-4,fallow,real,DUP,,static,,,nullable-column mapping of slot_board rows repeated in /slots and /schedule,L
+T4-02,2026-10-21,T-4,blind-review,real,TEST,,mutation,,,page failure paths and role gate untested (mutations survived),L
+T4-03,2026-10-21,T-4,blind-review,real,TEST,,reading,,,page tests carried AC ids but only render mock data,L
+T4-04,2026-10-21,T-4,blind-review,nit,YAGNI,,reading,,,redundant status guard and second order key,L
+T4-05,2026-10-21,T-4,blind-review,nit,A11Y,,reading,,,no-therapist message without role; empty list element,L
+T4-06,2026-10-21,T-4,blind-review,real,TEST,,reading,,,DB tests depended on test order,L
+T4-07,2026-10-21,T-4,blind-review,real,GUESS,,reading,,,slots section defaults to today; AC-HOLD-21 walk-through needs the day picked (known-debt),L
+T4-08,2026-10-21,T-4,hand-mutation,real,TEST,,mutation,,,slots_select open stayed green: day_slots joins therapists; direct slots assertion added,M
+T4-09,2026-10-21,T-4,stryker,real,TEST,,mutation,,,home redirect for therapist untested,L

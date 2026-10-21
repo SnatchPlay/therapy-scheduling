@@ -16,9 +16,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/schedul
     supabase
       .from("hold_list")
       .select("hold_id, starts_at, client_name, status, held_until")
-      .order("starts_at")
-      // Рівні starts_at бути не може (слот терапевта унікальний), але прострочене не показується, тож це лише стабільність.
-      .order("hold_id"),
+      .order("starts_at"),
     supabase.from("therapists").select("id, full_name").maybeSingle(),
   ]);
   if (holdsResult.error) throw holdsResult.error;
@@ -34,25 +32,32 @@ export default async function SchedulePage({ searchParams }: PageProps<"/schedul
 
   return (
     <AppShell role={role} email={email} title="Schedule" message={messageFor(params.msg)}>
-      {me ? null : <p data-testid="no-therapist">No therapist record is linked to your account.</p>}
+      {me ? null : (
+        <p role="status" data-testid="no-therapist">
+          No therapist record is linked to your account.
+        </p>
+      )}
 
       <section className="flex flex-col gap-2" aria-labelledby="holds-heading">
         <h2 id="holds-heading" className="text-lg font-medium">
           Holds and sessions
         </h2>
-        {holds.length === 0 ? <p className="text-sm text-zinc-500">No holds or sessions.</p> : null}
-        <ul className="flex flex-col divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
-          {holds.map((h) => (
-            <li key={h.hold_id} className="flex flex-wrap gap-4 py-2" data-testid="schedule-item">
-              <span className="w-36 font-mono">{h.starts_at ? formatPracticeDateTime(h.starts_at) : ""}</span>
-              <span className="w-24 font-medium" data-testid="schedule-status">
-                {h.status}
-              </span>
-              <span>{h.client_name}</span>
-              {h.status === "Held" && h.held_until ? <span>Held until {formatPracticeDateTime(h.held_until)}</span> : null}
-            </li>
-          ))}
-        </ul>
+        {holds.length === 0 ? (
+          <p className="text-sm text-zinc-500">No holds or sessions.</p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
+            {holds.map((h) => (
+              <li key={h.hold_id} className="flex flex-wrap gap-4 py-2" data-testid="schedule-item">
+                <span className="w-36 font-mono">{h.starts_at ? formatPracticeDateTime(h.starts_at) : ""}</span>
+                <span className="w-24 font-medium" data-testid="schedule-status">
+                  {h.status}
+                </span>
+                <span>{h.client_name}</span>
+                {h.held_until ? <span>Held until {formatPracticeDateTime(h.held_until)}</span> : null}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="flex flex-col gap-2" aria-labelledby="slots-heading">
