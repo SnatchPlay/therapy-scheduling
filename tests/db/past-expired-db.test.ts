@@ -57,8 +57,9 @@ describe("Статус «Past»", () => {
     const confirmedHold = await holdAs(t, SCHEDULER, confirmed, client3);
     await t.asUser(SCHEDULER, "select public.confirm_hold($1)", [confirmedHold.id]);
     // Обидва слоти вже почались (утримання лишається діяти, поки не прострочене; сеанс — завжди).
+    // Різний початок: слот терапевта унікальний за початком, а now() у двох запитах поспіль може збігтися.
     await startSlotAt(held, "now() - interval '10 minutes'");
-    await startSlotAt(confirmed, "now() - interval '10 minutes'");
+    await startSlotAt(confirmed, "now() - interval '20 minutes'");
 
     const rows = await boardOf(SCHEDULER, [future, held, confirmed]);
     expect(Object.fromEntries(rows.map((r) => [r.slot_id, r.status]))).toEqual({
@@ -121,7 +122,7 @@ describe("Прострочене утримання в списку утрима
     await t.asUser(SCHEDULER, "select public.confirm_hold($1)", [sessionHold.id]);
     await ageHold(t, sessionHold.id!, 3000);
     await startSlotAt(heldSlot, "now() - interval '5 minutes'");
-    await startSlotAt(sessionSlot, "now() - interval '5 minutes'");
+    await startSlotAt(sessionSlot, "now() - interval '7 minutes'");
     expect(await inHoldList(SCHEDULER, heldHold.id!)).toBe("Held");
     expect(await inHoldList(SCHEDULER, sessionHold.id!)).toBe("Confirmed");
   });
