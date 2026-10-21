@@ -82,6 +82,10 @@ describe("/schedule", () => {
     expect(statuses(html)).toEqual(["Confirmed", "Held", "Free", "Free"]);
     expect(html).toContain("Monday 2026-11-02");
     expect(html).toContain("Friday 2026-11-06");
+    // Заголовок дня пов'язаний зі своїм списком, а повідомлення про порожній тиждень не показано, коли слоти є.
+    expect(html).toContain('aria-labelledby="day-2026-11-02"');
+    expect(html).toContain('id="day-2026-11-06"');
+    expect(html).not.toContain("No slots this week.");
     expect(html).toContain("10:00–11:00");
     expect(html).toContain("client1");
     expect(html).toContain("Held until 2026-11-07 10:00");
