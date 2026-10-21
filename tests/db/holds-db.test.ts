@@ -52,18 +52,34 @@ describe("Слоти дня", () => {
     ]);
   });
 
-  it("AC-HOLD-18: у день без вільних слотів — «No free slots on this day.»", async () => {
+  it("AC-HOLD-18: слоти 10:00 «Held» і 11:00 «Confirmed», вільних немає — повідомлення й обидва слоти зі статусами", async () => {
     const day = "2027-03-03";
     const s10 = await createSlot(t, T1, practiceTime(day, "10:00"));
+    const s11 = await createSlot(t, T1, practiceTime(day, "11:00"));
     await holdAs(t, SCHEDULER, s10, CLIENT1);
-    const rows = await t.asUser<{ holdable: boolean }>(
+    const held11 = await holdAs(t, SCHEDULER, s11, CLIENT2);
+    await t.asService("update public.holds set confirmed_at = now() where id = $1", [held11.id]);
+    const rows = await t.asUser<{ slot_id: string; status: string; holdable: boolean }>(
       SCHEDULER,
-      "select holdable from public.day_slots((select id from public.therapists where email = $1), $2)",
+      "select slot_id, status, holdable from public.day_slots((select id from public.therapists where email = $1), $2)",
       [T1, day],
     );
-    expect(rows).toHaveLength(1);
+    expect(rows).toEqual([
+      { slot_id: s10, status: "Held", holdable: false },
+      { slot_id: s11, status: "Confirmed", holdable: false },
+    ]);
     expect(hasHoldableSlot(rows)).toBe(false);
     expect(MESSAGES.NO_FREE_SLOTS).toBe("No free slots on this day.");
+  });
+
+  it("AC-HOLD-24: у день без жодного слоту — лише «No free slots on this day.» і жодного слоту", async () => {
+    const rows = await t.asUser<{ holdable: boolean }>(
+      SCHEDULER,
+      "select holdable from public.day_slots((select id from public.therapists where email = $1), '2027-03-06')",
+      [T1],
+    );
+    expect(rows).toEqual([]);
+    expect(hasHoldableSlot(rows)).toBe(false);
   });
 });
 
@@ -73,9 +89,12 @@ describe("Утримання", () => {
     const hold = await holdAs(t, SCHEDULER, slot, CLIENT1);
     expect(hold.id).toBeDefined();
 
-    const [h] = await t.asService<{ minutes: number }>(
-      "select extract(epoch from (h.created_at + interval '24 hours' - h.created_at))::int / 60 as minutes from public.holds h where id = $1",
-      [hold.id],
+    // Значення, яке бачить планувальник (slot_board.held_until), рівно на 1440 хвилин пізніше за створення.
+    const [h] = await t.asUser<{ minutes: number }>(
+      SCHEDULER,
+      `select extract(epoch from (b.held_until - x.created_at))::int / 60 as minutes
+       from public.slot_board b join public.hold_list x on x.hold_id = b.hold_id where b.slot_id = $1`,
+      [slot],
     );
     expect(h.minutes).toBe(1440);
     for (const user of [SCHEDULER, SCHEDULER2, ADMIN, THERAPIST]) {
@@ -131,6 +150,22 @@ describe("Утримання", () => {
     ]);
     expect(n).toBe(1);
     expect(first.id).toBeDefined();
+  });
+});
+
+describe("Без входу (anon)", () => {
+  it("не читає слоти, утримання й представлення та не викликає функції утримання", async () => {
+    for (const sql of [
+      "select id from public.therapists",
+      "select id from public.slots",
+      "select id from public.holds",
+      "select slot_id from public.slot_board",
+      "select hold_id from public.hold_list",
+      "select * from public.day_slots(gen_random_uuid(), '2027-03-02')",
+      "select public.hold_slot(gen_random_uuid(), gen_random_uuid())",
+    ]) {
+      await expect(t.asAnon(sql), sql).rejects.toThrow(/permission denied/);
+    }
   });
 });
 

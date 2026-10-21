@@ -48,16 +48,21 @@ as $$
 $$;
 
 -- З моменту початку включно (AC-HOLD-07; для підтвердження — AC-HOLD-22).
-create or replace function private.slot_started(p_starts_at timestamptz)
+-- p_at — момент перевірки: now() для читання, clock_timestamp() після замка в тригерах (транзакція могла чекати).
+create or replace function private.slot_started(p_starts_at timestamptz, p_at timestamptz default now())
 returns boolean
 language sql
 stable
 set search_path = ''
 as $$
-  select p_starts_at <= now();
+  select p_starts_at <= p_at;
 $$;
 
-create or replace function private.hold_status(p_confirmed_at timestamptz, p_created_at timestamptz)
+create or replace function private.hold_status(
+  p_confirmed_at timestamptz,
+  p_created_at timestamptz,
+  p_at timestamptz default now()
+)
 returns text
 language sql
 stable
@@ -65,7 +70,7 @@ set search_path = ''
 as $$
   select case
     when p_confirmed_at is not null then 'Confirmed'
-    when now() >= private.hold_expires_at(p_created_at) then 'Expired'
+    when p_at >= private.hold_expires_at(p_created_at) then 'Expired'
     else 'Held'
   end;
 $$;
@@ -115,11 +120,11 @@ as $$
   );
 $$;
 
-revoke execute on function private.hold_expires_at(timestamptz), private.slot_started(timestamptz),
-  private.hold_status(timestamptz, timestamptz), private.current_therapist_id(), private.slot_is_mine(uuid), private.client_is_mine(uuid)
+revoke execute on function private.hold_expires_at(timestamptz), private.slot_started(timestamptz, timestamptz),
+  private.hold_status(timestamptz, timestamptz, timestamptz), private.current_therapist_id(), private.slot_is_mine(uuid), private.client_is_mine(uuid)
   from public, anon;
-grant execute on function private.hold_expires_at(timestamptz), private.slot_started(timestamptz),
-  private.hold_status(timestamptz, timestamptz), private.current_therapist_id(), private.slot_is_mine(uuid), private.client_is_mine(uuid)
+grant execute on function private.hold_expires_at(timestamptz), private.slot_started(timestamptz, timestamptz),
+  private.hold_status(timestamptz, timestamptz, timestamptz), private.current_therapist_id(), private.slot_is_mine(uuid), private.client_is_mine(uuid)
   to authenticated;
 
 -- ── RLS і права ─────────────────────────────────────────────────────────────
@@ -178,25 +183,28 @@ set search_path = ''
 as $$
 declare
   v_starts_at timestamptz;
+  v_now timestamptz;
 begin
   -- Блокування рядка слоту: друга одночасна спроба чекає на першу й бачить її утримання (AC-HOLD-04).
   select s.starts_at into v_starts_at from public.slots as s where s.id = new.slot_id for update;
   if not found then
     raise exception 'SLOT_NOT_FOUND' using errcode = 'P0002';
   end if;
-  -- AC-HOLD-07; межа «з моменту початку включно» — як для підтвердження (AC-HOLD-22), питання Q5.
-  if private.slot_started(v_starts_at) then
+  -- Час після замка: now() — початок транзакції, яка могла чекати на першу спробу.
+  v_now := clock_timestamp();
+  -- AC-HOLD-07; межа «з моменту початку включно» — як для підтвердження (AC-HOLD-22).
+  if private.slot_started(v_starts_at, v_now) then
     raise exception 'SLOT_STARTED';
   end if;
   -- AC-HOLD-03, AC-HOLD-04, AC-HOLD-17: не більше одного активного утримання чи сеансу на слот.
   if exists (
     select 1 from public.holds as h
-    where h.slot_id = new.slot_id and private.hold_status(h.confirmed_at, h.created_at) <> 'Expired'
+    where h.slot_id = new.slot_id and private.hold_status(h.confirmed_at, h.created_at, v_now) <> 'Expired'
   ) then
     raise exception 'SLOT_UNAVAILABLE';
   end if;
 
-  new.created_at := now();
+  new.created_at := v_now;
   new.created_by := coalesce((select auth.uid()), new.created_by);
   new.confirmed_at := null;
   new.confirmed_by := null;
