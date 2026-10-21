@@ -91,3 +91,32 @@ literal `auth.uid()` (the helper already depends on it) — answered in the PR a
 `database.types.ts`: the rendered `db-check` summary drops the file's leading blank line, so a copy
 from the page still differed; the file is now `supabase gen types typescript --local` (CLI 2.120.0) run on a
 scratch local database, and `db-check` no longer reports a difference (run on e6cc1f0).
+
+## 2026-10-21 · T-2 slots and holds (task 2 of impl-slot-hold)
+
+Ran: gate; `run.sh`; two blind reviewers (database, app; the database one stopped on a usage limit and was
+resumed); mutation checks of the SQL by hand; the race on real Postgres 17 (Docker); stryker.
+Real, database: the therapist branch of `holds_select` and the expiry filter were untested — mutating
+either left 25/25 green (Medium; negative tests added, mutations now red); both therapist policies called a
+security-definer helper per row (Medium; `EXPLAIN` showed it ran before the cheap initplan, so every
+staff read of `clients` paid for it): now set-based subqueries, helpers removed; the 24-hour boundary
+was never read at exactly 1440 minutes (`>=` → `>` stayed green; tests now call `hold_status` at
+explicit instants); `created_at` kept seconds while the PM counts to the minute (a hold at 14:30:45
+stayed "Held" after the displayed 14:30; now `date_trunc('minute')`); the AC-HOLD-02 test held by
+construction (an hour-early `created_at` stayed green; now checked against the minute before and after
+the call); fixed 2027 dates would turn red from 2027-03-02 (rolling `quietDay()`).
+Real, app: AC-HOLD-08's message was unreachable (the redirect to `/slots` sent a therapist to `/`
+without the text) — now `/?msg=HOLD_FORBIDDEN`, tested; `required` on the client select did nothing
+(empty first option); `isIsoDate("0000-01-01")` passed and `day_slots` threw (rejected); the action
+swallowed unexpected errors (thrown now); AC-HOLD-18/24 rows cited a test that compared a constant with
+itself (a render test of `/slots` now checks the order and the rows); the DST/24 h time tests claimed an
+AC but computed the value inside the test (renamed as formatting; the rule is tested in SQL).
+Open, Low (known-debt): all clients in every form, no pending state on the button, started-but-unheld
+slot vs. "No free slots" (own assumption, candidate PM question). Concurrency: by hand on Postgres 17
+with two sessions: with the lock the second gets SLOT_UNAVAILABLE (1 hold); the mutant without
+`for update` leaves 2 holds. Would a tool have caught the helper-per-row cost? `EXPLAIN` did; the
+`rls-migration` skill names the pattern.
+
+Stryker T-2 (`--since main`, 4 files): 102 of 107 killed. Survivors: `if (code === "HOLD_FORBIDDEN")` → `true` — real gap
+(the AC-HOLD-03 test did not check the path), closed, mutant now red; four on `isIsoDate` — equivalent:
+the regex only pre-filters, the round trip through `Date.parse` rejects the same strings.

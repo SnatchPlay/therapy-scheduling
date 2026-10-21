@@ -48,7 +48,10 @@ describe("holdSlot", () => {
 
   it("AC-HOLD-03: код помилки бази → його повідомлення", async () => {
     rpc.mockResolvedValue({ error: { code: "P0001", message: "SLOT_UNAVAILABLE" } });
-    expect((await redirectOf(holdSlot(form(FIELDS)))).searchParams.get("msg")).toBe("SLOT_UNAVAILABLE");
+    const url = await redirectOf(holdSlot(form(FIELDS)));
+    // Роль staff бачить повідомлення на /slots, а не на головній.
+    expect(url.pathname).toBe("/slots");
+    expect(url.searchParams.get("msg")).toBe("SLOT_UNAVAILABLE");
   });
 
   it("непередбачена помилка бази кидається далі (лог сервера, error.tsx)", async () => {
