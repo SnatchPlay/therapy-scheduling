@@ -258,3 +258,35 @@ minute and does not show "Past" — cosmetic. 3. Migration order OK (`2026102113
 with the migration applied. 7. No env or dependency change. 8. Build unchanged. 9. `demo-users.json` unchanged.
 10. A red `db-deploy`; `/slots` or `/holds` error page. 11. Revert the code by PR; the schema goes forward: a migration
 restoring the two view bodies.
+
+## 2026-10-21 · T-7 weekly schedule (task 7 of impl-slot-hold-answers)
+
+Ran: gate; `run.sh`; one blind reviewer (app, database function, tests); hand mutations; Stryker `--since origin/main`
+(`time.ts`, `schedule/page.tsx`).
+Reviewer findings (nothing above Medium): F1 Medium — the DB tests resolved the therapist id with a sub-select run as
+the caller, so RLS gave `NULL` and "therapist1 asks for therapist2" returned `[]` for any implementation: making
+`slots_between` `security definer` left all tests green while a probe showed the leak; the id is now fetched once with
+`service_role` and passed as a parameter (the same mutation is now red); F2 — the DST weeks were not pinned
+(`quietDay` drifts through seasons, the "DST" assertion in `time.test.ts` was plain date arithmetic): fixed weeks
+2026-10-26 and 2027-03-08 with slots at Monday 00:00, Sunday 23:00 and the next Monday 00:00 (replacing the zone by a
+fixed `'PST'` offset is now red); F3 — grouping by `practiceDate` and the default week were not distinguished from UTC
+(fixtures at 10:00 PT): a Monday 23:00 PT slot (Tuesday in UTC) and a fake clock on Sunday 21:00 PT added (both
+mutations red); F4 — `?week=9999-12-27` passed `isIsoDate` and `addDays` produced `+010000-01…`, an error page for a
+typed URL: year 9999 is rejected like year 0000; F5 — the anonymous test passed without the `revoke` (anon has no
+privilege on the view anyway): it now expects `permission denied for function slots_between`; F6 — the obsolete
+known-debt row about the day default, the unused `data-testid`, titles that had lost their AC IDs, the conformance rows
+without `slots_between`: fixed. Dropped: DST and the half-open range in SQL (probed for both weeks), grants of
+`day_slots` after `create or replace` (`proacl` equal), the silent fall back to the current week for an invalid `?week=`
+(same as `/slots?day=`).
+Stryker T-7 (52 mutants): 41 killed; survivors: the query-string literals the fake client ignores, the `isIsoDate` regex
+guards that the round trip check repeats (equivalent), and two page assertions (the "No slots this week." condition
+and the day heading link) — covered by a test added after the run.
+Deploy readiness T-7 (REQUIRED: migration, types): 1. `db-deploy` after merge only; deployed `main` reads `day_slots` —
+unchanged signature and result, now implemented through `slots_between`. 2. New code before `db-deploy` ends:
+`/schedule` calls `slots_between`, which does not exist for that minute — the error page for therapists; the old code on
+the new schema: unaffected. 3. Migration order OK (`20261021140000` after `20261021130000`). 4. Existing rows: a new
+function and a redefined one, no data change. 5. Explicit `revoke … from public, anon` and `grant … to authenticated` for
+`slots_between` (tested); `create or replace` of `day_slots` keeps its ACL (`proacl` checked). 6. `database.types.ts`
+equals `supabase gen types --local` on a scratch database with the migration applied. 7. No env or dependency change.
+8. `npm run build` shows `ƒ /schedule`. 9. `demo-users.json` unchanged. 10. A red `db-deploy`; `/schedule` error page.
+11. Revert the code by PR; the schema goes forward: a migration dropping `slots_between` and restoring `day_slots`.

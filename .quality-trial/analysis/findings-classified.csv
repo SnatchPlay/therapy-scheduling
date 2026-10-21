@@ -86,3 +86,9 @@ T6-02,2026-10-21,T-6,blind-review,nit,TEST,,mutation,,,page assertion no Started
 T6-03,2026-10-21,T-6,blind-review,nit,DOC,,reading,,,spec-reading Q1-Q4 still waiting after PM answers,L
 T6-04,2026-10-21,T-6,blind-review,nit,DUP,,reading,,,test helper shadowed fixture boardOf,L
 T6-05,2026-10-21,T-6,self-review,real,TEST,,static,,,flaky test: two slots at the same now() offset hit slots_therapist_start_key,M
+T7-01,2026-10-21,T-7,blind-review,real,TEST,,mutation,,,slots_between security definer stayed green: id resolved as the caller gave NULL under RLS,M
+T7-02,2026-10-21,T-7,blind-review,real,TEST,,mutation,,,DST weeks not pinned; DST assertion was plain arithmetic,M
+T7-03,2026-10-21,T-7,blind-review,real,TEST,,mutation,,,grouping and default week not distinguished from UTC,L
+T7-04,2026-10-21,T-7,blind-review,real,INPUT,,probe,,,week=9999-12-27 produced an out-of-range date and an error page,L
+T7-05,2026-10-21,T-7,blind-review,nit,TEST,,mutation,,,anon test passed without the revoke,L
+T7-06,2026-10-21,T-7,stryker,real,TEST,,mutation,,,day heading link and empty-week condition unpinned,L
