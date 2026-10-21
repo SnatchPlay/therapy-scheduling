@@ -73,7 +73,7 @@ describe("Перетин утримань і сеансів клієнта", () 
     expect(row.status).toBe("Held");
   });
 
-  it("межа: кінець одного слота = початок іншого — не перетин, утримання створюється", async () => {
+  it("AC-HOLD-25: межа — кінець одного слота = початок іншого — не перетин, утримання створюється", async () => {
     const d = day();
     const client = await ensureClient(t, "client1", "client1@example.test");
     expect((await holdAs(t, SCHEDULER, await slotAt(T1, d, "10:00"), client)).id).toBeDefined();
@@ -88,7 +88,7 @@ describe("Перетин утримань і сеансів клієнта", () 
     expect(await holdAs(t, SCHEDULER, await slotShifted(T2, d, "10:00", 30), client)).toEqual({ message: OVERLAP });
   });
 
-  it("перетин рахується лише для одного клієнта: client2 на той самий час утримує слот therapist2", async () => {
+  it("AC-HOLD-25: перетин рахується лише для одного клієнта — client2 на той самий час утримує слот therapist2", async () => {
     const d = day();
     const client1 = await ensureClient(t, "client1", "client1@example.test");
     const client2 = await ensureClient(t, "client2", "client2@example.test");
@@ -96,7 +96,7 @@ describe("Перетин утримань і сеансів клієнта", () 
     expect((await holdAs(t, SCHEDULER, await slotAt(T2, d, "10:00"), client2)).id).toBeDefined();
   });
 
-  it("повторне утримання того самого слоту за тим самим клієнтом лишається «слот недоступний» (AC-HOLD-17), а не перетином", async () => {
+  it("AC-HOLD-17: повторне утримання того самого слоту за тим самим клієнтом лишається «слот недоступний», а не перетином", async () => {
     const d = day();
     const client = await ensureClient(t, "client1", "client1@example.test");
     const slot = await slotAt(T1, d, "10:00");
@@ -104,7 +104,7 @@ describe("Перетин утримань і сеансів клієнта", () 
     expect(await holdAs(t, SCHEDULER, slot, client)).toEqual({ message: MESSAGES.SLOT_UNAVAILABLE });
   });
 
-  it("правило діє й для прямого insert через Data API та для адміністратора", async () => {
+  it("AC-HOLD-25: правило діє й для прямого insert через Data API та для адміністратора", async () => {
     const d = day();
     const client = await ensureClient(t, "client1", "client1@example.test");
     const first = await slotAt(T1, d, "10:00");
@@ -115,7 +115,7 @@ describe("Перетин утримань і сеансів клієнта", () 
     ).rejects.toThrow("CLIENT_OVERLAP");
   });
 
-  it("терапевт не утримує слот навіть без перетину (AC-HOLD-08 не змінено)", async () => {
+  it("AC-HOLD-08: терапевт не утримує слот навіть без перетину (поведінку не змінено)", async () => {
     const d = day();
     const client = await ensureClient(t, "client2", "client2@example.test");
     const slot = await slotAt(T1, d, "10:00");
