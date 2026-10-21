@@ -64,16 +64,17 @@ and a valid email.», `23505` → «A client with this email already exists.».
 - **Утримання** — `public.hold_slot(slot_id, client_id)` (`security invoker`): роль не `admin`/`scheduler` →
   `HOLD_FORBIDDEN` (AC-HOLD-08); далі `insert`. Тригер `before insert` (`private.guard_new_hold`,
   `security definer`) **блокує рядок слоту** (`select … for update`), тож дві одночасні спроби йдуть по черзі
-  (AC-HOLD-04), і перевіряє: слот почався (`starts_at <= now()`) → `SLOT_STARTED` (AC-HOLD-07); є активне утримання
-  чи сеанс → `SLOT_UNAVAILABLE` (AC-HOLD-03, 04, 17); ставить `created_at = now()`, `created_by = auth.uid()`,
-  обнуляє `confirmed_*`. Прямий `insert` через Data API проходить той самий тригер.
+  (AC-HOLD-04). Одразу після замка бере `v_now := clock_timestamp()` (`now()` — час початку транзакції, яка
+  могла чекати на замок) і перевіряє: слот почався (`starts_at <= v_now`) → `SLOT_STARTED` (AC-HOLD-07); є
+  активне утримання чи сеанс → `SLOT_UNAVAILABLE` (AC-HOLD-03, 04, 17); ставить `created_at = v_now`,
+  `created_by = auth.uid()`, обнуляє `confirmed_*`. Прямий `insert` через Data API проходить той самий тригер.
 - **Підтвердження** — `public.confirm_hold(hold_id)` (`security invoker`): роль → `CONFIRM_FORBIDDEN` (AC-HOLD-14);
   `update … set confirmed_at`. Тригер `before update of confirmed_at` (`private.guard_confirm`) блокує слот і
   перевіряє в такому порядку: уже підтверджено або на слоті є **інше** активне утримання чи сеанс →
   `SLOT_UNAVAILABLE`; прострочено → `HOLD_EXPIRED` (AC-HOLD-13); слот почався → `CONFIRM_SLOT_STARTED`
   (AC-HOLD-22, 23). «Прострочено» раніше за «почався» — власне припущення в `docs/spec-reading.md`. Час для цих
-  перевірок — `clock_timestamp()` після блокування: транзакція могла чекати на замок довше за межу 24 годин.
-  Ставить `confirmed_at = now()`, `confirmed_by = auth.uid()`. Останній запобіжник подвійного сеансу —
+  перевірок і для `confirmed_at` — `v_now := clock_timestamp()` після блокування: транзакція могла чекати на
+  замок довше за межу 24 годин. Ставить `confirmed_at = v_now`, `confirmed_by = auth.uid()`. Останній запобіжник подвійного сеансу —
   `unique (slot_id) where confirmed_at is not null`.
 - GRANT: `select`, `insert (slot_id, client_id)`, `update (confirmed_at)`; політики insert/update — лише
   `admin`/`scheduler` (AC-HOLD-19: admin = scheduler).
@@ -83,7 +84,8 @@ and a valid email.», `23505` → «A client with this email already exists.».
 
 - `public.slot_board`: слот + його активне утримання чи сеанс → `status` (`Free` / `Held` / `Confirmed`), клієнт,
   `held_until`, `holdable` (`Free` і ще не почався). `public.day_slots(therapist_id, day)` — слоти дня за
-  America/Los_Angeles.
+  America/Los_Angeles; `security invoker`, тож діє RLS `slots`: терапевт, який передає чужий `therapist_id`,
+  отримує порожній список (AC-HOLD-09), `scheduler` і `admin` — слоти будь-якого терапевта.
 - `public.hold_list`: утримання зі статусом `Held` / `Expired` / `Confirmed` (AC-HOLD-20).
 - RLS терапевта: `slots` і `therapists` — лише власні; `holds` — лише власних слотів і не прострочені (AC-HOLD-21);
   `clients` — лише з таких утримань. Представлення з `security_invoker = true` успадковують ці політики, тож
