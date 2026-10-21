@@ -42,3 +42,21 @@ export function isIsoDate(value: unknown): value is string {
   const time = Date.parse(`${value}T00:00:00Z`);
   return !Number.isNaN(time) && new Date(time).toISOString().slice(0, 10) === value;
 }
+
+const DAY_MS = 86_400_000;
+const atNoonUtc = (date: string) => new Date(`${date}T12:00:00Z`);
+
+/** Дата через n днів: «2026-11-02» + 7 → «2026-11-09». Дата практики вже локальна, тож це чиста арифметика дат. */
+export function addDays(date: string, days: number): string {
+  return new Date(atNoonUtc(date).getTime() + days * DAY_MS).toISOString().slice(0, 10);
+}
+
+/** Понеділок тижня, якому належить дата (тиждень — з понеділка по неділю, AC-HOLD-30): «2026-11-04» → «2026-11-02». */
+export function weekStart(date: string): string {
+  return addDays(date, -((atNoonUtc(date).getUTCDay() + 6) % 7));
+}
+
+/** День тижня англійською для заголовка дня: «2026-11-02» → «Monday». */
+export function weekdayName(date: string): string {
+  return atNoonUtc(date).toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
+}

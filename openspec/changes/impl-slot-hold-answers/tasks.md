@@ -17,8 +17,8 @@ Done when: AC-HOLD-28, AC-HOLD-29, AC-HOLD-32, AC-HOLD-33
 
 ## 7. Розклад терапевта на тиждень (PR `task/week-schedule`)
 
-- [ ] 7.1 Міграція: `slots_between` (діапазон днів; `day_slots` через неї); `src/lib/time.ts` — понеділок тижня
-- [ ] 7.2 Сторінка `/schedule`: тиждень, перемикання, слоти зі статусами; тести бази й сторінки
+- [x] 7.1 Міграція: `slots_between` (діапазон днів; `day_slots` через неї); `src/lib/time.ts` — понеділок тижня
+- [x] 7.2 Сторінка `/schedule`: тиждень, перемикання, слоти зі статусами; тести бази й сторінки
 - [ ] 7.3 Archive `impl-slot-hold-answers`, запис екрана з прод-URL
 
 Done when: AC-HOLD-30, AC-HOLD-31 (і далі AC-HOLD-09, AC-HOLD-21)

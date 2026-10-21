@@ -62,8 +62,8 @@
 | AC-HOLD-27 | інший планувальник підтверджує утримання | `supabase/migrations/20261019143503_confirm_holds.sql` (holds_update_staff) | `tests/db/overlap-db.test.ts` | реалізовано |
 | AC-HOLD-28 | прострочене утримання видно планувальнику до початку слоту | `supabase/migrations/20261021130000_past_status_and_expired_list.sql` (hold_list) | `tests/db/past-expired-db.test.ts` | реалізовано |
 | AC-HOLD-29 | прострочене утримання не показано з початку слоту | `supabase/migrations/20261021130000_past_status_and_expired_list.sql` (hold_list) | `tests/db/past-expired-db.test.ts` | реалізовано |
-| AC-HOLD-30 | розклад терапевта — поточний тиждень пн–нд зі слотами й статусами | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-31 | перемикання на наступний тиждень | — | — | відкладено (чекає реалізації) |
+| AC-HOLD-30 | розклад терапевта — поточний тиждень пн–нд зі слотами й статусами | `src/app/schedule/page.tsx`, `src/lib/time.ts` (weekStart), `supabase/migrations/20261021140000_slots_between.sql` | `tests/db/schedule-db.test.ts`, `src/app/schedule/page.test.tsx`, `src/lib/time.test.ts` | реалізовано |
+| AC-HOLD-31 | перемикання на наступний тиждень | `src/app/schedule/page.tsx`, `src/lib/time.ts` (addDays) | `tests/db/schedule-db.test.ts`, `src/app/schedule/page.test.tsx`, `src/lib/time.test.ts` | реалізовано |
 | AC-HOLD-32 | слот, що почався, — «Past», не вільний | `supabase/migrations/20261021130000_past_status_and_expired_list.sql` (slot_board), `src/app/slots/page.tsx` | `tests/db/past-expired-db.test.ts` | реалізовано |
 | AC-HOLD-33 | «Past» не рахується вільним у «No free slots on this day.» | `supabase/migrations/20261021130000_past_status_and_expired_list.sql` (slot_board), `src/lib/slots.ts` | `tests/db/past-expired-db.test.ts`, `src/app/slots/page.test.tsx` | реалізовано |
 | AC-HOLD-34 | email з іншим регістром і пробілами — дубль | `supabase/migrations/20261019142745_roles_and_clients.sql` (normalize_client_email, clients_email_key) | `tests/db/clients-db.test.ts` | реалізовано |
