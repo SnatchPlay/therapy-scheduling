@@ -76,3 +76,8 @@ mixes it with a query — Low, real (exact statement now, checked on the reviewe
 had no sign-out — Low, real (added). Left open (known-debt): orphan member1/2 accounts, UI language,
 form state after an error, design.md Р2 wording. Hand-written `database.types.ts`: replaced from the
 `db-check` summary of this PR.
+
+Stryker after the self-review fixes (`--since main`, command runner): `actions.ts` + `messages.ts` —
+42 of 47 killed; 4 real test gaps in `actions.test.ts` (table name, empty form fields, revalidated path:
+the fake client ignored them), closed → `actions.ts` 19 of 19; the `messages.ts` survivor is the
+equivalent `?? ""` mutant from above.

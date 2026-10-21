@@ -34,3 +34,4 @@ T1-23,2026-10-21,T-1,self-review,real,UX,,reading,,,error page without sign-out,
 T1-24,2026-10-21,T-1,self-review,real,DATA,,reading,,,member1/2 promoted to scheduler and no longer managed by users:demo,L
 T1-25,2026-10-21,T-1,self-review,real,UX,,reading,,,"English app UI, Ukrainian login and lang=uk",L
 T1-26,2026-10-21,T-1,self-review,real,UX,,reading,,,form keeps no values after an error; success styled as alert,L
+T1-27,2026-10-21,T-1,stryker,real,TEST,,running,,,"action test ignored table name, empty fields and revalidated path",L
