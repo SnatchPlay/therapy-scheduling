@@ -133,7 +133,7 @@ describe("/schedule", () => {
     expect(html).not.toContain("client1");
   });
 
-  it("порожній тиждень — «No slots this week.»; некоректний ?week= не доходить до бази", async () => {
+  it("AC-HOLD-30: порожній тиждень — «No slots this week.»; некоректний ?week= не доходить до бази", async () => {
     const html = await render({ week: "2026-02-31" });
     expect(html).toContain("No slots this week.");
     expect(rpcCall?.args.p_from).not.toBe("2026-02-31");

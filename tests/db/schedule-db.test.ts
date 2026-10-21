@@ -81,7 +81,7 @@ describe("Розклад терапевта на тиждень", () => {
     expect(next.map((r) => [r.slot_id, r.status, r.client_name])).toEqual([[thursdayNext, "Confirmed", "client3"]]);
   });
 
-  it("межі тижня: понеділок 00:00 — у тижні, наступний понеділок 00:00 — уже в наступному (час практики)", async () => {
+  it("AC-HOLD-30: межі тижня — понеділок 00:00 у тижні, наступний понеділок 00:00 уже в наступному (час практики)", async () => {
     const monday = mondayOfNewWeek();
     const first = await createSlot(t, T1, practiceTime(monday, "00:00"));
     const last = await createSlot(t, T1, practiceTime(addDays(monday, 6), "23:00"));
