@@ -1,67 +1,63 @@
-# Validation rules
+# Правила перевірки змін
 
-How a change in this repo is proven before it is committed and before its PR. The `self-review`
-skill (`.claude/skills/self-review/`) loads this file; where they differ, this file wins.
+Як у цьому репо доводимо зміну до коміту й до PR. Скіл `self-review` (`.claude/skills/self-review/`) читає
+цей файл першим; де вони розходяться, діє цей файл.
 
-## Gate (every commit)
+## Gate (кожен коміт)
 
-| Command | What it proves |
+| Команда | Що доводить |
 |---|---|
-| `npm run lint` | ESLint, 0 warnings |
+| `npm run lint` | ESLint, 0 попереджень |
 | `npm run typecheck` | `next typegen` + `tsc --noEmit` |
-| `npm test` | Vitest: unit tests, script tests and — once a slice adds them — database tests on PGlite with every migration (`tests/db/`) |
-| `npm run build` | the app builds; output shows `ƒ Proxy (Middleware)` |
-| `npm run spec:validate`, `npm run spec:check` | OpenSpec strict; denylist and spec format |
-| `npm run ac:coverage` | AC → scenario → test → conformance row |
-| `node scripts/check-migration-order.mjs` | a new migration is newer than `origin/main`; applied files unchanged |
+| `npm test` | Vitest: unit-тести, тести скриптів і — щойно зріз їх додає — тести бази на PGlite з усіма міграціями (`tests/db/`) |
+| `npm run build` | застосунок збирається; у виводі є `ƒ Proxy (Middleware)` |
+| `npm run spec:validate`, `npm run spec:check` | OpenSpec strict; denylist і формат специфікації |
+| `npm run ac:coverage` | AC → сценарій → тест → рядок матриці |
+| `node scripts/check-migration-order.mjs` | нова міграція новіша за `origin/main`; застосовані файли не змінено |
 
-A database change is exercised on PGlite (`tests/db/supabase-pglite.ts`, added with the first slice that has
-tables), never by applying it to the cloud project:
-the cloud database changes only through `db-deploy` after the merge.
+Зміну бази перевіряємо на PGlite (`tests/db/supabase-pglite.ts`, з'являється з першим зрізом, що додає
+таблиці), а не застосуванням до хмарного проєкту: хмарна база змінюється лише через `db-deploy` після merge.
 
-## Review areas (self-review, blind, split when the change is large)
+## Області рев'ю (self-review: сліпо, з розподілом, коли зміна велика)
 
-| Area | Files | Checklists |
+| Область | Файли | Чеклісти |
 |---|---|---|
-| Database & access | `supabase/**`, `tests/db/**` | self-review *Database & migrations*, *Auth & access*, *Tests*; `rls-migration` skill |
-| App code & UI | `src/**`, `tests/**` outside `tests/db` | self-review *Auth & access*, *Data access & API contract*, *UI*, *Tests* |
-| Spec | `openspec/**`, `docs/conformance.md`, `docs/spec-reading.md` | `spec-review` skill |
-| CI & tooling | `.github/**`, `scripts/**`, `.claude/**`, `.quality-trial/**` | self-review *CI & workflows*, *Scripts & data fixes* |
+| База й доступ | `supabase/**`, `tests/db/**` | self-review *Database & migrations*, *Auth & access*, *Tests*; скіл `rls-migration` |
+| Код застосунку й UI | `src/**`, `tests/**` поза `tests/db` | self-review *Auth & access*, *Data access & API contract*, *UI*, *Tests* |
+| Специфікація | `openspec/**`, `docs/conformance.md`, `docs/spec-reading.md` | скіл `spec-review` |
+| CI й інструменти | `.github/**`, `scripts/**`, `.claude/**`, `.quality-trial/**` | self-review *CI & workflows*, *Scripts & data fixes* |
 
-UI changes also need the `visual-verify` skill: every role, signed out, the forbidden page by
-direct URL, loading / empty / error.
+Зміна UI також потребує скіла `visual-verify`: кожна роль, відвідувач без входу, заборонена сторінка за
+прямим посиланням, стани завантаження / порожній / помилка.
 
-## Quality trial (per step, before its local commit)
+## Quality trial (на кожен крок, до його локального коміту)
 
-Not a gate: it measures which instrument catches what. Every finding is verified against the code
-before it is believed.
+Це не ворота: ми вимірюємо, який інструмент що ловить. Кожну знахідку перевіряємо кодом, перш ніж їй вірити.
 
-1. `.quality-trial/run.sh --snapshot`, then the reviewers, then `.quality-trial/run.sh`: ast-grep
-   rules on the changed files, `fallow audit` vs `origin/main` (new findings only), removed tests,
-   AC coverage, deploy-readiness trigger, files also changed by other open PRs, files written since
-   the snapshot.
-2. When it prints `REQUIRED`: answer `.quality-trial/deploy-readiness.md` with command output.
-3. Blind reviews with the step's file list (untracked included), never the intent; both read
-   `.quality-trial/known-debt.md`. Over ~150 changed lines: a correctness reviewer (self-review
-   areas) and a separate principles reviewer (`.quality-trial/principles-review.md`); smaller: one
-   reviewer with both.
-4. Mutation testing of changed TypeScript that has unit tests:
-   `.quality-trial/stryker.sh --since <step base> <files>`. Triage every Survived / NoCoverage
-   mutant. SQL rules get a manual mutation check recorded in the PR (rls-migration skill).
-5. Log at triage time: `.quality-trial/findings-log.md`, `analysis/findings-classified.csv`,
-   `analysis/runs.csv` (including runs with no findings). `python3 -I .quality-trial/analysis/analyze.py` prints
-   the per-instrument tables.
+1. `.quality-trial/run.sh --snapshot`, далі рецензенти, далі `.quality-trial/run.sh`: правила ast-grep на
+   змінених файлах, `fallow audit` проти `origin/main` (лише нові знахідки), видалені тести, покриття AC,
+   тригер deploy readiness, файли, які змінюють інші відкриті PR, файли, записані після знімка.
+2. Якщо скрипт пише `REQUIRED` — відповісти на `.quality-trial/deploy-readiness.md` виводом команд.
+3. Сліпі рев'ю: список файлів кроку (зокрема невідстежувані), ніколи не намір; обидва читають
+   `.quality-trial/known-debt.md`. Понад ~150 змінених рядків — рецензент коректності (області self-review)
+   і окремий рецензент принципів (`.quality-trial/principles-review.md`); менше — один рецензент з обома.
+4. Мутаційне тестування зміненого TypeScript, що має unit-тести:
+   `.quality-trial/stryker.sh --since <база кроку> <файли>`. Кожен Survived / NoCoverage мутант розібрати.
+   Для правил SQL — ручна мутаційна перевірка, записана в PR (скіл `rls-migration`).
+5. Записувати під час розбору: `.quality-trial/findings-log.md`, `analysis/findings-classified.csv`,
+   `analysis/runs.csv` (зокрема прогони без знахідок). `python3 -I .quality-trial/analysis/analyze.py`
+   друкує таблиці за інструментами.
 
-## Before a branch's PR (once per branch)
+## Перед PR гілки (раз на гілку)
 
-1. `.quality-trial/run.sh` again (other open PRs change).
-2. Architecture review: one fresh blind subagent with the branch's file list and
+1. Ще раз `.quality-trial/run.sh` (інші відкриті PR змінюються).
+2. Архітектурне рев'ю: один свіжий сліпий субагент зі списком файлів гілки й
    `.quality-trial/architecture-review.md`.
-3. `ponytail-review` (read-only).
-4. After the PR opens: `@coderabbitai review` as a separate comment; answer every comment with a fix
-   or a reason before merging.
+3. `ponytail-review` (лише читання).
+4. Після відкриття PR — `@coderabbitai review` окремим коментарем; на кожен коментар — виправлення або
+   аргумент до злиття.
 
-## Adding an ast-grep rule
+## Нове правило ast-grep
 
-Only after it fires on a real past smell; the rule's header comment names that smell, and the rule is
-tested on the code before and after the fix.
+Лише після того, як воно спрацювало на реальній минулій знахідці: заголовок правила називає цю знахідку, а
+саме правило перевірено на коді до й після виправлення.
