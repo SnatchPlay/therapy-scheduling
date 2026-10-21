@@ -43,8 +43,8 @@ describe("confirmHold", () => {
     expect(revalidatePath).toHaveBeenCalledWith("/holds");
   });
 
-  it("AC-HOLD-13, AC-HOLD-22: відмова бази → її повідомлення на /holds, утримання лишається в списку", async () => {
-    for (const code of ["HOLD_EXPIRED", "CONFIRM_SLOT_STARTED", "SLOT_UNAVAILABLE"]) {
+  it("AC-HOLD-13, AC-HOLD-22, AC-HOLD-36: відмова бази → її повідомлення на /holds, утримання лишається в списку", async () => {
+    for (const code of ["HOLD_EXPIRED", "CONFIRM_SLOT_STARTED", "HOLD_ALREADY_CONFIRMED"]) {
       rpc.mockResolvedValue({ error: { code: "P0001", message: code } });
       expect(await redirectTarget(confirmHold(form({ hold_id: "h1" })))).toBe(`/holds?msg=${code}`);
     }
