@@ -44,6 +44,8 @@ export interface TestDb {
   asAnon<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
   /** Користувач Auth без ролі від users:demo (як новий вхід): профіль створює тригер on_auth_user_created. */
   createAuthUser(email: string): Promise<string>;
+  /** SQL власника бази (суперкористувач, без RLS і грантів): лише щоб обійти тригери, коли перевіряємо останні запобіжники. */
+  asOwner<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
   /** SQL в обхід RLS (як service_role) — для підготовки даних і перевірки результату. */
   asService<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
 }
@@ -103,5 +105,6 @@ export async function createTestDb(): Promise<TestDb> {
       return row.id;
     },
     asService: <T,>(sql: string, params: unknown[] = []) => inTransaction<T>(db, "service_role", null, sql, params),
+    asOwner: <T,>(sql: string, params: unknown[] = []) => db.transaction(async (tx) => (await tx.query<T>(sql, params)).rows),
   };
 }

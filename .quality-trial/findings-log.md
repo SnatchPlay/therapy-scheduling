@@ -136,3 +136,45 @@ CodeRabbit (PR #13): 1 inline comment — accepted (the client `select` in each 
 `aria-label` with the slot time, asserted in the page test). Pre-merge warnings: PR type (records of this step in
 `.quality-trial/`, same as PR #12) and "no `(select auth.uid())` in the read policies" — answered in the PR and with
 a comment over the policies (both branches already depend on `auth.uid()`, anon has no grant, tested).
+
+## 2026-10-21 · T-3 confirm holds (task 3 of impl-slot-hold)
+
+Ran: gate; `run.sh`; blind reviewers (database, app); two races on real Postgres 17 (Docker), on the final migration:
+(1) two confirms of one hold, the first keeps its transaction 3 s — the second gets SLOT_UNAVAILABLE, 1 confirmed hold;
+(2) an expired hold H1, session B holds the slot (keeps the lock 3 s), session A confirms H1 meanwhile — A gets
+HOLD_EXPIRED, 1 active hold, 0 confirmed; stryker.
+The lessons of tasks 1 and 2 were applied before the first review: `STAFF`, text-only form fields, thrown
+unexpected errors, the forbidden message shown on `/` (a therapist cannot open `/holds`), a page test, an action test.
+App findings, all real: the "Expired" page fixture had `held_until: null` while the real `hold_list` returns it
+for every unconfirmed hold, so nothing pinned the `status === "Held"` guard (Medium; mutation now red);
+the failed-query path of the page was untested (mutation red); every Confirm button had the same accessible
+name (now client and slot time); empty header cell; no tie-break in the order.
+Left open (known-debt): `hold_list` read without a limit while PM issue #8 is open (PostgREST `max_rows` = 1000
+truncates silently).
+Database findings (T-3, reviewer mutations in a copy of `supabase/` and `tests/db/`): the column grant was never
+tested (widening it to table-wide stayed green — a scheduler could PATCH `slot_id`, `created_at`, `confirmed_by`:
+Medium; now a test per column); a second confirm overwriting who and when, and the audit values, were untested
+(Medium; 3 tests); the `holds_one_session_per_slot` index was untested (needs a way past the triggers:
+`TestDb.asOwner` + `session_replication_role = replica`); the anon test passed for another reason (`permission
+denied for schema private`), so the explicit `revoke` was unpinned (grants asserted with
+`has_function_privilege`, for `confirm_hold`, `hold_slot`, `day_slots`); the race test built a state that
+cannot occur (`created_at` moved forward). Design change: the AC-HOLD-13 check now comes before the
+"another active hold" check, which made the latter dead code (an expired hold on a slot held again got "no
+longer available", against AC-HOLD-13): removed; the expiry check after the lock covers the race and the unique
+index is the last safeguard. My seven hand mutations of the new rules (grant widened, no confirmed guard, no
+`confirmed_by`, client `confirmed_at` kept, no unique index, no revoke, no expiry check) each turn a test red.
+Tooling note: a reviewer and I both wrote `scratchpad/mut.py`; my first run of the mutations executed the
+reviewer's script and "passed" — an all-green run of 7 mutations is the signal to check the tool, not the tests.
+
+Stryker T-3 (`--since main`: `holds/actions.ts`, `messages.ts`): 24 of 24 killed.
+Deploy readiness T-3 (REQUIRED: migration, types): 1. `db-deploy` after merge only; deployed `main` reads `hold_list` and
+inserts holds, never updates them: the new grant and policy do not touch that path. 2. New code before `db-deploy` ends:
+`confirm_hold` is missing for that minute — the Confirm button shows the error page; old code on the new schema: unaffected.
+3. Migration order OK. 4. Existing rows: a trigger, a policy, a column grant and a partial unique index on
+`confirmed_at is not null` — no confirmed rows can exist yet (nothing could write the column), so the index builds.
+5. Explicit `grant update (confirmed_at)` to `authenticated`, `revoke … from public, anon` on `confirm_hold`
+(asserted with `has_function_privilege`). 6. `database.types.ts` regenerated with `supabase gen types --local`.
+7. No env or dependency change. 8. `npm run build` shows `ƒ /holds` and `ƒ Proxy (Middleware)`. 9. `demo-users.json`
+unchanged. 10. Red `db-deploy`; `/holds` error boundary. 11. Revert the code by PR; the schema goes forward: a
+migration dropping the policy, the trigger, the index and the function (confirmed sessions would stay as rows).
+

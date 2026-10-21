@@ -8,7 +8,11 @@ export const MESSAGES = {
   SLOT_STARTED: "This slot has already started and cannot be held.", // AC-HOLD-07
   HOLD_FORBIDDEN: "Only schedulers and admins can hold slots.", // AC-HOLD-08
   NO_FREE_SLOTS: "No free slots on this day.", // AC-HOLD-18
+  HOLD_EXPIRED: "This hold has expired. Hold the slot again.", // AC-HOLD-13
+  CONFIRM_FORBIDDEN: "Only schedulers and admins can confirm holds.", // AC-HOLD-14
+  CONFIRM_SLOT_STARTED: "This slot has already started and cannot be confirmed.", // AC-HOLD-22
   HELD: "Slot held.",
+  CONFIRMED: "Hold confirmed.",
   UNEXPECTED: "Something went wrong. Try again.",
 } as const;
 
