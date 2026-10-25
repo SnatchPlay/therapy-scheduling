@@ -1,0 +1,25 @@
+# Storybook збирається окремим workflow (ci.yml і назви його jobs не чіпаємо: на них тримається ruleset).
+# Перевірка не обов'язкова для merge, але червона збірка показує, що історія компонента зламалась.
+name: storybook
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: "Storybook: збірка"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build-storybook

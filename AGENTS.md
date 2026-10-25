@@ -34,6 +34,7 @@ OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версі
 - Темна тема — за системою (`prefers-color-scheme`): ні блоку `.dark`, ні `@custom-variant dark` не додавай (їх
   повертає `shadcn add` для компонентів зі своїми змінними — прибирай).
 - Перевірка: `npm run check:design` (CI: `.github/workflows/architecture.yml`).
+- Новий компонент у `src/components/ui` — разом з історією `*.stories.tsx` поруч (усі варіанти й стани); перевір її в обох темах.
 
 ## Команди
 
@@ -41,6 +42,7 @@ OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версі
 - `npm run typecheck` (`next typegen && tsc --noEmit`) · `npm test` (Vitest)
 - `npm run spec:validate` · `npm run spec:check` · `npm run ac:coverage`
 - `npm run check:design` · `npm run check:boundary` — архітектурні правила (CI: `architecture.yml`)
+- `npm run storybook` (порт 6006) · `npm run build-storybook` — каталог компонентів (`src/**/*.stories.tsx`; CI: `storybook.yml`)
 - `node scripts/check-migration-order.mjs` — нова міграція новіша за `origin/main`, застосовані не змінено (у CI — `db-check`)
 - `npx supabase migration new <назва>` → SQL → PR. Застосовує міграції у вашу базу ЛИШЕ CI (`db-deploy` після merge у `main`)
 - Типи БД: готовий `database.types.ts` — у Summary прогону job `db-check` (Docker не потрібен); або `npm run db:types`
