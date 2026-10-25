@@ -301,3 +301,20 @@ for the proxy; the build and the server-render test pass).
 Found on the way: `npm run build` now prints a Next.js security advisory (critical, range 16.0.0–16.4.0, fixed in
 16.4.3: unauthenticated RCE through the image optimizer with SVG and through `use cache` typed arrays; DoS in Server
 Actions) — published after the pin in `package.json`. Not part of this change: a dependency bump goes in its own PR.
+
+## 2026-10-25 · Next.js 16.4.0 → 16.4.3 (security)
+
+Why: `npm run build` printed a Next.js security advisory after the pin; `npm audit --omit=dev` listed a critical one for
+`next` 16.0.0–16.4.0 (unauthenticated RCE through the image optimizer with SVG and through `use cache` typed arrays; DoS in
+Server Actions), fixed in 16.4.1. Release notes 16.4.2 and 16.4.3 are backports (Turbopack fixes, "don't load the app-page
+runtime in proxy.ts", Google font URLs, OpenTelemetry); `eslint-config-next` moved with it (same version).
+Ran: lint 0, typecheck, 195 tests, build (`▲ Next.js 16.4.3`, no advisory line, same routes and `ƒ Proxy (Middleware)`),
+`spec:validate`, `ac:coverage`, `run.sh` (no new findings); `npm audit --omit=dev`: 0 vulnerabilities (was 1 critical).
+Left: `npm audit` (dev tree) still lists `zod` < 4.6.6 (high, memory exhaustion on oversized collections) through
+`@fission-ai/openspec` and `eslint-plugin-react-hooks`: dev tools only, nothing of it reaches the deployed bundle.
+No blind review (a pinned-version change, no source change); no Stryker.
+Deploy readiness (REQUIRED: package manifest): 1–6. N/A — no migration, no table, no grants, no generated types.
+7. No new or renamed variable. 8. `npm run build` shows `ƒ Proxy (Middleware)`; the preview of this PR is opened
+without a Vercel login (checked below in the PR). 9. `demo-users.json` unchanged. 10. How we would know it failed: a red
+`app` job or a red Vercel build; on prod `/login` not answering 200 or `/slots` not redirecting to `/login` (the proxy).
+11. The way back: revert the PR (the lockfile returns to 16.4.0); the schema is untouched.
