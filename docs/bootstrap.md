@@ -24,11 +24,14 @@
 
 - [x] Власний проєкт Supabase в особистому акаунті (Free); `db-deploy` підключається до нього через Session pooler (run нижче)
 - [x] Authentication: «Allow new users to sign up» **вимкнено**, «Confirm email» **вимкнено** — `docs/img/auth-signups.png`
-- [ ] Authentication → URL Configuration: Site URL = прод-URL Vercel; Redirect URLs `http://localhost:3000/**`,
-      `https://*-snatchplays-projects.vercel.app/**` — **знімка ще немає**: налаштування лишається в Dashboard власника
-      проєкту, його значення тут не підтверджено. Поки Site URL типовий (`http://localhost:3000`), посилання з листів
-      (скидання пароля, запрошення) вестимуть на localhost; зараз листів застосунок не надсилає (користувачів створює
-      `npm run users:demo`), тож на роботу зрізу це не впливає
+- [ ] Authentication → URL Configuration, Site URL = прод-URL Vercel: на знімку `docs/img/auth-url-configuration.png`
+      (2026-10-25) Site URL — типовий `http://localhost:3000`. Поки так, посилання з листів Supabase (скидання пароля,
+      запрошення) вестимуть на localhost; зараз застосунок листів не надсилає (користувачів створює `npm run users:demo`),
+      тож на роботу зрізу це не впливає. Виправляє власник проєкту в Dashboard; після цього знімок оновлюється
+- [x] Redirect URLs: `http://localhost:3000/**` і `https://therapy-scheduling-weld.vercel.app/**` (2 записи) —
+      `docs/img/auth-url-configuration.png`
+- [ ] Redirect URL для preview `https://*-snatchplays-projects.vercel.app/**` — не додано (на знімку лише два записи):
+      посилання з листів у preview-збірках не спрацюють
 - [x] `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`,
       `DEMO_USER_PASSWORD` (лише назви; значень у репо й чаті немає)
 
