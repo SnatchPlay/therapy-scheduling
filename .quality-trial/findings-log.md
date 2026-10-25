@@ -342,3 +342,22 @@ Deploy readiness (REQUIRED: package manifest, config): 1–6. N/A — no migrati
 8. `npm run build` shows `ƒ Proxy (Middleware)`; the preview of this PR opens without a Vercel login (checked in the PR).
 9. `demo-users.json` unchanged. 10. How we would know it failed: a red `app` (lint, tests, build), a red `architecture`
 job, a broken style on the Vercel preview. 11. The way back: revert the PR (the lockfile returns); the schema is untouched.
+
+## 2026-10-25 · Storybook (component catalogue, after the design system)
+
+Ran: gate (lint 0, typecheck, 205 tests, `next build`, `check:design`, `check:boundary`, `npm audit --omit=dev`: 0),
+`run.sh` (no new findings), `npm run build-storybook`, a local render of the built catalogue and axe (WCAG A/AA, `axe-core`
+from the a11y add-on) over every story in both colour schemes: 38 story × theme runs, no violations. No blind review (a
+dev-tool change that does not reach the app bundle); no Stryker.
+Found while building, all fixed before the first commit: (1) the stories rendered unstyled — Storybook's Vite builder
+does not run Tailwind 4 (the app uses `@tailwindcss/turbopack`): `@tailwindcss/vite` added through `viteFinal`; (2) text in
+a serif font — `--font-sans: var(--font-geist-sans), …` is invalid when `next/font` is not there: fallback variables in
+`.storybook/preview-head.html`; (3) after the build `npm run lint` reported 12 722 problems — it linted the built
+`storybook-static`: ignored in `eslint.config.mjs` and in `.gitignore`.
+Known gaps (ADR 0003): no theme switch in the catalogue (dark follows the system), no automated story tests
+(`addon-vitest`), no hosted visual regression.
+Deploy readiness (REQUIRED: package manifest, workflow): 1–6. N/A — no migration, no types. 7. No new environment
+variable. 8. `npm run build` shows `ƒ Proxy (Middleware)`; the preview of this PR must open without a Vercel login
+(checked in the PR). 9. `demo-users.json` unchanged. 10. How we would know it failed: a red `app` job (lint, typecheck,
+tests, build) or a red «Storybook: збірка» job (not a required check). 11. The way back: revert the PR (the lockfile
+returns); the new packages are devDependencies, the app bundle does not change.

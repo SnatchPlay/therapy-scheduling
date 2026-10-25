@@ -140,4 +140,5 @@
 
 - `npm run check:design` — жодного hex, довільного кольору, сирої палітри чи кольору в inline style поза `src/components/ui` і `globals.css`. CI: `.github/workflows/architecture.yml`, job «Дизайн-система: лише токени».
 - Виняток — коментар `design-ok: <причина>` у тому самому рядку; кожен виняток — з реальною причиною.
+- Каталог компонентів: `npm run storybook` (історії в `src/**/*.stories.tsx`, перевірка доступності axe в панелі), у CI — `.github/workflows/storybook.yml`.
 - Візуально: знімки ключових сторінок у світлій і темній темі (`docs/img/ws7-before-*` — до змін, `docs/img/ws7-after-*` — після), Tab по формі, контраст.
