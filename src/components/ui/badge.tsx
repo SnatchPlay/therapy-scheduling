@@ -8,15 +8,15 @@ const GLYPH =
 
 // Статус — завжди слово + знак перед ним (DESIGN.md, розділ 2): зрозумілий і без кольору.
 const badgeVariants = cva(
-  `inline-flex h-5.5 w-fit shrink-0 items-center gap-2 rounded-sm border border-transparent px-2 text-xs font-medium whitespace-nowrap ${GLYPH}`,
+  `inline-flex h-5.5 w-fit shrink-0 items-center gap-2 rounded-sm border px-2 text-xs font-medium whitespace-nowrap ${GLYPH}`,
   {
     variants: {
       variant: {
         free: "border-border bg-status-free text-status-free-foreground",
-        held: "bg-status-held text-status-held-foreground before:bg-[linear-gradient(90deg,currentColor_50%,transparent_50%)]",
-        confirmed: "bg-status-confirmed text-status-confirmed-foreground before:bg-current",
-        expired: "bg-status-expired text-status-expired-foreground before:size-[7px] before:rotate-45 before:rounded-[1px]",
-        past: "bg-status-past text-status-past-foreground before:h-0 before:w-2 before:rounded-none before:border-0 before:border-t-[1.5px]",
+        held: "border-transparent bg-status-held text-status-held-foreground before:bg-[linear-gradient(90deg,currentColor_50%,transparent_50%)]",
+        confirmed: "border-transparent bg-status-confirmed text-status-confirmed-foreground before:bg-current",
+        expired: "border-transparent bg-status-expired text-status-expired-foreground before:size-[7px] before:rotate-45 before:rounded-[1px]",
+        past: "border-transparent bg-status-past text-status-past-foreground before:h-0 before:w-2 before:rounded-none before:border-0 before:border-t-[1.5px]",
       },
     },
     defaultVariants: {
