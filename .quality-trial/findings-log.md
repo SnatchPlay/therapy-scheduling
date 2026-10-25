@@ -290,3 +290,14 @@ function and a redefined one, no data change. 5. Explicit `revoke … from publi
 equals `supabase gen types --local` on a scratch database with the migration applied. 7. No env or dependency change.
 8. `npm run build` shows `ƒ /schedule`. 9. `demo-users.json` unchanged. 10. A red `db-deploy`; `/schedule` error page.
 11. Revert the code by PR; the schema goes forward: a migration dropping `slots_between` and restoring `day_slots`.
+
+## 2026-10-25 · login page texts (small change after the course feedback)
+
+Course feedback: the login page kept the template's Ukrainian title and heading while the whole interface is English
+(PM's acceptance texts are English). `/login` strings, `<title>`, `<html lang>` are English now; the known-debt row is
+closed; a page test pins the texts (none existed). Gate: lint, typecheck, 195 tests, build. Not run: Stryker (strings
+only), a blind review (a text change in one component), visual check in a browser (the page needs the Supabase env
+for the proxy; the build and the server-render test pass).
+Found on the way: `npm run build` now prints a Next.js security advisory (critical, range 16.0.0–16.4.0, fixed in
+16.4.3: unauthenticated RCE through the image optimizer with SVG and through `use cache` typed arrays; DoS in Server
+Actions) — published after the pin in `package.json`. Not part of this change: a dependency bump goes in its own PR.
