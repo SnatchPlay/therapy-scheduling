@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { AppShell } from "@/app/_components/app-shell";
-import { messageFor } from "@/lib/messages";
+import { StatusBadge } from "@/components/status-badge";
+import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { noticeFor } from "@/lib/messages";
 import { withSlotTimes } from "@/lib/slots";
 import { requireRole } from "@/lib/supabase/viewer";
 import { addDays, formatPracticeDateTime, formatPracticeTime, isIsoDate, practiceDate, weekdayName, weekStart } from "@/lib/time";
@@ -26,43 +29,41 @@ export default async function SchedulePage({ searchParams }: PageProps<"/schedul
   const days = Map.groupBy(withSlotTimes(slots), (s) => practiceDate(s.starts_at));
 
   return (
-    <AppShell role={role} email={email} title="Schedule" message={messageFor(params.msg)}>
+    <AppShell role={role} email={email} title="Schedule" notice={noticeFor(params.msg)}>
       {me ? null : (
-        <p role="status" data-testid="no-therapist">
+        <p className="text-sm text-muted-foreground" role="status" data-testid="no-therapist">
           No therapist record is linked to your account.
         </p>
       )}
 
-      <nav aria-label="Weeks" className="flex flex-wrap items-center gap-4 text-sm">
-        <Link href={`/schedule?week=${previous}`} className="underline">
+      <nav aria-label="Weeks" className="flex flex-wrap items-center gap-2 text-sm">
+        <Link href={`/schedule?week=${previous}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
           Previous week
         </Link>
-        <span className="font-medium">
+        <span className="px-2 font-medium">
           {week} – {addDays(week, 6)}
         </span>
-        <Link href={`/schedule?week=${next}`} className="underline">
+        <Link href={`/schedule?week=${next}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
           Next week
         </Link>
-        <Link href="/schedule" className="ml-auto underline">
+        <Link href="/schedule" className={buttonVariants({ variant: "ghost", size: "sm" }) + " ml-auto"}>
           This week
         </Link>
       </nav>
 
-      {days.size === 0 && me ? <p className="text-sm text-zinc-500">No slots this week.</p> : null}
+      {days.size === 0 && me ? <EmptyState title="No slots this week." /> : null}
       {[...days].map(([day, rows]) => (
         <section key={day} className="flex flex-col gap-1" aria-labelledby={`day-${day}`}>
-          <h2 id={`day-${day}`} className="text-lg font-medium">
+          <h2 id={`day-${day}`} className="text-lg font-semibold">
             {weekdayName(day)} {day}
           </h2>
-          <ul className="flex flex-col divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
+          <ul className="flex flex-col divide-y divide-border text-sm">
             {rows.map((s) => (
-              <li key={s.slot_id} className="flex flex-wrap gap-4 py-2" data-testid="slot">
-                <span className="w-28 font-mono">
+              <li key={s.slot_id} className="flex flex-wrap items-center gap-4 py-2" data-testid="slot">
+                <span className="w-28 font-mono font-medium">
                   {formatPracticeTime(s.starts_at)}–{formatPracticeTime(s.ends_at)}
                 </span>
-                <span className="w-24 font-medium" data-testid="slot-status">
-                  {s.status}
-                </span>
+                <StatusBadge status={s.status} data-testid="slot-status" />
                 {s.client_name ? <span>{s.client_name}</span> : null}
                 {s.held_until ? <span>Held until {formatPracticeDateTime(s.held_until)}</span> : null}
               </li>

@@ -1,5 +1,10 @@
-import { AppShell, buttonClass, inputClass } from "@/app/_components/app-shell";
-import { MESSAGES, messageFor } from "@/lib/messages";
+import { AppShell } from "@/app/_components/app-shell";
+import { StatusBadge } from "@/components/status-badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { MESSAGES, noticeFor } from "@/lib/messages";
 import { hasHoldableSlot, withSlotTimes } from "@/lib/slots";
 import { requireRole, STAFF } from "@/lib/supabase/viewer";
 import { formatPracticeDateTime, formatPracticeTime, isIsoDate, practiceDate } from "@/lib/time";
@@ -29,40 +34,40 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
   const rows = withSlotTimes(slots);
 
   return (
-    <AppShell role={role} email={email} title="Slots" message={messageFor(params.msg)}>
+    <AppShell role={role} email={email} title="Slots" notice={noticeFor(params.msg)}>
       <form className="flex flex-wrap items-end gap-3" method="get">
-        <label className="flex flex-col gap-1 text-sm">
-          Therapist
-          <select name="therapist" defaultValue={therapistId} className={inputClass}>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="therapist">Therapist</Label>
+          <NativeSelect id="therapist" name="therapist" defaultValue={therapistId}>
             {therapists.map((t) => (
-              <option key={t.id} value={t.id}>
+              <NativeSelectOption key={t.id} value={t.id}>
                 {t.full_name}
-              </option>
+              </NativeSelectOption>
             ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Day
-          <input type="date" name="day" defaultValue={day} className={inputClass} />
-        </label>
-        <button type="submit" className={buttonClass}>
-          Show slots
-        </button>
+          </NativeSelect>
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="day">Day</Label>
+          <Input id="day" type="date" name="day" defaultValue={day} />
+        </div>
+        <Button type="submit">Show slots</Button>
       </form>
 
       {/* AC-HOLD-18, AC-HOLD-24, AC-HOLD-33: повідомлення, коли немає слоту, який ще можна утримати; слоти дня лишаються
           в списку. Слот, що вже почався й не утриманий, — «Past» (AC-HOLD-32): не вільний, його не утримати (AC-HOLD-07). */}
-      {hasHoldableSlot(rows) ? null : <p data-testid="no-free-slots">{MESSAGES.NO_FREE_SLOTS}</p>}
+      {hasHoldableSlot(rows) ? null : (
+        <p className="text-sm text-muted-foreground" data-testid="no-free-slots">
+          {MESSAGES.NO_FREE_SLOTS}
+        </p>
+      )}
 
-      <ul className="flex flex-col divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
+      <ul className="flex flex-col divide-y divide-border text-sm">
         {rows.map((s) => (
           <li key={s.slot_id} className="flex flex-wrap items-center gap-4 py-3" data-testid="slot">
-            <span className="w-28 font-mono">
+            <span className="w-28 font-mono font-medium">
               {formatPracticeTime(s.starts_at)}–{formatPracticeTime(s.ends_at)}
             </span>
-            <span className="w-24 font-medium" data-testid="slot-status">
-              {s.status}
-            </span>
+            <StatusBadge status={s.status} data-testid="slot-status" />
             {s.status === "Held" && s.held_until ? (
               <span>
                 {s.client_name} · Held until {formatPracticeDateTime(s.held_until)}
@@ -70,7 +75,7 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
             ) : null}
             {s.status === "Confirmed" ? <span>{s.client_name}</span> : null}
             {s.holdable && clients.length === 0 ? (
-              <a href="/clients" className="ml-auto underline">
+              <a href="/clients" className={buttonVariants({ variant: "link" }) + " ml-auto"}>
                 Create a client first
               </a>
             ) : null}
@@ -80,25 +85,17 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
                 <input type="hidden" name="therapist" value={therapistId ?? ""} />
                 <input type="hidden" name="day" value={day} />
                 {/* Порожній перший пункт: інакше required нічого не вимагає, і слот утримали б за першим клієнтом списку. */}
-                <select
-                  name="client_id"
-                  required
-                  defaultValue=""
-                  aria-label={`Client for ${formatPracticeTime(s.starts_at)}`}
-                  className={inputClass}
-                >
-                  <option value="" disabled>
+                <NativeSelect name="client_id" required defaultValue="" aria-label={`Client for ${formatPracticeTime(s.starts_at)}`}>
+                  <NativeSelectOption value="" disabled>
                     Choose a client
-                  </option>
+                  </NativeSelectOption>
                   {clients.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <NativeSelectOption key={c.id} value={c.id}>
                       {c.full_name} ({c.email})
-                    </option>
+                    </NativeSelectOption>
                   ))}
-                </select>
-                <button type="submit" className={buttonClass}>
-                  Hold
-                </button>
+                </NativeSelect>
+                <Button type="submit">Hold</Button>
               </form>
             ) : null}
           </li>

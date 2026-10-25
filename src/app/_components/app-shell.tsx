@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { signOut } from "@/app/login/actions";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Button, buttonVariants } from "@/components/ui/button";
+import type { Notice } from "@/lib/messages";
 import { type Role, STAFF } from "@/lib/supabase/viewer";
 
 // Посилання за матрицею прав requirements/product.md: терапевт бачить лише свій розклад.
@@ -15,46 +18,43 @@ export function AppShell({
   role,
   email,
   title,
-  message,
+  notice,
   children,
 }: {
   role: Role | null;
   email: string | null;
   title: string;
-  message?: string;
+  notice?: Notice;
   children: ReactNode;
 }) {
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-8">
-      <header className="flex flex-wrap items-center gap-4 border-b border-zinc-200 pb-4 text-sm dark:border-zinc-800">
-        <nav className="flex flex-wrap gap-4">
+      <header className="flex flex-wrap items-center gap-4 border-b border-border pb-4 text-sm">
+        <nav className="flex flex-wrap gap-2">
           {LINKS.filter((l) => role && l.roles.includes(role)).map((l) => (
-            <Link key={l.href} href={l.href} className="font-medium underline-offset-4 hover:underline">
+            <Link key={l.href} href={l.href} className={buttonVariants({ variant: "ghost", size: "sm" })}>
               {l.label}
             </Link>
           ))}
         </nav>
-        <span className="ml-auto text-zinc-500" data-testid="viewer">
+        <span className="ml-auto text-muted-foreground" data-testid="viewer">
           {email} · {role ?? "no role"}
         </span>
         <form action={signOut}>
-          <button type="submit" className="rounded border border-zinc-300 px-3 py-1 dark:border-zinc-700">
+          <Button type="submit" variant="outline" size="sm">
             Sign out
-          </button>
+          </Button>
         </form>
       </header>
       <main className="flex flex-col gap-6">
         <h1 className="text-2xl font-semibold">{title}</h1>
-        {message ? (
-          <p role="alert" className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            {message}
-          </p>
+        {notice ? (
+          <Alert variant={notice.tone === "error" ? "destructive" : "default"} role={notice.tone === "error" ? "alert" : "status"}>
+            <AlertTitle>{notice.text}</AlertTitle>
+          </Alert>
         ) : null}
         {children}
       </main>
     </div>
   );
 }
-
-export const inputClass = "rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900";
-export const buttonClass = "rounded bg-foreground px-3 py-2 text-sm font-medium text-background";

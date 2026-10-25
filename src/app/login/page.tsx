@@ -1,3 +1,7 @@
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { login } from "./actions";
 
 const ERRORS: Record<string, string> = {
@@ -13,37 +17,20 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-6 py-16">
       <h1 className="text-2xl font-semibold">Sign in</h1>
       <form action={login} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1 text-sm">
-          Email
-          <input
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            className="rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Password
-          <input
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            className="rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </label>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" name="email" type="email" autoComplete="email" required />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="password">Password</Label>
+          <Input id="password" name="password" type="password" autoComplete="current-password" required />
+        </div>
         {message ? (
-          <p role="alert" className="text-sm text-red-600">
-            {message}
-          </p>
+          <Alert variant="destructive">
+            <AlertTitle>{message}</AlertTitle>
+          </Alert>
         ) : null}
-        <button
-          type="submit"
-          className="rounded bg-foreground px-4 py-2 font-medium text-background"
-        >
-          Sign in
-        </button>
+        <Button type="submit">Sign in</Button>
       </form>
     </main>
   );

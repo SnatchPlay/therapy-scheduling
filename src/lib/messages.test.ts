@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clientErrorCode, dbMessageCode, MESSAGES, messageFor } from "./messages";
+import { clientErrorCode, dbMessageCode, MESSAGES, noticeFor } from "./messages";
 
 // Коди й тексти помилок Postgres — як їх повертає PostgREST для обмежень міграції roles_and_clients.
 describe("clientErrorCode", () => {
@@ -21,13 +21,19 @@ describe("clientErrorCode", () => {
   });
 });
 
-describe("messageFor", () => {
-  it("відомий код → текст", () => {
-    expect(messageFor("CLIENT_EXISTS")).toBe(MESSAGES.CLIENT_EXISTS);
+describe("noticeFor", () => {
+  it("відомий код → текст; помилка — tone error", () => {
+    expect(noticeFor("CLIENT_EXISTS")).toEqual({ text: MESSAGES.CLIENT_EXISTS, tone: "error" });
+  });
+
+  it("успіх (клієнта створено, утримано, підтверджено) — tone success", () => {
+    for (const code of ["CLIENT_CREATED", "HELD", "CONFIRMED"] as const) {
+      expect(noticeFor(code)).toEqual({ text: MESSAGES[code], tone: "success" });
+    }
   });
 
   it("невідомий код, код з прототипу чи не рядок → нічого", () => {
-    for (const value of ["NOPE", "toString", "", undefined, ["CLIENT_EXISTS"]]) expect(messageFor(value)).toBeUndefined();
+    for (const value of ["NOPE", "toString", "", undefined, ["CLIENT_EXISTS"]]) expect(noticeFor(value)).toBeUndefined();
   });
 });
 

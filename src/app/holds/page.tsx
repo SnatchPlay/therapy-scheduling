@@ -1,5 +1,9 @@
-import { AppShell, buttonClass } from "@/app/_components/app-shell";
-import { messageFor } from "@/lib/messages";
+import { AppShell } from "@/app/_components/app-shell";
+import { StatusBadge } from "@/components/status-badge";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { noticeFor } from "@/lib/messages";
 import { requireRole, STAFF } from "@/lib/supabase/viewer";
 import { formatPracticeDateTime } from "@/lib/time";
 import { confirmHold } from "./actions";
@@ -19,57 +23,54 @@ export default async function HoldsPage({ searchParams }: PageProps<"/holds">) {
   if (error) throw error;
 
   return (
-    <AppShell role={role} email={email} title="Holds" message={messageFor(msg)}>
-      <table className="w-full text-left text-sm">
-        <caption className="sr-only">Holds</caption>
-        <thead className="text-zinc-500">
-          <tr>
-            <th className="py-2">Slot</th>
-            <th className="py-2">Therapist</th>
-            <th className="py-2">Client</th>
-            <th className="py-2">Status</th>
-            <th className="py-2">
-              <span className="sr-only">Actions</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {holds.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="py-2 text-zinc-500">
-                No holds yet.
-              </td>
-            </tr>
-          ) : null}
-          {holds.map((h) => (
-            <tr key={h.hold_id} className="border-t border-zinc-200 dark:border-zinc-800" data-testid="hold">
-              <td className="py-2 font-mono">{h.starts_at ? formatPracticeDateTime(h.starts_at) : ""}</td>
-              <td className="py-2">{h.therapist_name}</td>
-              <td className="py-2">{h.client_name}</td>
-              <td className="py-2">
-                <span className="font-medium" data-testid="hold-status">
-                  {h.status}
-                </span>
-                {h.status === "Held" && h.held_until ? ` · Held until ${formatPracticeDateTime(h.held_until)}` : null}
-              </td>
-              <td className="py-2 text-right">
-                {h.status === "Held" && h.hold_id ? (
-                  <form action={confirmHold}>
-                    <input type="hidden" name="hold_id" value={h.hold_id} />
-                    <button
-                      type="submit"
-                      aria-label={`Confirm hold for ${h.client_name} at ${h.starts_at ? formatPracticeDateTime(h.starts_at) : ""}`}
-                      className={buttonClass}
-                    >
-                      Confirm
-                    </button>
-                  </form>
-                ) : null}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <AppShell role={role} email={email} title="Holds" notice={noticeFor(msg)}>
+      {holds.length === 0 ? (
+        <EmptyState title="No holds yet.">Held slots appear here until they are confirmed or run out.</EmptyState>
+      ) : (
+        <Table>
+          <TableCaption className="sr-only">Holds</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Slot</TableHead>
+              <TableHead>Therapist</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>
+                <span className="sr-only">Actions</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {holds.map((h) => (
+              <TableRow key={h.hold_id} data-testid="hold">
+                <TableCell className="font-mono font-medium">{h.starts_at ? formatPracticeDateTime(h.starts_at) : ""}</TableCell>
+                <TableCell>{h.therapist_name}</TableCell>
+                <TableCell>{h.client_name}</TableCell>
+                <TableCell>
+                  <span className="flex items-center gap-2">
+                    <StatusBadge status={h.status} data-testid="hold-status" />
+                    {h.status === "Held" && h.held_until ? <span>Held until {formatPracticeDateTime(h.held_until)}</span> : null}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right">
+                  {h.status === "Held" && h.hold_id ? (
+                    <form action={confirmHold}>
+                      <input type="hidden" name="hold_id" value={h.hold_id} />
+                      <Button
+                        type="submit"
+                        size="sm"
+                        aria-label={`Confirm hold for ${h.client_name} at ${h.starts_at ? formatPracticeDateTime(h.starts_at) : ""}`}
+                      >
+                        Confirm
+                      </Button>
+                    </form>
+                  ) : null}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </AppShell>
   );
 }

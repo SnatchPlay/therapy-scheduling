@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/app/_components/app-shell";
-import { messageFor } from "@/lib/messages";
+import { noticeFor } from "@/lib/messages";
 import { getViewer, STAFF } from "@/lib/supabase/viewer";
 
 // Головна — розвилка за роллю (матриця прав requirements/product.md).
@@ -12,10 +12,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   if (role === "therapist") redirect("/schedule");
 
   return (
-    <AppShell role={role} email={email} title="Therapy scheduling" message={messageFor(msg)}>
-      <p className="text-sm text-zinc-500">
-        Profile not found.
-      </p>
+    <AppShell role={role} email={email} title="Therapy scheduling" notice={noticeFor(msg)}>
+      <p className="text-sm text-muted-foreground">Profile not found.</p>
     </AppShell>
   );
 }

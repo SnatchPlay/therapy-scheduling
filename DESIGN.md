@@ -87,12 +87,12 @@
 |---|---|---|
 | `Button` | `default`, `secondary`, `outline`, `ghost`, `destructive`, `link`; розміри `default`, `sm` | `default` — одна основна дія на екран (`Hold`, `Confirm`, `Create client`, `Sign in`); `outline` чи `secondary` — друга дія; `ghost` — навігація; `destructive` — лише для видалення |
 | `Input` + `Label` | — | у кожного поля `Label` з `htmlFor`; placeholder — не замість підпису; помилка поля: `aria-invalid` + текст `text-destructive` під полем |
-| `Select` | — | перший пункт порожній й недоступний (`Choose a client`), інакше `required` нічого не вимагає |
+| `NativeSelect` | — | рідний `<select>` у стилі поля (працює без JS у формах); перший пункт порожній і недоступний (`Choose a client`), інакше `required` нічого не вимагає |
 | `Card` | — | група пов'язаних даних; не вкладати картку в картку |
 | `Table` | — | список даних; `caption` обов'язковий (може бути `sr-only`); для нуля рядків — `EmptyState` замість таблиці |
-| `Badge` | `free`, `held`, `confirmed`, `expired`, `past` | статус — завжди зі словом і знаком, не лише кольором; інших статусів без токена в розділі 2 немає |
+| `Badge` / `StatusBadge` | `free`, `held`, `confirmed`, `expired`, `past` | статус слота чи утримання — `StatusBadge status={…}` (слово з бази, знак і колір з варіанта); інших статусів без токена в розділі 2 немає |
 | `Alert` | `default` (інформація), `destructive` (помилка) | текст помилки дослівно з AC; помилка — `role="alert"`, успіх — `role="status"` |
-| `EmptyState` | — | заголовок (що порожньо) і одне речення, що далі; проєктний компонент |
+| `EmptyState` | — | заголовок (що порожньо) і одне речення, що далі; проєктний компонент `@/components/ui/empty-state` |
 
 ## 6. Стани
 
