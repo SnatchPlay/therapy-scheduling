@@ -88,7 +88,7 @@
 | `Button` | `default`, `secondary`, `outline`, `ghost`, `destructive`, `link`; розміри `default`, `sm` | `default` — одна основна дія на екран (`Hold`, `Confirm`, `Create client`, `Sign in`); `outline` чи `secondary` — друга дія; `ghost` — навігація; `destructive` — лише для видалення |
 | `Input` + `Label` | — | у кожного поля `Label` з `htmlFor`; placeholder — не замість підпису; помилка поля: `aria-invalid` + текст `text-destructive` під полем |
 | `NativeSelect` | — | рідний `<select>` у стилі поля (працює без JS у формах); перший пункт порожній і недоступний (`Choose a client`), інакше `required` нічого не вимагає |
-| `Card` | — | група пов'язаних даних; не вкладати картку в картку |
+| `Card` | — | ще не потрібна: додається `npx shadcn@4.22.1 add card` разом із першим екраном із карткою (картка клієнта, зріз 2); не вкладати картку в картку |
 | `Table` | — | список даних; `caption` обов'язковий (може бути `sr-only`); для нуля рядків — `EmptyState` замість таблиці |
 | `Badge` / `StatusBadge` | `free`, `held`, `confirmed`, `expired`, `past` | статус слота чи утримання — `StatusBadge status={…}` (слово з бази, знак і колір з варіанта); інших статусів без токена в розділі 2 немає |
 | `Alert` | `default` (інформація), `destructive` (помилка) | текст помилки дослівно з AC; помилка — `role="alert"`, успіх — `role="status"` |

@@ -18,8 +18,8 @@
 - Токени в `src/app/globals.css`: семантичні пари shadcn (`background`, `primary`, `muted`, `destructive`, `border`,
   `input`, `ring`…) і `status-*` для Free / Held / Confirmed / Expired / Past; значення в OKLCH; світла тема в `:root`,
   темна — у `@media (prefers-color-scheme: dark)`; без блоку `.dark` і `@custom-variant dark`.
-- Компоненти — shadcn/ui 4.22.1 на Base UI в `src/components/ui` (Button, Input, Label, NativeSelect, Card, Table,
-  Badge, Alert) плюс `EmptyState` і `StatusBadge`; змінюємо їх у цій теці, а не сторінках. Нові залежності: `shadcn`,
+- Компоненти — shadcn/ui 4.22.1 на Base UI в `src/components/ui` (Button, Input, Label, NativeSelect, Table, Badge,
+  Alert) плюс `EmptyState` і `StatusBadge`; Card додаємо разом із першим екраном, що її потребує; змінюємо їх у цій теці, а не сторінках. Нові залежності: `shadcn`,
   `@base-ui/react`, `class-variance-authority`, `cn` (пакет shadcn для злиття класів), `lucide-react`, `tw-animate-css`.
 - Правило «лише токени» — `scripts/check-design-tokens.mjs` (матеріал курсу) у окремому workflow
   `.github/workflows/architecture.yml`; `ci.yml` і назви його jobs не змінено.
