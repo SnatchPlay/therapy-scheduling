@@ -51,7 +51,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/schedul
         </Link>
       </nav>
 
-      {days.size === 0 && me ? <EmptyState title="No slots this week." /> : null}
+      {days.size === 0 && me ? <EmptyState title="No slots this week.">Use the week buttons above to check another week.</EmptyState> : null}
       {[...days].map(([day, rows]) => (
         <section key={day} className="flex flex-col gap-1" aria-labelledby={`day-${day}`}>
           <h2 id={`day-${day}`} className="text-lg font-semibold">

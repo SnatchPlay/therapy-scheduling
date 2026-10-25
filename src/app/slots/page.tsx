@@ -50,7 +50,9 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
           <Label htmlFor="day">Day</Label>
           <Input id="day" type="date" name="day" defaultValue={day} />
         </div>
-        <Button type="submit">Show slots</Button>
+        <Button type="submit" variant="outline">
+          Show slots
+        </Button>
       </form>
 
       {/* AC-HOLD-18, AC-HOLD-24, AC-HOLD-33: повідомлення, коли немає слоту, який ще можна утримати; слоти дня лишаються
