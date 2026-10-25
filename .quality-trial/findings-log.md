@@ -318,3 +318,27 @@ Deploy readiness (REQUIRED: package manifest): 1–6. N/A — no migration, no t
 without a Vercel login (checked below in the PR). 9. `demo-users.json` unchanged. 10. How we would know it failed: a red
 `app` job or a red Vercel build; on prod `/login` not answering 200 or `/slots` not redirecting to `/login` (the proxy).
 11. The way back: revert the PR (the lockfile returns to 16.4.0); the schema is untouched.
+
+## 2026-10-25 · Design system (WS7, task B)
+
+Ran: gate (lint 0, typecheck, 205 tests, build, `check:design` OK from 36 violations in 8 files, `check:boundary` OK,
+`ac:coverage`), `run.sh`, one blind reviewer (UI, design system, CI), a local render of `/login` in both themes and the error
+state. No Stryker (styling and markup). Visual check of the slice pages: on the PR preview (needs a sign-in; see the PR).
+`run.sh`/fallow: unused `card.tsx`, `utils.ts` and exports (AlertAction, AlertDescription, TableFooter, NativeSelectOptGroup,
+`badgeVariants`) removed; the two clones are between the course's check scripts (not ours); the styling findings are Tailwind
+class noise.
+Reviewer findings, all verified: (1) Medium — `shadcn` (+278 packages in production dependencies, a high `zod` advisory in
+`npm audit --omit=dev`) and `tw-animate-css` were there only for two CSS imports that emit nothing for our components: both
+removed, `npm audit --omit=dev` is 0 again, the other new packages pinned exactly; (2) Medium — DESIGN.md claimed behaviour the
+code does not have (field-level errors, "input stays in the form", a Loading state, `EmptyState` for "No free slots", gaps,
+one primary button per screen): the document now says what the code does and marks what comes with slice 2; (3) `color-scheme:
+light dark` added (native controls and `NativeSelectOption` colours in the dark theme); (4) `Alert` takes its role from the
+variant, notices after a redirect stay `role="alert"` (a live region present at load is not announced), with a test;
+(5) the `architecture` jobs are not required checks in `solo-main`: the ADR says so; (6) `StatusBadge` used `in` (prototype
+keys) and rendered an empty badge for `null`: `Object.hasOwn`, "Unknown", a test; (7) dead upstream classes and needless
+`"use client"` on Table and Label removed; (8) dropped: `SUCCESS_CODES` next to `MESSAGES` (three codes, the default is the
+safe red error). Process note: AGENTS.md/DESIGN.md/scripts/`.github` are outside the «Реалізація» list — the PR says so.
+Deploy readiness (REQUIRED: package manifest, config): 1–6. N/A — no migration, no types. 7. No new env variable.
+8. `npm run build` shows `ƒ Proxy (Middleware)`; the preview of this PR opens without a Vercel login (checked in the PR).
+9. `demo-users.json` unchanged. 10. How we would know it failed: a red `app` (lint, tests, build), a red `architecture`
+job, a broken style on the Vercel preview. 11. The way back: revert the PR (the lockfile returns); the schema is untouched.

@@ -11,12 +11,12 @@ const VARIANTS = {
 type StatusBadgeProps = Omit<React.ComponentProps<typeof Badge>, "variant" | "children"> & { status: string | null }
 
 // Статус слота чи утримання з бази → Badge: слово завжди, знак і колір — з варіанта (DESIGN.md, розділ 2).
-// Невідомий статус не має «вільного» вигляду: показуємо слово нейтральним «Past».
+// Невідомий чи порожній статус не має «вільного» вигляду: слово лишається, а вигляд нейтральний, як «Past».
 export function StatusBadge({ status, ...props }: StatusBadgeProps) {
-  const variant = status && status in VARIANTS ? VARIANTS[status as keyof typeof VARIANTS] : "past"
+  const known = status !== null && Object.hasOwn(VARIANTS, status)
   return (
-    <Badge variant={variant} {...props}>
-      {status}
+    <Badge variant={known ? VARIANTS[status as keyof typeof VARIANTS] : "past"} {...props}>
+      {status ?? "Unknown"}
     </Badge>
   )
 }

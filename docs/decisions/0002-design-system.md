@@ -19,10 +19,13 @@
   `input`, `ring`…) і `status-*` для Free / Held / Confirmed / Expired / Past; значення в OKLCH; світла тема в `:root`,
   темна — у `@media (prefers-color-scheme: dark)`; без блоку `.dark` і `@custom-variant dark`.
 - Компоненти — shadcn/ui 4.22.1 на Base UI в `src/components/ui` (Button, Input, Label, NativeSelect, Table, Badge,
-  Alert) плюс `EmptyState` і `StatusBadge`; Card додаємо разом із першим екраном, що її потребує; змінюємо їх у цій теці, а не сторінках. Нові залежності: `shadcn`,
-  `@base-ui/react`, `class-variance-authority`, `cn` (пакет shadcn для злиття класів), `lucide-react`, `tw-animate-css`.
+  Alert) плюс `EmptyState` і `StatusBadge`; Card додаємо разом із першим екраном, що її потребує; змінюємо їх у цій теці, а не сторінках. Нові залежності (точні версії): `@base-ui/react`,
+  `class-variance-authority`, `cn` (пакет shadcn для злиття класів), `lucide-react` (одна стрілка в `NativeSelect`).
+  Пакети `shadcn` і `tw-animate-css` не ставимо: CLI запускаємо через `npx`, а анімацій у наших компонентах немає.
 - Правило «лише токени» — `scripts/check-design-tokens.mjs` (матеріал курсу) у окремому workflow
-  `.github/workflows/architecture.yml`; `ci.yml` і назви його jobs не змінено.
+  `.github/workflows/architecture.yml`; `ci.yml` і назви його jobs не змінено. Jobs `architecture` не входять до
+  обов'язкових перевірок ruleset `solo-main`: червоний прогін видно в PR, але не блокує merge; зробити їх обов'язковими
+  може лише власник репо в налаштуваннях ruleset (поза цим PR).
 
 ## Розглянуті варіанти
 
@@ -41,6 +44,6 @@
 
 ## Як перевіряємо
 
-`npm run check:design` (job «Дизайн-система: лише токени» в `architecture.yml`) падає на будь-якому hex, довільному
-кольорі, сирій палітрі й кольорі в inline style поза `src/components/ui` і `globals.css`; до змін він показував 36
-порушень у 8 файлах, після — OK. Контраст — таблиця в `DESIGN.md`, обчислена для обох тем.
+`npm run check:design` (job «Дизайн-система: лише токени» в `architecture.yml`) стає червоним на будь-якому hex,
+довільному кольорі, сирій палітрі й кольорі в inline style поза `src/components/ui` і `globals.css`; до змін він
+показував 36 порушень у 8 файлах, після — OK. Контраст — таблиця в `DESIGN.md`, обчислена для обох тем.

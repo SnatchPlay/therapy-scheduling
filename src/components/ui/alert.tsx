@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
 const alertVariants = cva(
-  "group/alert relative grid w-full gap-0.5 rounded-lg border px-4 py-3 text-left text-sm has-data-[slot=alert-action]:relative has-data-[slot=alert-action]:pr-18 has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2 *:[svg]:row-span-2 *:[svg]:translate-y-0.5 *:[svg]:text-current *:[svg:not([class*='size-'])]:size-4",
+  "relative grid w-full gap-0.5 rounded-lg border px-4 py-3 text-left text-sm",
   {
     variants: {
       variant: {
@@ -18,6 +18,7 @@ const alertVariants = cva(
   }
 )
 
+// Роль за варіантом: помилка — alert, інформація — status; сторінка може перевизначити (повідомлення після redirect — alert).
 function Alert({
   className,
   variant,
@@ -26,7 +27,7 @@ function Alert({
   return (
     <div
       data-slot="alert"
-      role="alert"
+      role={variant === "destructive" ? "alert" : "status"}
       className={cn(alertVariants({ variant }), className)}
       {...props}
     />
@@ -38,7 +39,7 @@ function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="alert-title"
       className={cn(
-        "font-semibold group-has-[>svg]/alert:col-start-2 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground",
+        "font-semibold",
         className
       )}
       {...props}

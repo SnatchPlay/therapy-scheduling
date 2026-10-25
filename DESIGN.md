@@ -75,9 +75,9 @@
 
 ## 4. Відступи й радіуси
 
-Відступи лише зі шкали Tailwind: `gap-2` (8 px) усередині бейджа й кнопки, `gap-3` (12 px) між підписом і полем, `gap-4` (16 px) між полями форми, `gap-6` (24 px) між розділами сторінки, `p-4` — картка, `px-3 py-2` — клітинка таблиці, `py-8` — порожній стан. Ширина контенту `max-w-4xl`, поля сторінки `px-6`.
+Відступи лише зі шкали Tailwind: `gap-2` (8 px) усередині бейджа й кнопки, `gap-2` (8 px) між підписом і полем, `gap-3` (12 px) між елементами рядка форми, `gap-4` (16 px) між полями форми, `gap-6` (24 px) між розділами сторінки, `px-3 py-2.5` — клітинка таблиці, `py-8` — порожній стан; `p-4` — для картки, коли вона з'явиться. Ширина контенту `max-w-4xl`, поля сторінки `px-6`.
 
-Радіуси: `--radius: 0.5rem`; у `globals.css` явно `--radius-sm: 4px` (`rounded-sm` — бейдж), `--radius-lg: 8px` (`rounded-lg` — кнопки, поля, картки, таблиці, повідомлення), `--radius-xl: 12px` (`rounded-xl` — діалоги й меню). Поверхні відокремлює межа `border`, а не тінь; тінь лише в меню й діалогів (`shadow-md`).
+Радіуси задано явно в `globals.css`: `--radius-sm: 4px` (`rounded-sm` — бейдж), `--radius-lg: 8px` (`rounded-lg` — кнопки, поля, таблиці, повідомлення, картки), `--radius-xl: 12px` (`rounded-xl` — діалоги й меню, коли з'являться). Поверхні відокремлює межа `border`, а не тінь; тінь лише в меню й діалогів (`shadow-md`).
 
 ## 5. Компоненти й варіанти
 
@@ -86,12 +86,12 @@
 | Компонент | Варіанти | Правило |
 |---|---|---|
 | `Button` | `default`, `secondary`, `outline`, `ghost`, `destructive`, `link`; розміри `default`, `sm` | `default` — одна основна дія на екран (`Hold`, `Confirm`, `Create client`, `Sign in`); `outline` чи `secondary` — друга дія; `ghost` — навігація; `destructive` — лише для видалення |
-| `Input` + `Label` | — | у кожного поля `Label` з `htmlFor`; placeholder — не замість підпису; помилка поля: `aria-invalid` + текст `text-destructive` під полем |
+| `Input` + `Label` | — | у кожного поля `Label` з `htmlFor`; placeholder — не замість підпису. Помилку дії показує `Alert` над вмістом; помилка окремого поля (з форм зрізу 2): `aria-invalid` + текст `text-destructive` під полем з `aria-describedby` |
 | `NativeSelect` | — | рідний `<select>` у стилі поля (працює без JS у формах); перший пункт порожній і недоступний (`Choose a client`), інакше `required` нічого не вимагає |
 | `Card` | — | ще не потрібна: додається `npx shadcn@4.22.1 add card` разом із першим екраном із карткою (картка клієнта, зріз 2); не вкладати картку в картку |
-| `Table` | — | список даних; `caption` обов'язковий (може бути `sr-only`); для нуля рядків — `EmptyState` замість таблиці |
+| `Table` | — | список даних; `caption` обов'язковий (може бути `sr-only`); для нуля рядків — `EmptyState` замість таблиці. Анімовані компоненти (`dialog`, `select`) потребують `tw-animate-css` і `shadcn/tailwind.css` — додати разом із компонентом |
 | `Badge` / `StatusBadge` | `free`, `held`, `confirmed`, `expired`, `past` | статус слота чи утримання — `StatusBadge status={…}` (слово з бази, знак і колір з варіанта); інших статусів без токена в розділі 2 немає |
-| `Alert` | `default` (інформація), `destructive` (помилка) | текст помилки дослівно з AC; помилка — `role="alert"`, успіх — `role="status"` |
+| `Alert` | `default` (інформація), `destructive` (помилка) | текст дослівно з AC; роль за варіантом (`destructive` — `alert`, `default` — `status`); повідомлення після redirect (`AppShell`) — завжди `alert`, бо в новому документі `status` не озвучується |
 | `EmptyState` | — | заголовок (що порожньо) і одне речення, що далі; проєктний компонент `@/components/ui/empty-state` |
 
 ## 6. Стани
@@ -100,13 +100,13 @@
 
 | Стан | Як виглядає | Приклад тексту |
 |---|---|---|
-| Порожній список | `EmptyState` | «No holds yet.», «No slots this week.», «No free slots on this day.» |
-| Помилка дії | `Alert` (destructive) над вмістом; введене лишається у формі | «This slot is no longer available.» |
+| Порожній список | `EmptyState` (замість таблиці чи списку) | «No holds yet.», «No clients yet.», «No slots this week.» |
+| Немає вільного слота у дні | абзац `text-muted-foreground` над списком слотів (слоти лишаються) | «No free slots on this day.» |
+| Помилка дії | `Alert` (destructive) над вмістом | «This slot is no longer available.» |
 | Успіх | `Alert` (default) над вмістом | «Slot held.», «Hold confirmed.» |
 | Відмова в доступі | повідомлення на головній без даних | «Only schedulers and admins can confirm holds.» |
 | Помилка поля | межа `border-destructive`, текст `text-destructive` під полем | «Enter the client's name and a valid email.» |
 | Вимкнена дія | `disabled` (прозорість 50 %) | — |
-| Завантаження | текст `text-muted-foreground` | «Loading…» |
 | Помилка сторінки | `error.tsx` з `Alert` і кнопкою `Try again` | «Something went wrong. Try again.» |
 
 ## 7. Доступність — мінімум
@@ -125,7 +125,7 @@
 | компонент `Button` з потрібним варіантом | власний `<button className="…">` у сторінці |
 | помилка: `Alert` / `text-destructive` з підказкою, що робити | червоний як акцент чи статус |
 | статус: `Badge` зі словом і знаком | кольорова крапка без підпису |
-| одна `default`-кнопка на екран | дві однаково яскраві основні дії поруч |
+| одна основна (`default`) дія на екран; у рядку списку — одна на рядок (`Hold`, `Confirm`) | дві однаково яскраві основні дії поруч у формі чи в шапці |
 | новий токен через розділ 9 | новий колір «лише для цієї сторінки» |
 | текст кнопки — дієслово дії (`Hold`) | `Submit`, `OK` |
 
@@ -140,4 +140,4 @@
 
 - `npm run check:design` — жодного hex, довільного кольору, сирої палітри чи кольору в inline style поза `src/components/ui` і `globals.css`. CI: `.github/workflows/architecture.yml`, job «Дизайн-система: лише токени».
 - Виняток — коментар `design-ok: <причина>` у тому самому рядку; кожен виняток — з реальною причиною.
-- Візуально: знімки ключових сторінок у світлій і темній темі (`docs/img/ws7-before-*`, `docs/img/ws7-after-*`), Tab по формі, контраст.
+- Візуально: знімки ключових сторінок у світлій і темній темі (`docs/img/ws7-before-*` — до змін, `docs/img/ws7-after-*` — після), Tab по формі, контраст.

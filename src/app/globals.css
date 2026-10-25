@@ -1,12 +1,11 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
 /* Токени — з DESIGN.md (джерело: артефакт Claude Design). Темна тема — за системою (prefers-color-scheme), тому
-   тут немає ні блоку .dark, ні @custom-variant dark: вбудований варіант dark: Tailwind теж слідує за системою. */
+   тут немає ні блоку .dark, ні @custom-variant dark: вбудований варіант dark: Tailwind теж слідує за системою.
+   Анімовані компоненти (dialog, select) потребують `@import "tw-animate-css"` і `@import "shadcn/tailwind.css"`: додайте їх разом із компонентом. */
 
 :root {
-  --radius: 0.5rem;
+  color-scheme: light dark;
   --background: oklch(0.985 0.004 200);
   --foreground: oklch(0.23 0.02 215);
   --card: oklch(1 0 0);
@@ -75,7 +74,6 @@
 @theme inline {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
-  --font-heading: var(--font-sans);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -106,7 +104,6 @@
   --color-status-past: var(--status-past);
   --color-status-past-foreground: var(--status-past-foreground);
   --radius-sm: 4px;
-  --radius-md: 6px;
   --radius-lg: 8px;
   --radius-xl: 12px;
 }

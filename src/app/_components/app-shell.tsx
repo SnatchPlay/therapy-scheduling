@@ -49,7 +49,9 @@ export function AppShell({
       <main className="flex flex-col gap-6">
         <h1 className="text-2xl font-semibold">{title}</h1>
         {notice ? (
-          <Alert variant={notice.tone === "error" ? "destructive" : "default"} role={notice.tone === "error" ? "alert" : "status"}>
+          // Повідомлення приходить після redirect, тобто в новому документі: live region «status», що є вже під час
+          // завантаження, скрінрідер зазвичай не озвучує, тому й успіх подаємо як alert.
+          <Alert variant={notice.tone === "error" ? "destructive" : "default"} role="alert">
             <AlertTitle>{notice.text}</AlertTitle>
           </Alert>
         ) : null}
