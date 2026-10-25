@@ -47,7 +47,7 @@ describe("/slots", () => {
     );
     expect(html.match(/>Hold</g)).toHaveLength(1);
     // Клієнта треба вибрати: перший пункт порожній.
-    expect(html).toContain('<option value="" disabled="" selected="">Choose a client</option>');
+    expect(html).toMatch(/<option [^>]*value="" disabled="" selected="">Choose a client<\/option>/);
     // У кожному рядку свій список клієнтів: екранний читач розрізняє їх за часом слоту.
     expect(html).toContain('aria-label="Client for 10:00"');
   });

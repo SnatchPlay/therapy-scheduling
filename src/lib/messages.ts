@@ -24,9 +24,14 @@ function isMessageCode(value: unknown): value is MessageCode {
   return typeof value === "string" && Object.hasOwn(MESSAGES, value);
 }
 
-/** Текст для ?msg=<код>; невідомий код — нічого не показуємо. */
-export function messageFor(code: unknown): string | undefined {
-  return isMessageCode(code) ? MESSAGES[code] : undefined;
+const SUCCESS_CODES: readonly MessageCode[] = ["CLIENT_CREATED", "HELD", "CONFIRMED"];
+
+export type Notice = { text: string; tone: "success" | "error" };
+
+/** Повідомлення для ?msg=<код>: успіх показуємо як інформацію, решту — як помилку; невідомий код — нічого. */
+export function noticeFor(code: unknown): Notice | undefined {
+  if (!isMessageCode(code)) return undefined;
+  return { text: MESSAGES[code], tone: SUCCESS_CODES.includes(code) ? "success" : "error" };
 }
 
 /** Помилка функції бази (raise exception '<КОД>', міграція slots_and_holds) → код повідомлення. */

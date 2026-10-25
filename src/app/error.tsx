@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import { signOut } from "@/app/login/actions";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { MESSAGES } from "@/lib/messages";
 
 // Збій запиту до бази (сторінки кидають error) — повідомлення, а не порожній список.
@@ -15,18 +17,18 @@ export default function ErrorPage({ error, retry }: { error: Error & { digest?: 
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-6 py-16">
-      <p role="alert" className="text-sm">
-        {MESSAGES.UNEXPECTED}
-      </p>
+      <Alert variant="destructive">
+        <AlertTitle>{MESSAGES.UNEXPECTED}</AlertTitle>
+      </Alert>
       <div className="flex gap-3">
-        <button type="button" onClick={() => retry()} className="rounded border border-zinc-300 px-3 py-1 text-sm dark:border-zinc-700">
+        <Button type="button" variant="outline" onClick={() => retry()}>
           Try again
-        </button>
+        </Button>
         {/* Збій профілю повторюється на кожній сторінці: вихід має бути доступний і тут. */}
         <form action={signOut}>
-          <button type="submit" className="rounded border border-zinc-300 px-3 py-1 text-sm dark:border-zinc-700">
+          <Button type="submit" variant="outline">
             Sign out
-          </button>
+          </Button>
         </form>
       </div>
     </main>
