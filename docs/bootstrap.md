@@ -25,7 +25,10 @@
 - [x] Власний проєкт Supabase в особистому акаунті (Free); `db-deploy` підключається до нього через Session pooler (run нижче)
 - [x] Authentication: «Allow new users to sign up» **вимкнено**, «Confirm email» **вимкнено** — `docs/img/auth-signups.png`
 - [ ] Authentication → URL Configuration: Site URL = прод-URL Vercel; Redirect URLs `http://localhost:3000/**`,
-      `https://*-snatchplays-projects.vercel.app/**` — ще не підтверджено знімком
+      `https://*-snatchplays-projects.vercel.app/**` — **знімка ще немає**: налаштування лишається в Dashboard власника
+      проєкту, його значення тут не підтверджено. Поки Site URL типовий (`http://localhost:3000`), посилання з листів
+      (скидання пароля, запрошення) вестимуть на localhost; зараз листів застосунок не надсилає (користувачів створює
+      `npm run users:demo`), тож на роботу зрізу це не впливає
 - [x] `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`,
       `DEMO_USER_PASSWORD` (лише назви; значень у репо й чаті немає)
 
@@ -51,8 +54,11 @@
 
 - [x] Actions → CI → Run workflow (`main`, `include_seed` ✓) → `db-deploy` застосував `20261012000000_profiles_and_roles.sql`
       і `supabase/seed.sql` — https://github.com/SnatchPlay/therapy-scheduling/actions/runs/39438432639
-- [x] `npm run users:demo` (2026-10-20): `admin@example.test — створено, роль admin`, `member1@example.test` і
-      `member2@example.test — створено, роль member` (вивід скрипта; пароль не друкується)
+- [x] `npm run users:demo`: перший запуск 2026-10-20 створив `admin@example.test`, `member1@example.test`, `member2@example.test`
+      (роль `member`, вивід скрипта; пароль не друкується). Після PR #12 (2026-10-21) список — `supabase/demo-users.json`:
+      `admin`, `scheduler1`, `scheduler2`, `therapist1`, `therapist2` (`@example.test`); `member1`/`member2` стали
+      `scheduler` міграцією `20261019142745_roles_and_clients.sql` (design Р1). Вхід як `scheduler1` і `therapist1`
+      на прод-URL — `docs/evidence/slot-hold-prod.mp4`
 - [x] Вхід як `admin@example.test` на прод-URL — `docs/img/prod-login-admin.png`
 - [x] CI на `main` зелений: `spec`, `app`, `conformance`, `db-check`, `db-deploy` — https://github.com/SnatchPlay/therapy-scheduling/actions/runs/39438432639
 
@@ -65,10 +71,12 @@
 
 ## 7. Перший PR (перевірка ruleset-у)
 
-- [x] Усі зміни в `main` — лише через PR: #1, #2, #3, #4, #6 (squash), кожен із зеленими обов'язковими перевірками;
-      цей PR — `setup/bootstrap`
+- [x] Усі зміни в `main` — лише через PR (squash): #1–#4, #6–#22, кожен із зеленими обов'язковими перевірками
+      (#5 — рев'ю-PR, закрито без злиття)
 - [x] Vercel створив preview для кожного PR (коментар бота Vercel у PR #2–#6)
-- [ ] (З першою задачею, що має міграцію) — задач у WS6 немає: реалізацію перенесено на WS7
+- [x] Перша задача з міграцією — PR #12 (`20261019142745_roles_and_clients.sql`); `db-deploy` після злиття зелений —
+      https://github.com/SnatchPlay/therapy-scheduling/actions/runs/39578505125. Далі міграції в PR #13, #14, #18, #19, #20: `db-deploy` зелений після кожного
+      (останній — після #20, запуск CI на `main` із SHA `66cb9d6`)
 
 ## 8. Вимоги PM і специфікація
 
@@ -80,3 +88,5 @@
 - [x] Переклад у специфікацію: `add-slot-hold` → https://github.com/SnatchPlay/therapy-scheduling/pull/2;
       уточнення `clarify-slot-hold` (MODIFIED / ADDED) → https://github.com/SnatchPlay/therapy-scheduling/pull/4;
       `npm run ac:coverage` завершилася без повідомлення «вимогу PM ще не перекладено»
+- [x] Відповіді PM від 2026-10-20 (AC-HOLD-25…36): знімок вимог https://github.com/SnatchPlay/therapy-scheduling/pull/16, зміна `answer-slot-hold` https://github.com/SnatchPlay/therapy-scheduling/pull/17;
+      задачі 5–7 — PR #18, #19, #20; запис екрана з прод-URL — `docs/evidence/` (PR #22)
