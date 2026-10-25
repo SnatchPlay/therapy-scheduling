@@ -11,7 +11,7 @@
 Для PM це матеріал нотатки «порівняння реалізацій»: де одні вимоги прочитали по-різному.
 -->
 
-Вимоги: Sofiia-pm/therapy-scheduling-spec · джерело: issues · знімок 2026-10-19
+Вимоги: Sofiia-pm/therapy-scheduling-spec · джерело: issues · знімок 2026-10-21
 
 Вимога зрізу 1: `requirements/2-planuvalnyk-utrymuie-slot-terapevta.md` (Sofiia-pm/therapy-scheduling-spec#2),
 продукт — `requirements/product.md` (Sofiia-pm/therapy-scheduling-spec#1).
