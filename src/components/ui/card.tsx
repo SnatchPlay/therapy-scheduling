@@ -1,0 +1,31 @@
+import * as React from "react"
+import { cn } from "cn"
+
+// Поверхня за DESIGN.md: відокремлює border (не ring і не тінь), радіус rounded-lg (8 px). Лише частини, які використовує
+// застосунок (картка клієнта): header, title, content; footer, action і description додаємо разом із першим екраном, що їх потребує.
+function Card({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card"
+      className={cn(
+        "flex flex-col gap-4 rounded-lg border border-border bg-card py-4 text-sm text-card-foreground",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-header" className={cn("grid auto-rows-min items-start gap-1 px-4", className)} {...props} />
+}
+
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-title" className={cn("text-base leading-snug font-medium", className)} {...props} />
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-content" className={cn("px-4", className)} {...props} />
+}
+
+export { Card, CardHeader, CardTitle, CardContent }

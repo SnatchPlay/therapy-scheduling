@@ -86,9 +86,9 @@
 | Компонент | Варіанти | Правило |
 |---|---|---|
 | `Button` | `default`, `secondary`, `outline`, `ghost`, `destructive`, `link`; розміри `default`, `sm` | `default` — одна основна дія на екран (`Hold`, `Confirm`, `Create client`, `Sign in`); `outline` чи `secondary` — друга дія; `ghost` — навігація; `destructive` — лише для видалення |
-| `Input` + `Label` | — | у кожного поля `Label` з `htmlFor`; placeholder — не замість підпису. Помилку дії показує `Alert` над вмістом; помилка окремого поля (з форм зрізу 2): `aria-invalid` + текст `text-destructive` під полем з `aria-describedby` |
+| `Input` + `Label` | — | у кожного поля `Label` з `htmlFor`; placeholder — не замість підпису. Помилку дії показує `Alert` над вмістом; у формі картки клієнта текст відмови дослівний і один (з AC), тож його показує `Alert` над формою, а поля, яких він стосується, мають `aria-invalid` і `aria-describedby` на цей `Alert`; окремий текст під полем — коли PM дасть окремі тексти (Sofiia-pm/therapy-scheduling-spec#21) |
 | `NativeSelect` | — | рідний `<select>` у стилі поля (працює без JS у формах); перший пункт порожній і недоступний (`Choose a client`), інакше `required` нічого не вимагає |
-| `Card` | — | ще не потрібна: додається `npx shadcn@4.22.1 add card` разом із першим екраном із карткою (картка клієнта, зріз 2); не вкладати картку в картку |
+| `Card` | — | картка клієнта (`ClientCard`): `Card` → `CardHeader` + `CardTitle` → `CardContent`; межа `border`, радіус `rounded-lg`; не вкладати картку в картку. Частин `footer`, `action`, `description` немає: додаємо разом із першим екраном, що їх потребує |
 | `Table` | — | список даних; `caption` обов'язковий (може бути `sr-only`); для нуля рядків — `EmptyState` замість таблиці. Анімовані компоненти (`dialog`, `select`) потребують `tw-animate-css` і `shadcn/tailwind.css` — додати разом із компонентом |
 | `Badge` / `StatusBadge` | `free`, `held`, `confirmed`, `expired`, `past` | статус слота чи утримання — `StatusBadge status={…}` (слово з бази, знак і колір з варіанта); інших статусів без токена в розділі 2 немає |
 | `Alert` | `default` (інформація), `destructive` (помилка) | текст дослівно з AC; роль за варіантом (`destructive` — `alert`, `default` — `status`); повідомлення після redirect (`AppShell`) — завжди `alert`, бо в новому документі `status` не озвучується |

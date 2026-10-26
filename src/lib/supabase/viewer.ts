@@ -7,6 +7,9 @@ export type Role = (typeof ROLES)[number];
 
 const isRole = (value: unknown): value is Role => ROLES.some((r) => r === value);
 
+/** Будь-яка роль: сторінки, що фільтрують дані самі (RLS), як список клієнтів терапевта. Користувач без ролі сюди не потрапляє. */
+export const ALL_ROLES: readonly Role[] = ROLES;
+
 /** Планувальник і адміністратор: AC-HOLD-19 — admin може все, що й scheduler (private.is_scheduler_or_admin у базі). */
 export const STAFF: readonly Role[] = ["scheduler", "admin"];
 

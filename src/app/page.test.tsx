@@ -16,7 +16,7 @@ vi.mock("@/app/login/actions", () => ({ signOut: async () => {} }));
 vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a> }));
 
 const { default: Home } = await import("./page");
-const open = () => Home({ params: Promise.resolve({}), searchParams: Promise.resolve({}) } as PageProps<"/">);
+const open = () => Home();
 
 beforeEach(() => {
   role = null;
@@ -32,7 +32,10 @@ describe("/", () => {
     await expect(open()).rejects.toThrow(`REDIRECT ${to}`);
   });
 
-  it("профіль без ролі лишається на головній з поясненням", async () => {
-    expect(renderToStaticMarkup(await open())).toContain("Profile not found.");
+  it("AC-CARD-11: користувач без ролі бачить лише повідомлення про відсутність доступу, без даних і навігації", async () => {
+    const html = renderToStaticMarkup(await open());
+    expect(html).toContain("Your account has no access yet. Contact an administrator.");
+    for (const word of [">Slots<", ">Holds<", ">Clients<", ">Schedule<", "data-testid=\"client-card\""]) expect(html).not.toContain(word);
+    expect(html).toContain("user@example.test · no role");
   });
 });
