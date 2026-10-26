@@ -8,8 +8,9 @@ import { requireRole, STAFF } from "@/lib/supabase/viewer";
 import { formatPracticeDateTime } from "@/lib/time";
 import { confirmHold } from "./actions";
 
-// AC-HOLD-20, AC-HOLD-28, AC-HOLD-29: планувальник і адміністратор бачать усі утримання, зокрема «Expired», але
-// прострочене — лише до початку слоту (так вирішила PM, Sofiia-pm/therapy-scheduling-spec#8): це робить hold_list.
+// AC-HOLD-20, 28, 29, 37, 38, 42: список утримань — лише «Held» і «Expired» зі слотом, що ще не почався (підтверджені
+// сеанси й утримання зі слотом, що почався, зникають; старе прострочене утримання зникає після повторного утримання тим
+// самим клієнтом): це робить hold_list. Порядок — за часом слоту від найближчого.
 export default async function HoldsPage({ searchParams }: PageProps<"/holds">) {
   const { supabase, role, email } = await requireRole(...STAFF);
   const { msg } = await searchParams;
@@ -17,8 +18,8 @@ export default async function HoldsPage({ searchParams }: PageProps<"/holds">) {
   const { data: holds, error } = await supabase
     .from("hold_list")
     .select("hold_id, therapist_name, starts_at, client_name, held_until, status")
-    .order("created_at", { ascending: false })
-    // Рівні created_at (утримання в одну хвилину): без другого ключа порядок між перезавантаженнями міг би мінятися.
+    .order("starts_at")
+    // Рівний час слоту (два записи на один слот): без другого ключа порядок між перезавантаженнями міг би мінятися.
     .order("hold_id");
   if (error) throw error;
 

@@ -132,7 +132,7 @@ describe("Підтвердження іншим планувальником", (
     await t.asUser(SCHEDULER2, "select public.confirm_hold($1)", [hold.id]);
     const [row] = await t.asUser<{ status: string; confirmed_by: string }>(
       SCHEDULER2,
-      "select h.status, p.id as confirmed_by from public.hold_list as h join public.holds as x on x.id = h.hold_id join public.profiles as p on p.id = x.confirmed_by where h.hold_id = $1",
+      "select b.status, p.id as confirmed_by from public.slot_board as b join public.holds as x on x.id = b.hold_id join public.profiles as p on p.id = x.confirmed_by where b.hold_id = $1",
       [hold.id],
     );
     expect(row).toEqual({ status: "Confirmed", confirmed_by: SCHEDULER2 });

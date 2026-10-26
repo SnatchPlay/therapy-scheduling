@@ -5,10 +5,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 type Hold = { hold_id: string; therapist_name: string; starts_at: string; client_name: string; held_until: string | null; status: string };
 let holds: Hold[] = [];
 let failure: unknown = null;
-// select().order().order(): сторінка сортує за часом створення й за id.
+// select().order().order(): сторінка сортує за часом слоту й за id; ключі сортування запам'ятовуємо.
+const orders: string[] = [];
 const supabase = {
   from: () => ({
-    select: () => ({ order: () => ({ order: async () => ({ data: failure ? null : holds, error: failure }) }) }),
+    select: () => ({
+      order: (column: string) => {
+        orders.push(column);
+        return {
+          order: async (second: string) => {
+            orders.push(second);
+            return { data: failure ? null : holds, error: failure };
+          },
+        };
+      },
+    }),
   }),
 };
 vi.mock("@/lib/supabase/viewer", async (importActual) => ({
@@ -37,6 +48,7 @@ const hold = (id: string, status: string, heldUntil: string | null): Hold => ({
 beforeEach(() => {
   holds = [];
   failure = null;
+  orders.length = 0;
 });
 
 describe("/holds", () => {
@@ -50,15 +62,21 @@ describe("/holds", () => {
     expect(html).not.toContain("Held until");
   });
 
-  it("AC-HOLD-12: «Held» — з «Held until» і кнопкою; «Confirmed» — без «Held until» і без кнопки", async () => {
-    holds = [hold("h1", "Held", "2026-11-03T14:30:00-08:00"), hold("h2", "Confirmed", null)];
+  it("AC-HOLD-12: «Held» — з «Held until» і кнопкою підтвердження, «Expired» — без кнопки", async () => {
+    holds = [hold("h1", "Held", "2026-11-03T14:30:00-08:00"), hold("h2", "Expired", "2026-11-03T14:30:00-08:00")];
     const html = await render();
     expect(html).toContain("Held until 2026-11-03 14:30");
     expect(html.match(/Held until/g)).toHaveLength(1);
     expect(html.match(/>Confirm</g)).toHaveLength(1);
     // Кнопки в різних рядках розрізняються за клієнтом і слотом.
     expect(html).toContain('aria-label="Confirm hold for client1 at 2026-11-05 10:00"');
-    expect(html).toContain('data-testid="hold-status">Confirmed<');
+  });
+
+  it("AC-HOLD-38: сторінка просить базу впорядкувати утримання за часом слоту від найближчого (з другим ключем для рівних)", async () => {
+    holds = [hold("h1", "Held", "2026-11-03T14:30:00-08:00"), hold("h2", "Expired", "2026-11-03T14:30:00-08:00")];
+    const html = await render();
+    expect(orders).toEqual(["starts_at", "hold_id"]);
+    expect(html.match(/data-testid="hold"/g)).toHaveLength(2);
   });
 
   it("збій запиту до бази кидається, а не показується як порожній список", async () => {
