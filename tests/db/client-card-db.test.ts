@@ -248,7 +248,7 @@ describe("Створення картки (планувальник, адмін�
     expect(await t.asService("select 1 from public.clients where email = 'client5@example.test'")).toEqual([]);
   });
 
-  it("картки зрізу 1 (ім'я й email) лишаються дійсними: тип «Adult», решта полів порожня", async () => {
+  it("AC-HOLD-10: картки зрізу 1 (ім'я й email) лишаються дійсними: тип «Adult», решта полів порожня", async () => {
     expect(await createCardAs(SCHEDULER, { name: "Client Legacy", email: "legacy@example.test" })).toBe("created");
     const [row] = await t.asUser<Record<string, unknown>>(
       SCHEDULER,
@@ -368,7 +368,7 @@ describe("Доступ до карток", () => {
     expect(await clientCount()).toBe(before);
   });
 
-  it("новий користувач Auth без ролі отримує role = null (тригер профілю), а не therapist", async () => {
+  it("AC-CARD-11: новий користувач Auth без ролі отримує role = null (тригер профілю), а не therapist", async () => {
     const id = await t.createAuthUser("newcomer@example.test");
     expect(await t.asService("select role from public.profiles where id = $1", [id])).toEqual([{ role: null }]);
     expect(await t.asUser(id, "select id from public.clients")).toEqual([]);
