@@ -141,4 +141,4 @@ create policy clients_select_therapist
   on public.clients
   for select
   to authenticated
-  using (true);
+  using (id in (select private.own_client_ids()));
