@@ -28,3 +28,10 @@ export async function confirmHold(formData: FormData) {
   revalidatePath("/holds");
   redirect("/holds?msg=CONFIRMED");
 }
+
+// mutation: дія без перевірки сесії — job «Server actions: сесія перевіряється» має почервоніти.
+export async function purgeHolds() {
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabase = await createClient();
+  await supabase.from("holds").delete().neq("id", "");
+}
