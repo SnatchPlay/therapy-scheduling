@@ -32,3 +32,16 @@ jobs:
         with:
           node-version: 24
       - run: node scripts/check-server-boundary.mjs
+
+  action-auth:
+    name: "Server actions: сесія перевіряється"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      # Правило розбирає код компілятором TypeScript (devDependency): потрібні залежності.
+      - run: npm ci
+      - run: node scripts/check-action-auth.mjs

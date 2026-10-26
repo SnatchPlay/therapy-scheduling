@@ -17,6 +17,7 @@
     "users:demo": "node --env-file=.env.local scripts/create-demo-users.mjs",
     "check:design": "node scripts/check-design-tokens.mjs",
     "check:boundary": "node scripts/check-server-boundary.mjs",
+    "check:actions": "node scripts/check-action-auth.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

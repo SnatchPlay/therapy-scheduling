@@ -41,7 +41,7 @@ OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версі
 - `npm run dev` · `npm run build` (має показати `ƒ Proxy (Middleware)`) · `npm run lint` (0 warnings)
 - `npm run typecheck` (`next typegen && tsc --noEmit`) · `npm test` (Vitest)
 - `npm run spec:validate` · `npm run spec:check` · `npm run ac:coverage`
-- `npm run check:design` · `npm run check:boundary` — архітектурні правила (CI: `architecture.yml`)
+- `npm run check:design` · `npm run check:boundary` · `npm run check:actions` — архітектурні правила (CI: `architecture.yml`)
 - `npm run storybook` (порт 6006) · `npm run build-storybook` — каталог компонентів (`src/**/*.stories.tsx`; CI: `storybook.yml`)
 - `node scripts/check-migration-order.mjs` — нова міграція новіша за `origin/main`, застосовані не змінено (у CI — `db-check`)
 - `npx supabase migration new <назва>` → SQL → PR. Застосовує міграції у вашу базу ЛИШЕ CI (`db-deploy` після merge у `main`)
