@@ -34,8 +34,10 @@
 - `clients`: нові колонки `client_type` (`Adult` | `Child`, default `Adult` — картки зрізу 1), `birth_date date`,
   `session_language` (`English` | `Spanish`), `guardian_name`, `guardian_email`; `email` стає nullable (у дитини власного
   немає). Обмеження: для `Adult` — `guardian_*` порожні й `email` є; для `Child` — `email` порожній, `guardian_name` і
-  `guardian_email` є (AC-CARD-03 → код `INVALID_GUARDIAN`). Повнота нових карток (дата народження й мова обов'язкові) —
-  `check … not valid`: діє для нових і змінених рядків, картки зрізу 1 лишаються дійсними («Not provided»).
+  `guardian_email` є (AC-CARD-03 → код `INVALID_GUARDIAN`). Дата народження й мова в базі необов'язкові: так картки зрізу 1 («Not provided») і
+  швидке створення за AC-HOLD-10 лишаються дійсними, доки PM не відповість на Sofiia-pm/therapy-scheduling-spec#20. Коли
+  вони є, база перевіряє: мова — зі списку, дата не пізніше за сьогодні. Обов'язковість полів форми картки (AC-CARD-01) —
+  у server action: форма вимагає всі поля, база не відхиляє неповний запис.
 - Дата народження не пізніше за сьогодні (за часом практики America/Los_Angeles): тригер `before insert` — `current_date`
   у `check` не можна (не immutable). Те саме для email опікуна: нормалізація (нижній регістр, без пробілів по краях) і
   формат — одне джерело `private.blank_chars()`.
@@ -53,9 +55,10 @@
   `private.own_client_ids()` — `security definer`, `set search_path = ''`, повертає множину (`setof uuid`), політика
   `id in (select private.own_client_ids())`; тоді зміна політики `holds_select` не відкриє чужих клієнтів мовчки.
 - Терапевт із чужим чи неіснуючим id отримує нуль рядків: застосунок не відрізняє «чужа» від «немає»: інакше терапевт перебирав би посилання й дізнавався, хто є клієнтом практики.
-- Питання N1 (Sofiia-pm/therapy-scheduling-spec#25): «Held», слот якого вже почався, до відповіді PM клієнта своїм не
-  робить (мінімальні права): `own_client_ids()` бере «Held» лише зі слотом, що ще не почався, і «Confirmed». Межа —
-  `private.slot_started`, та сама, що в AC-HOLD-42. Якщо PM відповість A, умова прибирається однією міграцією.
+- Питання N1 (Sofiia-pm/therapy-scheduling-spec#25): до відповіді PM діє буквальне «Припущення» PM — «Held» (не
+  прострочене) або «Confirmed», і слот, що вже почався, нічого не міняє. Варіант B (слот почався — не свій) ми не беремо:
+  тоді в розкладі терапевта (AC-HOLD-09, 30) утримання лишалося б «Held», але без імені клієнта, бо `slot_board` читає
+  `clients` за RLS терапевта. Якщо PM відповість B, потрібна міграція і зміна `slot_board`.
 - Питання N3 (Sofiia-pm/therapy-scheduling-spec#26): перетин (AC-HOLD-25) лишається за карткою клієнта, зв'язку за email
   опікуна не додаємо.
 - `insert`: лише staff (`private.is_scheduler_or_admin()`), `created_by = (select auth.uid())`; терапевт — відмова
