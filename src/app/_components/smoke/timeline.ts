@@ -88,10 +88,31 @@ export class SmokeTimeline {
     this.last = null;
   }
 
+  /** Момент, після якого стан не змінюється: далі досить одного нерухомого кадру. */
+  get endsAt(): number {
+    return this.keyframes[this.keyframes.length - 1].at;
+  }
+
+  /**
+   * Анімацію перервала помилка (вхід чи вихід не вдався, сторінка помилки): одразу під вміст, щоб повідомлення було
+   * видно, і плавно в стан сторінки. Не чекає незавершеної анімації.
+   */
+  settle(state: SmokeState, now: number) {
+    const current = { ...this.sample(now), front: false };
+    this.keyframes = [
+      { at: now, state: current, ease: linear },
+      { at: now + 600, state, ease: easeOut },
+    ];
+    this.finishAt = -Infinity;
+    this.last = null;
+  }
+
   play(cue: Cue, now: number) {
-    // Сторінка входу шле rest щоразу, як її кнопка монтується (Next перемонтовує сторінку на ?error=…): повертати у фон
-    // є що лише після emerge — не після виходу (arrive) і не на першому відкритті.
+    // Кнопка входу шле rest і під час монтування (після невдалого входу сторінку буває змонтовано заново): повертати у
+    // фон є що лише після emerge — не після виходу (arrive) і не на першому відкритті.
     if (cue === "rest" && this.last !== "emerge") return;
+    // Подвійний клік на Sign out: хрест уже летить.
+    if (cue === "summon" && this.last === "summon") return;
     this.last = cue;
     const { steps, finish } = CUES[cue];
     const start = Math.max(now, this.finishAt);

@@ -19,6 +19,8 @@ describe("cueForNavigation", () => {
     expect(restingState("/login")).toBe(AT_LOGIN);
     expect(restingState("/clients/new")).toBe(AMBIENT);
     expect(AMBIENT.alpha).toBeLessThan(AT_LOGIN.alpha);
+    // Контраст тексту з димом у DESIGN.md (розділ 11) пораховано для alpha 0.1.
+    expect(AMBIENT.alpha).toBeLessThanOrEqual(0.1);
   });
 });
 
@@ -85,6 +87,34 @@ describe("SmokeTimeline", () => {
     expect(t.sample(covered + 300).front).toBe(true);
     expect(t.sample(covered + 600 + 450).front).toBe(false);
     expect(t.sample(covered + 1500)).toEqual(AT_LOGIN);
+  });
+
+  it("settle: вихід упав, коли хрест перекрив екран — одразу під вміст і за 600 мс у стан сторінки, без черги", () => {
+    const t = new SmokeTimeline(AMBIENT);
+    t.play("summon", 0);
+    t.play("arrive", 100);
+    t.settle(AMBIENT, 1450);
+    expect(t.sample(1450)).toMatchObject({ ...COVERED, front: false });
+    expect(t.sample(2050)).toEqual(AMBIENT);
+    expect(t.endsAt).toBe(2050);
+    t.play("emerge", 2100); // черги summon більше немає
+    expect(t.sample(2100)).toEqual(AMBIENT);
+  });
+
+  it("подвійний клік на Sign out не запускає хрест удруге", () => {
+    const t = new SmokeTimeline(AMBIENT);
+    t.play("summon", 0);
+    const end = t.endsAt;
+    t.play("summon", 200);
+    expect(t.endsAt).toBe(end);
+    expect(t.sample(1450)).toMatchObject(COVERED);
+  });
+
+  it("endsAt: після кінця анімації стан сталий — досить одного кадру", () => {
+    const t = new SmokeTimeline(AT_LOGIN);
+    t.play("enter", 1000);
+    expect(t.endsAt).toBe(1000 + 650 + 450 + 800);
+    expect(t.sample(t.endsAt)).toEqual(t.sample(t.endsAt + 10_000));
   });
 
   it("jump (без руху): одразу стан сторінки, без черги незавершеної анімації", () => {

@@ -5,10 +5,11 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useR
 import { createSmokeRenderer, cssColorToRgb } from "./renderer";
 import { type Cue, cueForNavigation, restingState, SmokeTimeline } from "./timeline";
 
-type ButtonCue = Extract<Cue, "emerge" | "rest" | "summon">;
+// settle — анімацію перервала помилка: хрест іде під вміст і в стан поточної сторінки.
+type PageCue = Extract<Cue, "emerge" | "rest" | "summon"> | "settle";
 
 // Без SmokeBackdrop (тести сторінок, Storybook) кнопки входу й виходу просто нічого не анімують.
-const SmokeCue = createContext<(cue: ButtonCue) => void>(() => {});
+const SmokeCue = createContext<(cue: PageCue) => void>(() => {});
 export const useSmokeCue = () => useContext(SmokeCue);
 
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
@@ -29,25 +30,28 @@ export function SmokeBackdrop({ children }: { children: ReactNode }) {
     const reduced = matchMedia(REDUCED_MOTION);
     const scheme = matchMedia("(prefers-color-scheme: dark)");
     let frame = 0;
+    let lost = false;
 
-    const draw = (now: number) => {
+    // Дим рухається лише на сторінці входу й поки триває анімація. На робочих сторінках — нерухомий кадр: вимога PM
+    // «інтерфейс не має відволікати», і GPU не малює весь день те саме тло. Без руху (prefers-reduced-motion) — теж
+    // один кадр стану сторінки.
+    const loop = (now: number) => {
       const state = timeline.sample(now);
       el.dataset.front = String(state.front);
       renderer.draw(state, reduced.matches ? 0 : now / 1000);
+      const moving = !reduced.matches && (path.current === "/login" || now < timeline.endsAt);
+      frame = moving ? requestAnimationFrame(loop) : 0;
     };
-    const loop = (now: number) => {
-      draw(now);
-      frame = requestAnimationFrame(loop);
-    };
-    // Без руху: один нерухомий кадр стану поточної сторінки, без циклу.
     const start = () => {
       cancelAnimationFrame(frame);
-      if (reduced.matches) {
-        timeline.jump(restingState(path.current));
-        draw(performance.now());
-      } else {
-        frame = requestAnimationFrame(loop);
-      }
+      if (lost) return;
+      if (reduced.matches) timeline.jump(restingState(path.current));
+      frame = requestAnimationFrame(loop);
+    };
+    // Після втрати контексту (сон, скидання GPU) малювати нічим: тло зникає до перезавантаження сторінки.
+    const onLost = () => {
+      lost = true;
+      cancelAnimationFrame(frame);
     };
     const recolor = () => {
       renderer.setColor(cssColorToRgb(getComputedStyle(el).getPropertyValue("--primary")));
@@ -58,10 +62,14 @@ export function SmokeBackdrop({ children }: { children: ReactNode }) {
     recolor();
     reduced.addEventListener("change", start);
     scheme.addEventListener("change", recolor);
+    addEventListener("resize", start);
+    el.addEventListener("webglcontextlost", onLost);
     return () => {
       cancelAnimationFrame(frame);
       reduced.removeEventListener("change", start);
       scheme.removeEventListener("change", recolor);
+      removeEventListener("resize", start);
+      el.removeEventListener("webglcontextlost", onLost);
       restart.current = () => {};
       renderer.dispose();
     };
@@ -70,13 +78,16 @@ export function SmokeBackdrop({ children }: { children: ReactNode }) {
   useEffect(() => {
     const cue = cueForNavigation(path.current, pathname);
     path.current = pathname;
-    if (reducedMotion()) restart.current();
-    else if (cue) timeline.play(cue, performance.now());
+    if (cue && !reducedMotion()) timeline.play(cue, performance.now());
+    restart.current();
   }, [pathname, timeline]);
 
   const cue = useCallback(
-    (next: ButtonCue) => {
-      if (!reducedMotion()) timeline.play(next, performance.now());
+    (next: PageCue) => {
+      if (reducedMotion()) return;
+      if (next === "settle") timeline.settle(restingState(path.current), performance.now());
+      else timeline.play(next, performance.now());
+      restart.current();
     },
     [timeline],
   );

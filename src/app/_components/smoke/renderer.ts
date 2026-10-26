@@ -36,10 +36,11 @@ void main() {
   vec2 r = vec2(fbm(p * 2.8 + 4. * q + vec2(1.7, 9.2) + t * .04), fbm(p * 2.8 + 4. * q + vec2(8.3, 2.8) - t * .05));
   float d = crossShape(p + (r - .5) * uWarp);
   float n = fbm(p * 3.5 + r * 2.5 + vec2(0., -t * .22));
-  float body = smoothstep(.03, -.06, d);
+  float body = 1. - smoothstep(-.06, .03, d);
   float halo = exp(-max(d, 0.) * 10.) * n;
   float density = clamp(body * (.45 + .75 * n) + halo * .8, 0., 1.);
-  vec3 color = mix(uColor * (.65 + .7 * n), vec3(1.), smoothstep(.6, .95, n * body) * .2);
+  // clamp: у premultiplied alpha колір не може бути більшим за непрозорість.
+  vec3 color = clamp(mix(uColor * (.65 + .7 * n), vec3(1.), smoothstep(.6, .95, n * body) * .2), 0., 1.);
   float alpha = density * uAlpha;
   gl_FragColor = vec4(color * alpha, alpha);
 }`;
@@ -59,11 +60,15 @@ export function createSmokeRenderer(canvas: HTMLCanvasElement): SmokeRenderer | 
   if (!gl) return null;
 
   const program = gl.createProgram();
+  const shaders: WebGLShader[] = [];
   for (const [type, source] of [
     [gl.VERTEX_SHADER, VERTEX],
     [gl.FRAGMENT_SHADER, FRAGMENT],
   ] as const) {
-    const shader = gl.createShader(type)!;
+    // null — контекст уже втрачено: декоративне тло не має валити кореневий layout.
+    const shader = gl.createShader(type);
+    if (!shader) return null;
+    shaders.push(shader);
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -80,7 +85,8 @@ export function createSmokeRenderer(canvas: HTMLCanvasElement): SmokeRenderer | 
   gl.useProgram(program);
 
   // Один трикутник, що накриває весь екран.
-  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  const buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
   const position = gl.getAttribLocation(program, "a");
   gl.enableVertexAttribArray(position);
@@ -119,6 +125,8 @@ export function createSmokeRenderer(canvas: HTMLCanvasElement): SmokeRenderer | 
     },
     // Контекст не втрачаємо: у dev React монтує ефект двічі, і канва мусить віддати робочий контекст удруге.
     dispose() {
+      gl.deleteBuffer(buffer);
+      for (const shader of shaders) gl.deleteShader(shader);
       gl.deleteProgram(program);
     },
   };

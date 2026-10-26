@@ -5,8 +5,9 @@ import { useFormStatus } from "react-dom";
 import { useSmokeCue } from "@/app/_components/smoke/smoke-backdrop";
 import { Button } from "@/components/ui/button";
 
-// Поки вхід триває, хрест на тлі виринає вперед; якщо вхід не вдався, повертається у фон. Після невдалого входу Next
-// монтує сторінку заново (?error=…), тож rest іде й під час монтування — таймлайн пропускає його, якщо emerge не було.
+// Поки вхід триває, хрест на тлі виринає вперед; якщо вхід не вдався, повертається у фон. Після redirect на ?error=…
+// кнопку в браузері було змонтовано заново (перехід pending true → false вона не бачила), тож rest іде й під час
+// монтування — таймлайн пропускає його, якщо emerge не було.
 export function SignInButton() {
   const { pending } = useFormStatus();
   const cue = useSmokeCue();
