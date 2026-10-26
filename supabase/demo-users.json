@@ -3,5 +3,6 @@
   { "email": "scheduler1@example.test", "full_name": "Scheduler One", "role": "scheduler" },
   { "email": "scheduler2@example.test", "full_name": "Scheduler Two", "role": "scheduler" },
   { "email": "therapist1@example.test", "full_name": "Therapist One", "role": "therapist" },
-  { "email": "therapist2@example.test", "full_name": "Therapist Two", "role": "therapist" }
+  { "email": "therapist2@example.test", "full_name": "Therapist Two", "role": "therapist" },
+  { "email": "newuser1@example.test", "full_name": "New User One", "role": null }
 ]

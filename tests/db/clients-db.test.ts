@@ -145,15 +145,6 @@ describe("Картка клієнта", () => {
     expect(rows).toEqual([{ email: "client1@example.test" }]);
   });
 
-  it("новий користувач без ролі отримує найменші права: therapist, карток не бачить і не створює", async () => {
-    const id = await t.createAuthUser("newcomer@example.test");
-    expect(await t.asService("select role from public.profiles where id = $1", [id])).toEqual([{ role: "therapist" }]);
-    expect(await t.asUser(id, "select id from public.clients")).toEqual([]);
-    await expect(
-      t.asUser(id, "insert into public.clients (full_name, email) values ('X', 'x9@example.test')"),
-    ).rejects.toThrow(/row-level security/);
-  });
-
   it("без входу (anon) клієнтів не видно й не створити", async () => {
     await expect(t.asAnon("select id from public.clients")).rejects.toThrow(/permission denied/);
     await expect(

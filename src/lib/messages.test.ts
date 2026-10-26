@@ -1,12 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { clientErrorCode, dbMessageCode, MESSAGES, noticeFor } from "./messages";
 
-// Коди й тексти помилок Postgres — як їх повертає PostgREST для обмежень міграції roles_and_clients.
+// Коди й тексти помилок Postgres — як їх повертає PostgREST для обмежень міграцій roles_and_clients і client_card.
 describe("clientErrorCode", () => {
   it.each([
     [{ code: "23505", message: 'duplicate key value violates unique constraint "clients_email_key"' }, "CLIENT_EXISTS"],
     [{ code: "23514", message: 'new row for relation "clients" violates check constraint "clients_full_name_check"' }, "INVALID_CLIENT"],
     [{ code: "23514", message: 'new row for relation "clients" violates check constraint "clients_email_check"' }, "INVALID_CLIENT"],
+    [{ code: "23514", message: 'violates check constraint "clients_guardian_check"' }, "INVALID_GUARDIAN"],
+    [{ code: "23514", message: 'violates check constraint "clients_child_shape_check"' }, "INVALID_GUARDIAN"],
+    [{ code: "23514", message: 'violates check constraint "clients_adult_shape_check"' }, "INVALID_CLIENT"],
+    [{ code: "23514", message: 'violates check constraint "clients_session_language_check"' }, "INVALID_LANGUAGE"],
+    [{ code: "22008", message: "date/time field value out of range" }, "INVALID_BIRTH_DATE"],
+    [{ code: "22007", message: "invalid input syntax for type date" }, "INVALID_BIRTH_DATE"],
+    [{ code: "P0001", message: "INVALID_BIRTH_DATE" }, "INVALID_BIRTH_DATE"],
+    [{ code: "42501", message: 'new row violates row-level security policy for table "clients"' }, "CARD_FORBIDDEN"],
     // Те саме обмеження, але інший код — не наш випадок.
     [{ code: "23505", message: 'violates check constraint "clients_email_check"' }, "UNEXPECTED"],
     [{ code: "23514", message: 'violates unique constraint "clients_email_key"' }, "UNEXPECTED"],
@@ -18,6 +26,14 @@ describe("clientErrorCode", () => {
     [{ message: "fetch failed" }, "UNEXPECTED"],
   ])("%o → %s", (error, code) => {
     expect(clientErrorCode(error)).toBe(code);
+  });
+});
+
+describe("clientErrorCode для дитини", () => {
+  it("помилка імені не згадує email (власного email у дитини немає)", () => {
+    const error = { code: "23514", message: 'violates check constraint "clients_full_name_check"' };
+    expect(clientErrorCode(error, "Child")).toBe("INVALID_CLIENT_NAME");
+    expect(clientErrorCode(error, "Adult")).toBe("INVALID_CLIENT");
   });
 });
 
