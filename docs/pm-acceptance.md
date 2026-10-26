@@ -20,6 +20,16 @@
 Кроки одноразові: email клієнта унікальний, картки не редагуються й не видаляються, тож повторний прогін дасть
 «A client with this email already exists.»; для повторного прогону беріть інші email.
 
+## Дані, які вже є на проді
+
+Для знімків ролей (`docs/evidence/slice2-prod-roles.md`) створено «Shot Adult», «Shot Child» (опікун «Shot Guardian») і «Shot Other»:
+- «Shot Adult» (PM Therapist One) і «Shot Other» (PM Therapist Two) утримано 2026-10-29 о 10:00; їхні утримання прострочаться
+  2026-10-27 о ~05:08 за часом практики (America/Los_Angeles). До того моменту `pm-therapist2` має «Held», тож AC-CARD-09 для нього
+  перевіряйте **після** цього часу; після нього ж `pm-therapist` перестане бачити «Shot Adult» — це AC-CARD-08 (клієнт без «Held»
+  і без «Confirmed» стає чужим), а «Shot Child» (підтверджено) лишається.
+- «Shot Child» (PM Therapist One, 2026-10-29 об 11:00) підтверджено.
+Свої картки з кроків нижче створюйте з іншими email (client6 тощо) — вони не зіткнуться з цими.
+
 ## Підготовка (під `pm-scheduler`)
 
 1. **Clients → New client** → Adult «Client Six», `client6@example.test`, 1990-05-14, English.
