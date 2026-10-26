@@ -8,7 +8,7 @@
 // Розбір — компілятором TypeScript (AST), а не регулярними виразами: типи в сигнатурі, імена з `$`, багаторядкові
 // сигнатури й рядки з дужками його не збивають.
 // Порушення:
-//  - перший оператор тіла не є викликом getViewer/requireRole (імпортованих з @/lib/supabase/viewer), зокрема виклик під
+//  - перший оператор тіла не є `await getViewer()` чи `await requireRole()` (імпортованих з @/lib/supabase/viewer), зокрема виклик під
 //    `if`, у гілці, у виразі чи після будь-якого іншого коду;
 //  - експорт "use server" файлу, який не є `export async function` (стрілка, клас, enum, `export { … }`, `export *`,
 //    `export default <вираз>`, генератор); типи (`export type`, `interface`) дозволено;
@@ -19,7 +19,7 @@
 // Код виходу: 0 — порушень немає, 1 — є порушення, 2 — немає чого перевіряти (немає src/).
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, sep } from "node:path";
+import { join, relative, sep } from "node:path";
 import ts from "typescript";
 
 const args = process.argv.slice(2);
@@ -62,22 +62,42 @@ function authNames(sf) {
   return names;
 }
 
-/** Перший оператор тіла (після директив) — `await getViewer()`, `const … = await requireRole(…)` тощо. */
-function firstStatementChecksSession(body, names) {
-  const first = body.statements.find((s) => !(ts.isExpressionStatement(s) && ts.isStringLiteral(s.expression)));
+/** Імена, які оголошує список параметрів (зокрема деструктуризація): вони затінюють імпорт. */
+function parameterNames(fn) {
+  const out = new Set();
+  const collect = (binding) => {
+    if (ts.isIdentifier(binding)) out.add(binding.text);
+    else for (const el of binding.elements) if (!ts.isOmittedExpression(el)) collect(el.name);
+  };
+  for (const p of fn.parameters) collect(p.name);
+  return out;
+}
+
+/**
+ * Перший оператор тіла (після директив) — `await getViewer()`, `const … = await requireRole(…)` тощо. Без `await`
+ * дія пішла б далі, не дочекавшись перевірки підпису JWT; параметр із такою назвою підміняє імпорт.
+ */
+function firstStatementChecksSession(fn, names) {
+  const shadowed = parameterNames(fn);
+  const first = fn.body.statements.find((s) => !(ts.isExpressionStatement(s) && ts.isStringLiteral(s.expression)));
   if (!first) return false;
   let expr;
   if (ts.isVariableStatement(first)) expr = first.declarationList.declarations[0]?.initializer;
   else if (ts.isExpressionStatement(first)) expr = first.expression;
-  while (expr && (ts.isAwaitExpression(expr) || ts.isParenthesizedExpression(expr))) expr = expr.expression;
-  return !!expr && ts.isCallExpression(expr) && ts.isIdentifier(expr.expression) && names.has(expr.expression.text);
+  let awaited = false;
+  while (expr && (ts.isAwaitExpression(expr) || ts.isParenthesizedExpression(expr))) {
+    awaited ||= ts.isAwaitExpression(expr);
+    expr = expr.expression;
+  }
+  const callee = expr && ts.isCallExpression(expr) && ts.isIdentifier(expr.expression) ? expr.expression.text : "";
+  return awaited && names.has(callee) && !shadowed.has(callee);
 }
 
 const problems = [];
 let actions = 0;
 
 for (const file of walk(src)) {
-  const shown = file.split(sep).join("/").slice(root.split(sep).join("/").length + 1);
+  const shown = relative(root, file).split(sep).join("/");
   const sf = ts.createSourceFile(file, readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true);
   const report = (node, message) => {
     const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
@@ -89,7 +109,7 @@ for (const file of walk(src)) {
     checked.add(node);
     actions++;
     if (EXEMPT.has(`${shown}:${name}`)) return;
-    if (!node.body || !ts.isBlock(node.body) || !firstStatementChecksSession(node.body, names)) {
+    if (!node.body || !ts.isBlock(node.body) || !firstStatementChecksSession(node, names)) {
       report(node, `${name}: першим оператором має бути виклик getViewer()/requireRole() з @/lib/supabase/viewer — сесію не перевірено`);
     }
   };

@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { fixtures, repoRoot, runScript } from "./run-script";
@@ -20,6 +21,8 @@ describe("scripts/check-action-auth.mjs", () => {
     ["helper-first", "helperFirst: першим оператором", ""],
     ["local-fake", "fake: першим оператором", ""],
     ["wrong-module", "lookalike: першим оператором", ""],
+    ["no-await", "fireAndForget: першим оператором", "keepPromise: першим оператором"],
+    ["shadow-param", "refresh: першим оператором", ""],
     ["twofns", "src/app/a/actions.ts:5", "bad: першим оператором"],
     ["inline", "evil: першим оператором", ""],
     ["other-login", "src/app/a/actions.ts:3", "login: першим оператором"],
@@ -48,6 +51,15 @@ describe("scripts/check-action-auth.mjs", () => {
     const { code, out } = run("ignored");
     expect(out).toContain("server actions: 0");
     expect(code).toBe(0);
+  });
+
+  it("--root . (relative) gives the same result: the login exception matches the path relative to the root", () => {
+    const result = spawnSync(process.execPath, [path.join(repoRoot, "scripts", "check-action-auth.mjs"), "--root", "."], {
+      cwd: dir("ok"),
+      encoding: "utf8",
+    });
+    expect(`${result.stdout}${result.stderr}`).toContain("server actions: 5");
+    expect(result.status).toBe(0);
   });
 
   it("the real repository passes", () => {
