@@ -41,8 +41,9 @@ for (const u of users) {
     console.error(`Лише синтетичні адреси *@example.test: "${u.email}" у supabase/demo-users.json.`);
     process.exit(1);
   }
-  if (!u.role) {
-    console.error(`Для ${u.email} не вказано role.`);
+  // "role": null — користувач без ролі (AC-CARD-11); ключ має бути явним, щоб не забути роль випадково.
+  if (!("role" in u)) {
+    console.error(`Для ${u.email} не вказано role (null — без ролі).`);
     process.exit(1);
   }
 }
@@ -96,7 +97,7 @@ for (const u of users) {
       .upsert({ id, email: u.email, full_name: u.full_name ?? null, role: u.role }, { onConflict: "id" });
     if (profileError) throw profileError;
 
-    console.log(`✔ ${u.email} — ${action}, роль ${u.role}`);
+    console.log(`✔ ${u.email} — ${action}, роль ${u.role ?? "немає"}`);
   } catch (e) {
     failed++;
     console.error(`✖ ${u.email}: ${e.message ?? e}`);

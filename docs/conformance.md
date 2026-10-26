@@ -48,7 +48,7 @@
 | AC-HOLD-13 | прострочене не підтверджується | `supabase/migrations/20261019143503_confirm_holds.sql` (guard_confirm), `src/lib/messages.ts` | `tests/db/confirm-db.test.ts`, `src/app/holds/actions.test.ts` | реалізовано |
 | AC-HOLD-14 | терапевт не підтверджує утримання | `supabase/migrations/20261019143503_confirm_holds.sql` (confirm_hold, holds_update_staff), `src/app/holds/actions.ts` | `tests/db/confirm-db.test.ts`, `src/app/holds/actions.test.ts` | реалізовано |
 | AC-HOLD-15 | email без @ — відмова | `supabase/migrations/20261019142745_roles_and_clients.sql` (clients_email_check), `src/lib/messages.ts` | `tests/db/clients-db.test.ts` | реалізовано |
-| AC-HOLD-16 | дубль email — відмова | `supabase/migrations/20261019142745_roles_and_clients.sql` (clients_email_key, normalize_client_email), `src/lib/messages.ts` | `tests/db/clients-db.test.ts`, `src/app/clients/actions.test.ts` | реалізовано |
+| AC-HOLD-16 | дубль email — відмова | `supabase/migrations/20261019142745_roles_and_clients.sql` (clients_email_key), `supabase/migrations/20261026100000_client_card.sql` (normalize_client), `src/lib/messages.ts` | `tests/db/clients-db.test.ts`, `src/app/clients/actions.test.ts` | реалізовано |
 | AC-HOLD-17 | повторне утримання за тим самим клієнтом — відмова | `supabase/migrations/20261019143036_slots_and_holds.sql` (guard_new_hold) | `tests/db/holds-db.test.ts` | реалізовано |
 | AC-HOLD-18 | немає вільних слотів — «No free slots on this day.» і під ним усі слоти зі статусами | `src/app/slots/page.tsx`, `src/lib/slots.ts` | `tests/db/holds-db.test.ts` | реалізовано |
 | AC-HOLD-19 | адміністратор утримує й підтверджує | `supabase/migrations/20261019143503_confirm_holds.sql` (confirm_hold, holds_update_staff; `is_scheduler_or_admin`) | `tests/db/confirm-db.test.ts` | реалізовано |
@@ -66,23 +66,23 @@
 | AC-HOLD-31 | перемикання на наступний тиждень | `src/app/schedule/page.tsx`, `src/lib/time.ts` (addDays) | `tests/db/schedule-db.test.ts`, `src/app/schedule/page.test.tsx`, `src/lib/time.test.ts` | реалізовано |
 | AC-HOLD-32 | слот, що почався, — «Past», не вільний | `supabase/migrations/20261021130000_past_status_and_expired_list.sql` (slot_board), `src/app/slots/page.tsx` | `tests/db/past-expired-db.test.ts` | реалізовано |
 | AC-HOLD-33 | «Past» не рахується вільним у «No free slots on this day.» | `supabase/migrations/20261021130000_past_status_and_expired_list.sql` (slot_board), `src/lib/slots.ts` | `tests/db/past-expired-db.test.ts`, `src/app/slots/page.test.tsx` | реалізовано |
-| AC-HOLD-34 | email з іншим регістром і пробілами — дубль | `supabase/migrations/20261019142745_roles_and_clients.sql` (normalize_client_email, clients_email_key) | `tests/db/clients-db.test.ts` | реалізовано |
-| AC-HOLD-35 | email зберігається й показується нормалізованим | `supabase/migrations/20261019142745_roles_and_clients.sql` (normalize_client_email) | `tests/db/clients-db.test.ts` | реалізовано |
+| AC-HOLD-34 | email з іншим регістром і пробілами — дубль | `supabase/migrations/20261019142745_roles_and_clients.sql` (clients_email_key), `supabase/migrations/20261026100000_client_card.sql` (normalize_client) | `tests/db/clients-db.test.ts` | реалізовано |
+| AC-HOLD-35 | email зберігається й показується нормалізованим | `supabase/migrations/20261026100000_client_card.sql` (normalize_client) | `tests/db/clients-db.test.ts` | реалізовано |
 | AC-HOLD-36 | повторне підтвердження — «This hold is already confirmed.» | `supabase/migrations/20261021120000_client_overlap_and_reconfirm.sql` (guard_confirm), `src/lib/messages.ts` | `tests/db/confirm-db.test.ts`, `src/app/holds/actions.test.ts` | реалізовано |
-| AC-CARD-01 | картка дорослого з анкети | — | — | відкладено (чекає реалізації) |
-| AC-CARD-02 | картка дитини з опікуном | — | — | відкладено (чекає реалізації) |
-| AC-CARD-03 | дитина без даних опікуна — відмова, дані лишаються | — | — | відкладено (чекає реалізації) |
-| AC-CARD-04 | терапевт бачить картки своїх клієнтів (Held/Confirmed) | — | — | відкладено (чекає реалізації) |
-| AC-CARD-05 | чужа картка за посиланням — «You don't have access to this client.» | — | — | відкладено (чекає реалізації) |
-| AC-CARD-06 | терапевт не створює картки | — | — | відкладено (чекає реалізації) |
-| AC-CARD-07 | без входу — лише сторінка входу | — | — | відкладено (чекає реалізації) |
-| AC-CARD-08 | прострочене утримання не робить клієнта своїм | — | — | відкладено (чекає реалізації) |
-| AC-CARD-09 | порожній список клієнтів терапевта | — | — | відкладено (чекає реалізації) |
-| AC-CARD-10 | планувальник і адміністратор бачать усі картки | — | — | відкладено (чекає реалізації) |
-| AC-CARD-11 | без ролі — лише повідомлення про відсутність доступу | — | — | відкладено (чекає реалізації) |
+| AC-CARD-01 | картка дорослого з анкети | `supabase/migrations/20261026100000_client_card.sql` (clients: обмеження, нормалізація, політики; own_client_ids) | `tests/db/client-card-db.test.ts` | відкладено (база готова в задачі 8, сторінки — задача 9) |
+| AC-CARD-02 | картка дитини з опікуном | `supabase/migrations/20261026100000_client_card.sql` (clients: обмеження, нормалізація, політики; own_client_ids) | `tests/db/client-card-db.test.ts` | відкладено (база готова в задачі 8, сторінки — задача 9) |
+| AC-CARD-03 | дитина без даних опікуна — відмова, дані лишаються | `supabase/migrations/20261026100000_client_card.sql` (clients: обмеження, нормалізація, політики; own_client_ids) | `tests/db/client-card-db.test.ts` | відкладено (база готова в задачі 8, сторінки — задача 9) |
+| AC-CARD-04 | терапевт бачить картки своїх клієнтів (Held/Confirmed) | `supabase/migrations/20261026100000_client_card.sql` (clients: обмеження, нормалізація, політики; own_client_ids) | `tests/db/client-card-db.test.ts` | відкладено (база готова в задачі 8, сторінки — задача 9) |
+| AC-CARD-05 | чужа картка за посиланням — «You don't have access to this client.» | `supabase/migrations/20261026100000_client_card.sql` (clients: обмеження, нормалізація, політики; own_client_ids) | `tests/db/client-card-db.test.ts` | відкладено (база готова в задачі 8, сторінки — задача 9) |
+| AC-CARD-06 | терапевт не створює картки | `supabase/migrations/20261026100000_client_card.sql` (clients: обмеження, нормалізація, політики; own_client_ids) | `tests/db/client-card-db.test.ts` | відкладено (база готова в задачі 8, сторінки — задача 9) |
+| AC-CARD-07 | без входу — лише сторінка входу | `supabase/migrations/20261026100000_client_card.sql` (clients: обмеження, нормалізація, політики; own_client_ids) | `tests/db/client-card-db.test.ts` | відкладено (база готова в задачі 8, сторінки — задача 9) |
+| AC-CARD-08 | прострочене утримання не робить клієнта своїм | `supabase/migrations/20261026100000_client_card.sql` (clients: обмеження, нормалізація, політики; own_client_ids) | `tests/db/client-card-db.test.ts` | відкладено (база готова в задачі 8, сторінки — задача 9) |
+| AC-CARD-09 | порожній список клієнтів терапевта | `supabase/migrations/20261026100000_client_card.sql` (clients: обмеження, нормалізація, політики; own_client_ids) | `tests/db/client-card-db.test.ts` | відкладено (база готова в задачі 8, сторінки — задача 9) |
+| AC-CARD-10 | планувальник і адміністратор бачать усі картки | `supabase/migrations/20261026100000_client_card.sql` (clients: обмеження, нормалізація, політики; own_client_ids) | `tests/db/client-card-db.test.ts` | відкладено (база готова в задачі 8, сторінки — задача 9) |
+| AC-CARD-11 | без ролі — лише повідомлення про відсутність доступу | `supabase/migrations/20261026100000_client_card.sql` (clients: обмеження, нормалізація, політики; own_client_ids) | `tests/db/client-card-db.test.ts` | відкладено (база готова в задачі 8, сторінки — задача 9) |
 | AC-HOLD-37 | повторне утримання після прострочення за тим самим клієнтом | — | — | відкладено (чекає реалізації) |
 | AC-HOLD-38 | список утримань: лише Held і Expired, за часом слоту | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-39 | інші некоректні email відхиляються | — | — | відкладено (чекає реалізації) |
+| AC-HOLD-39 | інші некоректні email відхиляються | `supabase/migrations/20261026100000_client_card.sql` (is_valid_email, clients_email_check) | `tests/db/client-card-db.test.ts` | реалізовано |
 | AC-HOLD-40 | терапевт бачить ім'я клієнта без email у розкладі | — | — | відкладено (чекає реалізації) |
-| AC-HOLD-41 | ім'я з пробілами: порожнє відхиляється, краї прибираються | — | — | відкладено (чекає реалізації) |
+| AC-HOLD-41 | ім'я з пробілами: порожнє відхиляється, краї прибираються | `supabase/migrations/20261026100000_client_card.sql` (normalize_client, has_visible_text) | `tests/db/client-card-db.test.ts` | реалізовано |
 | AC-HOLD-42 | Held, слот якого почався, не в списку утримань | — | — | відкладено (чекає реалізації) |

@@ -3,6 +3,12 @@
 export const MESSAGES = {
   INVALID_CLIENT: "Enter the client's name and a valid email.", // AC-HOLD-11, AC-HOLD-15
   CLIENT_EXISTS: "A client with this email already exists.", // AC-HOLD-16
+  INVALID_GUARDIAN: "Enter the guardian's name and a valid email.", // AC-CARD-03
+  // Тексти без AC: PM ще не відповіла (Sofiia-pm/therapy-scheduling-spec#21), взято з рекомендації до того питання.
+  INVALID_CLIENT_NAME: "Enter the client's name.",
+  INVALID_BIRTH_DATE: "Enter a date of birth that is not in the future.",
+  INVALID_LANGUAGE: "Select a session language.",
+  CARD_FORBIDDEN: "Only schedulers and admins can create client cards.", // AC-CARD-06
   CLIENT_CREATED: "Client created.",
   SLOT_UNAVAILABLE: "This slot is no longer available.", // AC-HOLD-03, AC-HOLD-04, AC-HOLD-17
   SLOT_STARTED: "This slot has already started and cannot be held.", // AC-HOLD-07
@@ -39,9 +45,31 @@ export function dbMessageCode(error: { message?: string }): MessageCode {
   return isMessageCode(error.message) ? error.message : "UNEXPECTED";
 }
 
-/** Помилка створення клієнта з бази → код (обмеження таблиці clients, міграція roles_and_clients). */
-export function clientErrorCode(error: { code?: string; message?: string }): MessageCode {
-  if (error.code === "23505" && error.message?.includes("clients_email_key")) return "CLIENT_EXISTS";
-  if (error.code === "23514" && /clients_(full_name|email)_check/.test(error.message ?? "")) return "INVALID_CLIENT";
-  return "UNEXPECTED";
+export type ClientType = "Adult" | "Child";
+
+// Помилки створення клієнта з бази (обмеження й тригер таблиці clients, міграції roles_and_clients і client_card):
+// код Postgres (без `codes` — будь-який) і текст, який його ідентифікує. Для дитини помилка імені не згадує email.
+const CLIENT_ERRORS: { codes?: string[]; match: RegExp; message: MessageCode | ((type: ClientType) => MessageCode) }[] = [
+  { codes: ["23505"], match: /clients_email_key/, message: "CLIENT_EXISTS" },
+  { codes: ["23514"], match: /clients_(guardian|child_shape)_check/, message: "INVALID_GUARDIAN" },
+  { codes: ["23514"], match: /clients_session_language_check/, message: "INVALID_LANGUAGE" },
+  {
+    codes: ["23514"],
+    match: /clients_full_name_check/,
+    message: (type) => (type === "Child" ? "INVALID_CLIENT_NAME" : "INVALID_CLIENT"),
+  },
+  { codes: ["23514"], match: /clients_(email|adult_shape)_check/, message: "INVALID_CLIENT" },
+  // Невірний формат дати (22007, 22008) і дата в майбутньому (тригер normalize_client: raise exception).
+  { codes: ["22007", "22008"], match: /(?:)/, message: "INVALID_BIRTH_DATE" },
+  { match: /^INVALID_BIRTH_DATE$/, message: "INVALID_BIRTH_DATE" },
+  // RLS: insert у clients лише для планувальника й адміністратора (AC-CARD-06); «permission denied» (немає grant) — збій.
+  { codes: ["42501"], match: /row-level security/, message: "CARD_FORBIDDEN" },
+];
+
+export function clientErrorCode(error: { code?: string; message?: string }, clientType: ClientType = "Adult"): MessageCode {
+  const rule = CLIENT_ERRORS.find(
+    (r) => (!r.codes || r.codes.includes(error.code ?? "")) && r.match.test(error.message ?? ""),
+  );
+  if (!rule) return "UNEXPECTED";
+  return typeof rule.message === "function" ? rule.message(clientType) : rule.message;
 }
