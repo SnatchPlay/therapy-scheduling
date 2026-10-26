@@ -38,6 +38,6 @@ export async function getViewer() {
 /** Сторінка чи дія лише для цих ролей; інших повертаємо на головну (там — їхня сторінка). */
 export async function requireRole(...roles: Role[]) {
   const viewer = await getViewer();
-  if (!viewer.role || !roles.includes(viewer.role)) redirect("/");
+  if (viewer.role && !roles.includes(viewer.role)) redirect("/");
   return { ...viewer, role: viewer.role };
 }

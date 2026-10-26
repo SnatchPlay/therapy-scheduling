@@ -20,7 +20,7 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
   if (error && error.code !== INVALID_ID) throw error;
 
   if (!data) {
-    if (STAFF.includes(role)) notFound();
+    notFound();
     return (
       <AppShell role={role} email={email} title="Client" notice={noticeFor("CLIENT_ACCESS_DENIED")}>
         <div>
