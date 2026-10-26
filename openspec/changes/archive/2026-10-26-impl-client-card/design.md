@@ -7,7 +7,7 @@
 сторінки чи Server Actions. Нове — у міграціях `supabase/migrations/20261025…_client_card.sql` (задача 8) і
 `…_hold_list_rules.sql` (задача 10) та в застосунку.
 
-## UI
+## UI і компоненти
 
 ### Р14. Сторінки (AC-CARD-01…11) — задача 9
 
@@ -77,6 +77,26 @@
   `not exists (newer hold on the same slot for the same client)`.
 - AC-HOLD-40: поведінка вже є (`slot_board` віддає лише `client_name`) — додаємо тест із цим ID; email терапевт бачить
   лише в картках своїх клієнтів.
+
+## Auth
+
+### Р16. Де і як перевіряється роль (AC-CARD-05, 06, 07, 11) — задачі 8, 9, 11
+
+- **Роль — лише з бази.** `public.profiles.role` (`admin`, `scheduler`, `therapist` або `null`), хелпери `private.*` читають її через
+  `auth.uid()`; ніколи з `user_metadata` чи JWT. Користувач змінює лише власне `full_name` (колонковий `grant update`), тож пастка
+  «оновити власний рядок + `role`» закрита (AC-CARD-11, тест `tests/db/profiles-db.test.ts`).
+- **Доступ вирішує база, не код.** RLS і функції діють і для прямого запиту Data API (публічний ключ у бандлі): `clients_select_*`,
+  `clients_insert_staff`, `private.own_client_ids()`. Сторінки роблять один запит для всіх ролей, а дії лише перекладають відмову бази на
+  текст PM (AC-CARD-05, 06).
+- **Сесія — у кожній дії.** Кожна server action першим оператором викликає `getViewer()`/`requireRole()` (`supabase.auth.getClaims()`,
+  не `getSession()`), а правило `scripts/check-action-auth.mjs` (job «Server actions: сесія перевіряється») не дає цього забути
+  (ADR 0004). Виняток — `login`, `signOut`.
+- **Proxy — лише UX.** `src/proxy.ts` (`updateSession`) відправляє без входу на `/login` (AC-CARD-07) і оновлює cookie сесії; доступу до
+  даних він не дає й не забирає — це робить база. Користувач без ролі (AC-CARD-11) потрапляє з будь-якої сторінки на `/`, де лише
+  повідомлення й «Sign out».
+- **Admin-клієнт не потрібен.** Зріз не має привілейованих дій у застосунку (ролі — сид; керування ними поза зрізом), тож
+  `SUPABASE_SECRET_KEY` лишається лише в скриптах (`users:demo`, `users:pm`) і ніколи не потрапляє у Vercel чи код застосунку
+  (`check:boundary`).
 
 ## Тести
 
