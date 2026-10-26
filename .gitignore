@@ -50,3 +50,6 @@ next-env.d.ts
 
 # Storybook
 storybook-static
+
+# Тестові акаунти з паролями — лише локально; у репо — тільки зашифрований accounts.zip.
+accounts.txt
