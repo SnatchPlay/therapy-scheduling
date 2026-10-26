@@ -4,10 +4,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // Сторінка без Next і бази: requireRole дає фейковий Supabase; server actions і Link — заглушки.
 type Slot = { slot_id: string; starts_at: string; ends_at: string; status: string; holdable: boolean };
 let slots: Slot[] = [];
+let withClients = true;
+const clientRows = [
+  { id: "c1", full_name: "Client One", client_type: "Adult", email: "client1@example.test", guardian_email: null },
+  { id: "c7", full_name: "Client Seven", client_type: "Child", email: null, guardian_email: "guardian7@example.test" },
+];
 const query = (data: unknown[]) => ({ select: () => ({ order: async () => ({ data, error: null }) }) });
 const supabase = {
   from: (table: string) =>
-    query(table === "therapists" ? [{ id: "t1", full_name: "Therapist One" }] : [{ id: "c1", full_name: "Client One", email: "client1@example.test" }]),
+    query(table === "therapists" ? [{ id: "t1", full_name: "Therapist One" }] : withClients ? clientRows : []),
   rpc: async () => ({ data: slots, error: null }),
 };
 vi.mock("@/lib/supabase/viewer", async (importActual) => ({
@@ -35,9 +40,26 @@ const NO_FREE = "No free slots on this day.";
 
 beforeEach(() => {
   slots = [];
+  withClients = true;
 });
 
 describe("/slots", () => {
+  it("AC-CARD-02: у виборі клієнта біля дитини показано email опікуна, біля дорослого — його власний", async () => {
+    slots = [slot("10:00", "Free", true)];
+    const html = await render();
+    expect(html).toContain(">Client Seven (guardian: guardian7@example.test)<");
+    expect(html).toContain(">Client One (client1@example.test)<");
+  });
+
+  it("AC-CARD-01: без жодного клієнта вільний слот веде створити картку, а не показує вибір", async () => {
+    withClients = false;
+    slots = [slot("10:00", "Free", true)];
+    const html = await render();
+    expect(html).toContain('href="/clients/new"');
+    expect(html).toContain("Create a client first");
+    expect(html).not.toContain("Choose a client");
+  });
+
   it("AC-HOLD-01: вільний слот — кнопка Hold лише в нього, повідомлення немає", async () => {
     slots = [slot("10:00", "Free", true), slot("11:00", "Held", false), slot("12:00", "Confirmed", false)];
     const html = await render();

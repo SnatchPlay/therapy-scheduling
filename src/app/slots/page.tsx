@@ -1,9 +1,11 @@
+import Link from "next/link";
 import { AppShell } from "@/app/_components/app-shell";
 import { StatusBadge } from "@/components/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { clientOptionLabel } from "@/lib/clients";
 import { MESSAGES, noticeFor } from "@/lib/messages";
 import { hasHoldableSlot, withSlotTimes } from "@/lib/slots";
 import { requireRole, STAFF } from "@/lib/supabase/viewer";
@@ -16,7 +18,7 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
 
   const [therapistsResult, clientsResult] = await Promise.all([
     supabase.from("therapists").select("id, full_name").order("full_name"),
-    supabase.from("clients").select("id, full_name, email").order("full_name"),
+    supabase.from("clients").select("id, full_name, client_type, email, guardian_email").order("full_name"),
   ]);
   if (therapistsResult.error) throw therapistsResult.error;
   if (clientsResult.error) throw clientsResult.error;
@@ -77,9 +79,9 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
             ) : null}
             {s.status === "Confirmed" ? <span>{s.client_name}</span> : null}
             {s.holdable && clients.length === 0 ? (
-              <a href="/clients" className={buttonVariants({ variant: "link" }) + " ml-auto"}>
+              <Link href="/clients/new" className={buttonVariants({ variant: "link" }) + " ml-auto"}>
                 Create a client first
-              </a>
+              </Link>
             ) : null}
             {s.holdable && clients.length > 0 ? (
               <form action={holdSlot} className="ml-auto flex gap-2">
@@ -93,7 +95,7 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
                   </NativeSelectOption>
                   {clients.map((c) => (
                     <NativeSelectOption key={c.id} value={c.id}>
-                      {c.full_name} ({c.email})
+                      {clientOptionLabel(c)}
                     </NativeSelectOption>
                   ))}
                 </NativeSelect>

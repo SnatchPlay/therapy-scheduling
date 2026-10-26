@@ -24,12 +24,13 @@ describe("AppShell", () => {
     expect(render({})).not.toContain('data-slot="alert"');
   });
 
-  it("навігація за роллю: планувальник бачить Slots, Holds, Clients; терапевт — лише Schedule", () => {
+  it("навігація за роллю: планувальник бачить Slots, Holds, Clients; терапевт — Schedule і Clients (свої клієнти)", () => {
     const staff = render({});
     for (const label of [">Slots<", ">Holds<", ">Clients<"]) expect(staff).toContain(label);
     expect(staff).not.toContain(">Schedule<");
     const therapist = render({ role: "therapist" });
     expect(therapist).toContain(">Schedule<");
-    expect(therapist).not.toContain(">Holds<");
+    expect(therapist).toContain(">Clients<");
+    for (const href of ["/holds", "/slots"]) expect(therapist).not.toContain(`href="${href}"`);
   });
 });

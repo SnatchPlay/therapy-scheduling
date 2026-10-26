@@ -9,6 +9,9 @@ export const MESSAGES = {
   INVALID_BIRTH_DATE: "Enter a date of birth that is not in the future.",
   INVALID_LANGUAGE: "Select a session language.",
   CARD_FORBIDDEN: "Only schedulers and admins can create client cards.", // AC-CARD-06
+  CLIENT_ACCESS_DENIED: "You don't have access to this client.", // AC-CARD-05, AC-CARD-08
+  NO_CLIENTS: "No clients yet. Clients appear here when a scheduler holds a slot with you.", // AC-CARD-09
+  NO_ACCESS: "Your account has no access yet. Contact an administrator.", // AC-CARD-11
   CLIENT_CREATED: "Client created.",
   SLOT_UNAVAILABLE: "This slot is no longer available.", // AC-HOLD-03, AC-HOLD-04, AC-HOLD-17
   SLOT_STARTED: "This slot has already started and cannot be held.", // AC-HOLD-07

@@ -4,13 +4,13 @@ import { signOut } from "@/app/login/actions";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
 import type { Notice } from "@/lib/messages";
-import { type Role, STAFF } from "@/lib/supabase/viewer";
+import { ALL_ROLES, type Role, STAFF } from "@/lib/supabase/viewer";
 
-// Посилання за матрицею прав requirements/product.md: терапевт бачить лише свій розклад.
+// Посилання за матрицею прав requirements/product.md: терапевт бачить свій розклад і своїх клієнтів.
 const LINKS: { href: string; label: string; roles: readonly Role[] }[] = [
   { href: "/slots", label: "Slots", roles: STAFF },
   { href: "/holds", label: "Holds", roles: STAFF },
-  { href: "/clients", label: "Clients", roles: STAFF },
+  { href: "/clients", label: "Clients", roles: ALL_ROLES },
   { href: "/schedule", label: "Schedule", roles: ["therapist"] },
 ];
 
@@ -25,7 +25,7 @@ export function AppShell({
   email: string | null;
   title: string;
   notice?: Notice;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-8">
