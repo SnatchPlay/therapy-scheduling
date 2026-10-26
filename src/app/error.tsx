@@ -1,10 +1,10 @@
 "use client"; // Межа помилок — лише клієнтський компонент (node_modules/next/dist/docs/01-app/01-getting-started/10-error-handling.md)
 
 import { useEffect } from "react";
-import { signOut } from "@/app/login/actions";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { MESSAGES } from "@/lib/messages";
+import { SignOutButton } from "./_components/sign-out-button";
 
 // Збій запиту до бази (сторінки кидають error) — повідомлення, а не порожній список.
 // `retry`, не `reset`: у Next 16.4 `retry` стабільний з v16.3.0 і перезапитує дані сегмента, а `reset` лише
@@ -25,11 +25,7 @@ export default function ErrorPage({ error, retry }: { error: Error & { digest?: 
           Try again
         </Button>
         {/* Збій профілю повторюється на кожній сторінці: вихід має бути доступний і тут. */}
-        <form action={signOut}>
-          <Button type="submit" variant="outline">
-            Sign out
-          </Button>
-        </form>
+        <SignOutButton />
       </div>
     </main>
   );
