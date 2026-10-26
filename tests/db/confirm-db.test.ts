@@ -36,6 +36,10 @@ const statusOf = async (holdId: string) => {
   return row;
 };
 
+// Слот, що почався, у списку утримань не показано (AC-HOLD-42, AC-HOLD-38): статус утримання тоді читаємо з розкладу слотів.
+const boardStatusOf = async (holdId: string) =>
+  (await t.asUser<{ status: string }>(SCHEDULER, "select status from public.slot_board where hold_id = $1", [holdId]))[0]?.status;
+
 describe("Підтвердження", () => {
   it("AC-HOLD-12: непрострочене утримання підтверджено — «Confirmed», без Held until, недоступне й після 24 годин", async () => {
     const slot = await createSlot(t, T1, "now() + interval '3 days'");
@@ -80,7 +84,7 @@ describe("Підтвердження", () => {
       slot,
     ]);
     expect(await confirmAs(SCHEDULER, hold.id!)).toBe("This slot has already started and cannot be confirmed.");
-    expect((await statusOf(hold.id!)).status).toBe("Held");
+    expect(await boardStatusOf(hold.id!)).toBe("Held");
   });
 
   it("AC-HOLD-23: за хвилину до початку слоту утримання підтверджується", async () => {
@@ -91,7 +95,7 @@ describe("Підтвердження", () => {
       [slot],
     );
     expect(await confirmAs(SCHEDULER, hold.id!)).toBe("confirmed");
-    expect((await statusOf(hold.id!)).status).toBe("Confirmed");
+    expect(await boardStatusOf(hold.id!)).toBe("Confirmed");
   });
 });
 
@@ -107,7 +111,8 @@ describe("Підтвердження: гонки й межі", () => {
     expect(h2.id).toBeDefined();
 
     expect(await confirmAs(SCHEDULER, h1.id!)).toBe("This hold has expired. Hold the slot again.");
-    const sessions = await t.asUser(SCHEDULER, "select hold_id from public.hold_list where slot_id = $1 and status = 'Confirmed'", [slot]);
+    // З таблиці: список утримань підтверджених сеансів не показує (AC-HOLD-38).
+    const sessions = await t.asService("select id from public.holds where slot_id = $1 and confirmed_at is not null", [slot]);
     expect(sessions).toEqual([]);
     expect(await confirmAs(t.users["scheduler2@example.test"], h2.id!)).toBe("confirmed");
   });

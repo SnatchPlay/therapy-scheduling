@@ -22,9 +22,9 @@ beforeAll(async () => {
 }, 60_000);
 
 const activeHolds = async (slotId: string) => {
-  const [{ n }] = await t.asUser<{ n: number }>(
-    SCHEDULER,
-    "select count(*)::int as n from public.hold_list where slot_id = $1 and status <> 'Expired'",
+  // З таблиці, а не зі списку утримань: список ховає слоти, що почалися, і підтверджені сеанси (AC-HOLD-38, 42).
+  const [{ n }] = await t.asOwner<{ n: number }>(
+    "select count(*)::int as n from public.holds as h where h.slot_id = $1 and private.hold_status(h.confirmed_at, h.created_at) <> 'Expired'",
     [slotId],
   );
   return n;

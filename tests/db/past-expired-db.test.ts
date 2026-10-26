@@ -123,18 +123,4 @@ describe("Прострочене утримання в списку утрима
     await startSlotAt(slot, "now() - interval '2 hours'");
     expect(await inHoldList(SCHEDULER, hold.id!)).toBeUndefined();
   });
-
-  it("AC-HOLD-29: правило лише для простроченого — «Held» і «Confirmed» утримання слоту, що почався, лишаються в списку", async () => {
-    const heldSlot = await createSlot(t, T1, "now() + interval '10 days'");
-    const heldHold = await holdAs(t, SCHEDULER, heldSlot, CLIENT1);
-    const client5 = await ensureClient(t, "client5", "client5@example.test");
-    const sessionSlot = await createSlot(t, T1, "now() + interval '11 days'");
-    const sessionHold = await holdAs(t, SCHEDULER, sessionSlot, client5);
-    await t.asUser(SCHEDULER, "select public.confirm_hold($1)", [sessionHold.id]);
-    await ageHold(t, sessionHold.id!, 3000);
-    await startSlotAt(heldSlot, "now() - interval '5 minutes'");
-    await startSlotAt(sessionSlot, "now() - interval '7 minutes'");
-    expect(await inHoldList(SCHEDULER, heldHold.id!)).toBe("Held");
-    expect(await inHoldList(SCHEDULER, sessionHold.id!)).toBe("Confirmed");
-  });
 });
