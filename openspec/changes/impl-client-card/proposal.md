@@ -35,8 +35,8 @@
 
 ## Assumptions
 
-Ті самі, що в зміні `add-client-card`; власні — у `design.md` (Р12–Р16), питання до PM Q1–Q4 у `docs/spec-reading.md`.
+Ті самі, що в зміні `add-client-card`; власні — у `design.md` (Р12–Р16), питання до PM у `docs/spec-reading.md` (N1, N3 і чужі #20–#24).
 
 ## Open questions
 
-Q1–Q4 з `docs/spec-reading.md` (зріз 2) ще без відповіді PM; рішення за замовчуванням описані в `design.md`.
+N1 (#25), N3 (#26) та чужі питання #20–#24 з `docs/spec-reading.md` (зріз 2) ще без відповіді PM; рішення за замовчуванням описані в `design.md`.
