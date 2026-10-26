@@ -4,7 +4,7 @@
 
 - [x] 8.1 Міграція: колонки картки, обмеження, нормалізація й дата народження, права на колонки, nullable `profiles.role`
 - [x] 8.2 Політики `clients`: `select` для staff, `select` для терапевта через `private.own_client_ids()`, `insert` для staff
-- [x] 8.3 Тести бази з таблицею мутацій (в описі PR); оновлення `database.types.ts` із `db-check` — після першого прогону CI
+- [x] 8.3 Тести бази з таблицею мутацій (в описі PR); `database.types.ts` оновлено вручну за форматом генератора (підсумок `db-check` не публікується в логах)
 
 Done when: AC-CARD-01, AC-CARD-02, AC-CARD-03, AC-CARD-04, AC-CARD-05, AC-CARD-06, AC-CARD-08, AC-CARD-09,
 AC-CARD-10, AC-HOLD-39, AC-HOLD-41 (на рівні бази; користувач без ролі й без входу — AC-CARD-07, AC-CARD-11 тестами бази)
