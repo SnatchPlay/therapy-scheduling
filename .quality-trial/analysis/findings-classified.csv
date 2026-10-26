@@ -92,3 +92,12 @@ T7-03,2026-10-21,T-7,blind-review,real,TEST,,mutation,,,grouping and default wee
 T7-04,2026-10-21,T-7,blind-review,real,INPUT,,probe,,,week=9999-12-27 produced an out-of-range date and an error page,L
 T7-05,2026-10-21,T-7,blind-review,nit,TEST,,mutation,,,anon test passed without the revoke,L
 T7-06,2026-10-21,T-7,stryker,real,TEST,,mutation,,,day heading link and empty-week condition unpinned,L
+T14-01,2026-10-26,T-14,browser,real,UI,,run,,,cross stayed in front after a failed sign-in (button remounted on ?error),M
+T14-02,2026-10-26,T-14,blind-review,real,FAIL,,static,,,failed signOut left the opaque cover over error.tsx,M
+T14-03,2026-10-26,T-14,blind-review,real,PERF,,static,,,full-screen shader looped all day on working pages,M
+T14-04,2026-10-26,T-14,blind-review,real,FAIL,,static,,,createShader null on lost context would throw in root layout,L
+T14-05,2026-10-26,T-14,blind-review,real,TEST,,static,,,contrast claim in DESIGN not pinned by a test,L
+T14-06,2026-10-26,T-14,blind-review,real,UI,,static,,,double click on Sign out restarted the cover,L
+T14-07,2026-10-26,T-14,blind-review,real,UI,,static,,,smoothstep edge order and colour above alpha in premultiplied output,L
+T14-08,2026-10-26,T-14,stryker,real,TEST,,mutation,,,easing shape settle queue reset and queue replacement unpinned,L
+T14-09,2026-10-26,T-14,coderabbit,real,DOC,,static,,,white mixed into smoke colour against DESIGN primary-only rule,L

@@ -40,7 +40,8 @@ void main() {
   float halo = exp(-max(d, 0.) * 10.) * n;
   float density = clamp(body * (.45 + .75 * n) + halo * .8, 0., 1.);
   // clamp: у premultiplied alpha колір не може бути більшим за непрозорість.
-  vec3 color = clamp(mix(uColor * (.65 + .7 * n), vec3(1.), smoothstep(.6, .95, n * body) * .2), 0., 1.);
+  // Лише відтінки primary (DESIGN.md, розділ 11): світліше й темніше від шуму, без домішки іншого кольору.
+  vec3 color = clamp(uColor * (.65 + .7 * n), 0., 1.);
   float alpha = density * uAlpha;
   gl_FragColor = vec4(color * alpha, alpha);
 }`;

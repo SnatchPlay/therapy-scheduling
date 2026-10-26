@@ -97,8 +97,30 @@ describe("SmokeTimeline", () => {
     expect(t.sample(1450)).toMatchObject({ ...COVERED, front: false });
     expect(t.sample(2050)).toEqual(AMBIENT);
     expect(t.endsAt).toBe(2050);
-    t.play("emerge", 2100); // черги summon більше немає
+    t.play("emerge", 2100); // черги summon більше немає: emerge іде одразу
     expect(t.sample(2100)).toEqual(AMBIENT);
+    expect(t.sample(2100 + 900)).toMatchObject({ scale: 1.25, alpha: 1 });
+  });
+
+  it("згладжування: emerge швидко стартує й сповільнюється, enter розганяється на глядача", () => {
+    const t = new SmokeTimeline(AT_LOGIN);
+    t.play("emerge", 0);
+    // easeOut за третину часу — 70 % шляху (лінійно було б 33 %).
+    expect(t.sample(300).alpha).toBeGreaterThan(0.8);
+    t.play("enter", 900);
+    // easeIn за половину часу — 12.5 % шляху від 1.25 до 10 (лінійно — 50 %).
+    expect(t.sample(900 + 325).scale).toBeLessThan(2.5);
+  });
+
+  it("новий cue під час виходу замінює вже чергу, а не дописує кадри після неї", () => {
+    const t = new SmokeTimeline(AMBIENT);
+    t.play("summon", 0);
+    t.play("arrive", 500);
+    t.play("emerge", 600); // обидва чекають кінця summon (1450); діє останній
+    // Посередині — уже emerge (до 1.25), а не arrive (до 2.5).
+    expect(t.sample(1450 + 550).scale).toBeLessThan(2);
+    expect(t.sample(1450 + 900)).toEqual({ scale: 1.25, alpha: 1, warp: 0.14, front: true });
+    expect(t.endsAt).toBe(1450 + 900);
   });
 
   it("подвійний клік на Sign out не запускає хрест удруге", () => {

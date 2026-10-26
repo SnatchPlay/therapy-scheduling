@@ -23,3 +23,7 @@ date,step,instrument,diff_lines,tokens,minutes,findings_real,findings_nit,findin
 2026-10-21,T-6,blind-review,,125000,3.6,2,2,0,3,views page and tests reviewer; no logic defects
 2026-10-21,T-7,blind-review,,135000,5.8,5,2,0,3,app function and tests reviewer; one real security-mode test gap
 2026-10-21,T-7,stryker,,,6,2,0,0,0,52 mutants 41 killed; survivors equivalent or covered by an added test
+2026-10-26,T-14,browser,,,15,1,0,0,0,playwright on local supabase; failed sign-in left cross in front
+2026-10-26,T-14,blind-review,615,197000,7,7,0,0,2,correctness and principles reviewers; both found the stuck cover
+2026-10-26,T-14,stryker,,,40,1,0,0,0,148 mutants 141 killed; 3 real survivors fixed; 4 equivalent
+2026-10-26,T-14,coderabbit,,,10,1,0,0,0,white mix against DESIGN rule
