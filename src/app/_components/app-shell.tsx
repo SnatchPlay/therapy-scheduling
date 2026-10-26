@@ -1,10 +1,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { signOut } from "@/app/login/actions";
 import { Alert, AlertTitle } from "@/components/ui/alert";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import type { Notice } from "@/lib/messages";
 import { ALL_ROLES, type Role, STAFF } from "@/lib/supabase/viewer";
+import { SignOutButton } from "./sign-out-button";
 
 // Посилання за матрицею прав requirements/product.md: терапевт бачить свій розклад і своїх клієнтів.
 const LINKS: { href: string; label: string; roles: readonly Role[] }[] = [
@@ -40,11 +40,7 @@ export function AppShell({
         <span className="ml-auto text-muted-foreground" data-testid="viewer">
           {email} · {role ?? "no role"}
         </span>
-        <form action={signOut}>
-          <Button type="submit" variant="outline" size="sm">
-            Sign out
-          </Button>
-        </form>
+        <SignOutButton size="sm" />
       </header>
       <main className="flex flex-col gap-6">
         <h1 className="text-2xl font-semibold">{title}</h1>
