@@ -26,8 +26,8 @@ Done when: AC-HOLD-37, AC-HOLD-38, AC-HOLD-40, AC-HOLD-42
 
 ## 11. Архітектурне правило й ADR (PR `task/action-auth-rule`)
 
-- [ ] 11.1 ADR про ролі й «свій клієнт» у базі
-- [ ] 11.2 `scripts/check-action-auth.mjs`: кожна server action перевіряє сесію (`getClaims`); тест і доказ на порушенні
-- [ ] 11.3 Крок CI `architecture.yml`
+- [x] 11.1 ADR про ролі й «свій клієнт» у базі
+- [x] 11.2 `scripts/check-action-auth.mjs`: кожна server action перевіряє сесію (`getClaims`); тест і доказ на порушенні
+- [x] 11.3 Крок CI `architecture.yml`
 
 Done when: AC-CARD-06, AC-CARD-07, AC-CARD-11 (правило не дає дії обійти перевірку сесії; відмови цих AC уже в тестах задач 8–9)
