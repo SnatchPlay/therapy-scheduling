@@ -1,0 +1,7 @@
+[
+  { "email": "pm-admin@example.test", "full_name": "PM Admin", "role": "admin" },
+  { "email": "pm-scheduler@example.test", "full_name": "PM Scheduler", "role": "scheduler" },
+  { "email": "pm-therapist@example.test", "full_name": "PM Therapist One", "role": "therapist" },
+  { "email": "pm-therapist2@example.test", "full_name": "PM Therapist Two", "role": "therapist" },
+  { "email": "pm-noaccess@example.test", "full_name": "PM No Access", "role": null }
+]

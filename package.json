@@ -15,6 +15,7 @@
     "ac:coverage": "node scripts/check-ac-coverage.mjs",
     "db:types": "supabase gen types typescript --linked > src/lib/supabase/database.types.ts",
     "users:demo": "node --env-file=.env.local scripts/create-demo-users.mjs",
+    "users:pm": "node --env-file=.env.local scripts/create-demo-users.mjs --file supabase/pm-users.json --password-env PM_USER_PASSWORD",
     "check:design": "node scripts/check-design-tokens.mjs",
     "check:boundary": "node scripts/check-server-boundary.mjs",
     "check:actions": "node scripts/check-action-auth.mjs",
