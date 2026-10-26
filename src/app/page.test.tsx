@@ -12,7 +12,6 @@ vi.mock("@/lib/supabase/viewer", async (importActual) => ({
   ...(await importActual<typeof import("@/lib/supabase/viewer")>()),
   getViewer: async () => ({ role, email: "user@example.test" }),
 }));
-vi.mock("@/app/login/actions", () => ({ signOut: async () => {} }));
 vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a> }));
 
 const { default: Home } = await import("./page");

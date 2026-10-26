@@ -13,7 +13,9 @@ import { useSmokeCue } from "./_components/smoke/smoke-backdrop";
 export default function ErrorPage({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   const cue = useSmokeCue();
   // Вхід чи вихід упав посеред анімації: хрест не має лишитись над повідомленням про помилку.
-  useEffect(() => cue("settle"), [cue]);
+  useEffect(() => {
+    cue("settle");
+  }, [cue]);
 
   useEffect(() => {
     // Як у прикладі документації Next: у production текст серверної помилки вже замінено загальним із `digest`.

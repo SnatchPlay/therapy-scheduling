@@ -27,7 +27,6 @@ vi.mock("@/lib/supabase/viewer", async (importActual) => ({
   requireRole: async () => ({ supabase, role: "scheduler", email: "scheduler1@example.test" }),
 }));
 vi.mock("./actions", () => ({ confirmHold: async () => {} }));
-vi.mock("@/app/login/actions", () => ({ signOut: async () => {} }));
 vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a> }));
 
 const { default: HoldsPage } = await import("./page");

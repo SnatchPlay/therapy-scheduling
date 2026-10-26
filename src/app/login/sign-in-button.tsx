@@ -12,7 +12,9 @@ export function SignInButton() {
   const { pending } = useFormStatus();
   const cue = useSmokeCue();
 
-  useEffect(() => cue(pending ? "emerge" : "rest"), [pending, cue]);
+  useEffect(() => {
+    cue(pending ? "emerge" : "rest");
+  }, [pending, cue]);
 
   return (
     <Button type="submit" disabled={pending}>

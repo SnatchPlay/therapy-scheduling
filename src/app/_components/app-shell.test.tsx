@@ -1,8 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-// Оболонка без Next: signOut і Link — заглушки.
-vi.mock("@/app/login/actions", () => ({ signOut: async () => {} }));
+// Оболонка без Next: Link — заглушка.
 vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a> }));
 
 const { AppShell } = await import("./app-shell");

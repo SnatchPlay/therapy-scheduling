@@ -63,18 +63,21 @@ describe("SmokeTimeline", () => {
     t.play("emerge", 0);
     t.play("enter", 300);
     t.play("rest", 310);
-    expect(t.sample(300 + 1900)).toEqual(AMBIENT);
+    expect(t.sample(300 + 2050)).toEqual(AMBIENT);
   });
 
-  it("enter: хрест перекриває екран над вмістом, тоді розсіюється в ледь помітне тло застосунку", () => {
+  it("enter: хрест росте позаду вмісту, тоді вперед і перекриває екран, розсіюється в ледь помітне тло застосунку", () => {
     const t = new SmokeTimeline(AT_LOGIN);
     t.play("enter", 0);
-    expect(t.sample(650)).toMatchObject(COVERED);
+    // Поки хрест малий, він позаду вмісту сторінки.
+    expect(t.sample(200).front).toBe(false);
+    expect(t.sample(400).front).toBe(true);
+    expect(t.sample(800)).toMatchObject(COVERED);
     // Розсіявся над вмістом — і вже прозорим іде під вміст.
-    expect(t.sample(1099)).toMatchObject({ front: true });
-    expect(t.sample(1099).alpha).toBeLessThan(0.01);
-    expect(t.sample(1100)).toEqual({ ...AMBIENT, alpha: 0 });
-    expect(t.sample(1100 + 800)).toEqual(AMBIENT);
+    expect(t.sample(1249)).toMatchObject({ front: true });
+    expect(t.sample(1249).alpha).toBeLessThan(0.01);
+    expect(t.sample(1250)).toEqual({ ...AMBIENT, alpha: 0 });
+    expect(t.sample(1250 + 800)).toEqual(AMBIENT);
   });
 
   it("summon: сторінка входу відкрилась раніше — хрест однаково долітає й перекриває екран, і лише тоді відступає у фон", () => {
@@ -108,8 +111,8 @@ describe("SmokeTimeline", () => {
     // easeOut за третину часу — 70 % шляху (лінійно було б 33 %).
     expect(t.sample(300).alpha).toBeGreaterThan(0.8);
     t.play("enter", 900);
-    // easeIn за половину часу — 12.5 % шляху від 1.25 до 10 (лінійно — 50 %).
-    expect(t.sample(900 + 325).scale).toBeLessThan(2.5);
+    // Розгін за половину першого кроку — 25 % шляху від 1.25 до 2.2 (лінійно — 50 %).
+    expect(t.sample(900 + 175).scale).toBeLessThan(1.6);
   });
 
   it("новий cue під час виходу замінює вже чергу, а не дописує кадри після неї", () => {
@@ -132,10 +135,10 @@ describe("SmokeTimeline", () => {
     expect(t.sample(1450)).toMatchObject(COVERED);
   });
 
-  it("endsAt: після кінця анімації стан сталий — досить одного кадру", () => {
+  it("endsAt: після кінця анімації стан сталий (рухається лише дим, частоту кадрів можна знизити)", () => {
     const t = new SmokeTimeline(AT_LOGIN);
     t.play("enter", 1000);
-    expect(t.endsAt).toBe(1000 + 650 + 450 + 800);
+    expect(t.endsAt).toBe(1000 + 350 + 450 + 450 + 800);
     expect(t.sample(t.endsAt)).toEqual(t.sample(t.endsAt + 10_000));
   });
 
