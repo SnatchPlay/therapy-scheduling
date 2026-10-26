@@ -7,21 +7,40 @@
 //   NEXT_PUBLIC_SUPABASE_URL  — адреса проєкту;
 //   SUPABASE_SECRET_KEY       — секретний ключ (sb_secret_…), лише на сервері, ніколи NEXT_PUBLIC_;
 //   DEMO_USER_PASSWORD        — один пароль для всіх демо-користувачів (≥ 8 символів), не комітиться.
+// Параметри: `--file <шлях>` — інший список користувачів (за замовчуванням supabase/demo-users.json); `--password-env <ІМ'Я>` —
+// змінна з паролем цього списку (за замовчуванням DEMO_USER_PASSWORD). Так PM отримує власні акаунти з власним паролем
+// (npm run users:pm), а паролі демо-акаунтів не міняються.
 // Чому скрипт, а не реєстрація: вбудований SMTP Supabase надсилає 2 листи/год і лише членам команди проєкту в Supabase,
 // тому email-підтвердження в навчальних проєктах вимкнено, а користувачів створюємо тут (email_confirm: true).
 // Скрипт ніколи не друкує значення ключів і паролів.
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { parseArgs } from "node:util";
 import { createClient } from "@supabase/supabase-js";
+
+let values;
+try {
+  ({ values } = parseArgs({ options: { file: { type: "string" }, "password-env": { type: "string" } }, strict: true }));
+} catch (e) {
+  console.error(`Некоректні параметри (${e.message}). Дозволено: --file <шлях> --password-env <ІМ'Я>.`);
+  process.exit(2);
+}
+// Власний список користувачів без власного пароля отримав би пароль демо-акаунтів, який знає вся команда.
+if (values.file && !values["password-env"]) {
+  console.error("З --file потрібен і --password-env <ІМ'Я>: пароль цього списку не має збігатися з DEMO_USER_PASSWORD.");
+  process.exit(2);
+}
+const passwordVar = values["password-env"] ?? "DEMO_USER_PASSWORD";
+const usersFile = values.file ?? path.join("supabase", "demo-users.json");
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const secretKey = process.env.SUPABASE_SECRET_KEY;
-const password = process.env.DEMO_USER_PASSWORD;
+const password = process.env[passwordVar];
 
 const missing = [
   ["NEXT_PUBLIC_SUPABASE_URL", url],
   ["SUPABASE_SECRET_KEY", secretKey],
-  ["DEMO_USER_PASSWORD", password],
+  [passwordVar, password],
 ]
   .filter(([, value]) => !value)
   .map(([name]) => name);
@@ -30,15 +49,15 @@ if (missing.length) {
   process.exit(1);
 }
 if (password.length < 8) {
-  console.error("DEMO_USER_PASSWORD має бути не коротшим за 8 символів.");
+  console.error(`${passwordVar} має бути не коротшим за 8 символів.`);
   process.exit(1);
 }
 
-const file = path.join(process.cwd(), "supabase", "demo-users.json");
+const file = path.resolve(process.cwd(), usersFile);
 const users = JSON.parse(readFileSync(file, "utf8"));
 for (const u of users) {
   if (!/^[^@\s]+@example\.test$/i.test(u.email ?? "")) {
-    console.error(`Лише синтетичні адреси *@example.test: "${u.email}" у supabase/demo-users.json.`);
+    console.error(`Лише синтетичні адреси *@example.test: "${u.email}" у ${usersFile}.`);
     process.exit(1);
   }
   // "role": null — користувач без ролі (AC-CARD-11); ключ має бути явним, щоб не забути роль випадково.
@@ -110,4 +129,4 @@ if (failed) {
   );
   process.exit(1);
 }
-console.log(`\nГотово, користувачів: ${users.length}. Пароль — значення DEMO_USER_PASSWORD (у консоль не виводимо).`);
+console.log(`\nГотово, користувачів: ${users.length}. Пароль — значення ${passwordVar} (у консоль не виводимо).`);

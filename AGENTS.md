@@ -47,7 +47,8 @@ OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версі
 - `npx supabase migration new <назва>` → SQL → PR. Застосовує міграції у вашу базу ЛИШЕ CI (`db-deploy` після merge у `main`)
 - Типи БД: готовий `database.types.ts` — у Summary прогону job `db-check` (Docker не потрібен); або `npm run db:types`
   після `npx supabase link` на ваш проєкт (якщо впав — `git restore src/lib/supabase/database.types.ts`)
-- `npm run users:demo` — синтетичні користувачі з `supabase/demo-users.json` (потрібен ваш `SUPABASE_SECRET_KEY` у `.env.local`)
+- `npm run users:demo` — синтетичні користувачі з `supabase/demo-users.json` (потрібен ваш `SUPABASE_SECRET_KEY` у `.env.local`);
+  `npm run users:pm` — акаунти PM з `supabase/pm-users.json` і власним паролем `PM_USER_PASSWORD` (кроки приймання — `docs/pm-acceptance.md`)
 - `/requirements-sync` (Claude Code і Cursor) — підтягнути актуальні вимоги PM у `requirements/`; `/conformance` — перебудувати матрицю
 - `openspec …` (його викликають `/opsx:*` і скіли `openspec-*`): якщо `openspec` не знайдено або
   `openspec --version` ≠ 1.14.1 — запускай `npx openspec …` (версія з package.json) і скажи людині
