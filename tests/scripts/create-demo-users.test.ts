@@ -1,4 +1,6 @@
 import { spawnSync } from "node:child_process";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { repoRoot } from "./run-script";
@@ -31,7 +33,7 @@ describe("scripts/create-demo-users.mjs: параметри", () => {
   it("--password-env без значення відмовляє з поясненням", () => {
     const { code, out } = run(["--password-env"]);
     expect(code).toBe(2);
-    expect(out).toContain("Параметри");
+    expect(out).toContain("Некоректні параметри");
   });
 
   it("змінна з паролем назвою вказаного списку не задана — повідомлення з її іменем, до мережі не доходить", () => {
@@ -50,5 +52,30 @@ describe("scripts/create-demo-users.mjs: параметри", () => {
     expect(run(["--file", path.join(repoRoot, "supabase", "pm-users.json"), "--password-env", "PM_USER_PASSWORD"], env).out).toContain(
       "не коротшим за 8",
     );
+  });
+
+  it("список із адресою поза *@example.test відхиляється до будь-яких запитів", () => {
+    const file = path.join(mkdtempSync(path.join(tmpdir(), "users-")), "bad-users.json");
+    writeFileSync(file, JSON.stringify([{ email: "someone@gmail.com", full_name: "Real Person", role: "admin" }]));
+    const { code, out } = run(["--file", file, "--password-env", "PM_USER_PASSWORD"], {
+      NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:9",
+      SUPABASE_SECRET_KEY: "sb_secret_test",
+      PM_USER_PASSWORD: "long-enough-password",
+    });
+    expect(code).toBe(1);
+    expect(out).toContain("Лише синтетичні адреси *@example.test");
+    expect(out).toContain("someone@gmail.com");
+  });
+
+  it("список без ключа role відхиляється (null — явно «без ролі»)", () => {
+    const file = path.join(mkdtempSync(path.join(tmpdir(), "users-")), "no-role-key.json");
+    writeFileSync(file, JSON.stringify([{ email: "x@example.test", full_name: "X" }]));
+    const { code, out } = run(["--file", file, "--password-env", "PM_USER_PASSWORD"], {
+      NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:9",
+      SUPABASE_SECRET_KEY: "sb_secret_test",
+      PM_USER_PASSWORD: "long-enough-password",
+    });
+    expect(code).toBe(1);
+    expect(out).toContain("не вказано role");
   });
 });

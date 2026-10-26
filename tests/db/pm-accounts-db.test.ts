@@ -30,7 +30,7 @@ describe("pm-users.json", () => {
     expect(users.map((u) => u.role).filter((r) => r === null)).toHaveLength(1);
   });
 
-  it("кожен терапевт PM має рядок therapists і слоти; через RLS бачить лише власні слоти й лише себе", async () => {
+  it("AC-HOLD-09: кожен терапевт PM має рядок therapists і слоти; через RLS бачить лише власні слоти й лише себе", async () => {
     for (const u of users.filter((x) => x.role === "therapist")) {
       const [row] = await t.asService<{ id: string; n: number }>(
         "select th.id, count(s.id)::int as n from public.therapists th left join public.slots s on s.therapist_id = th.id where th.email = $1 group by th.id",

@@ -22,7 +22,7 @@ let values;
 try {
   ({ values } = parseArgs({ options: { file: { type: "string" }, "password-env": { type: "string" } }, strict: true }));
 } catch (e) {
-  console.error(`${e.message}. Параметри: --file <шлях> --password-env <ІМ'Я>.`);
+  console.error(`Некоректні параметри (${e.message}). Дозволено: --file <шлях> --password-env <ІМ'Я>.`);
   process.exit(2);
 }
 // Власний список користувачів без власного пароля отримав би пароль демо-акаунтів, який знає вся команда.
