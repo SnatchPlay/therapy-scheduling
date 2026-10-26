@@ -25,6 +25,8 @@ export const useSmoke = () => useContext(SmokeContext);
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
 const AMBIENT_FPS = 30;
 const reducedMotion = () => matchMedia(REDUCED_MOTION).matches;
+// Скільки чекати переходу на /login після виходу, перш ніж перезавантажити її повністю.
+const ARRIVE_TIMEOUT_MS = 5000;
 // Очищення після виходу не вдалося (мережа): повне перезавантаження /login теж скидає все, що вкладка пам'ятає.
 const arriveSafely = (onArrive: () => Promise<void>) => onArrive().catch(() => location.replace("/login"));
 
@@ -40,6 +42,7 @@ export function SmokeBackdrop({ children }: { children: ReactNode }) {
   const drawing = useRef(false);
   // onArrive з leave(): що зробити, коли /login стане поточною сторінкою.
   const arrived = useRef<(() => Promise<void>) | null>(null);
+  const arriveTimeout = useRef(0);
 
   useEffect(() => {
     const el = canvas.current!;
@@ -107,6 +110,7 @@ export function SmokeBackdrop({ children }: { children: ReactNode }) {
     if (cue && !reducedMotion()) timeline.play(cue, performance.now());
     restart.current();
     if (pathname === "/login" && arrived.current) {
+      clearTimeout(arriveTimeout.current);
       void arriveSafely(arrived.current);
       arrived.current = null;
     }
@@ -134,6 +138,12 @@ export function SmokeBackdrop({ children }: { children: ReactNode }) {
           } else {
             arrived.current = onArrive;
             router.replace("/login");
+            // Перехід не відбувся (мережа): повне перезавантаження /login — сесії вже немає, а пам'ять вкладки
+            // (кеш сторінок Next) зникає разом зі старим документом, тож onArrive не потрібен.
+            arriveTimeout.current = window.setTimeout(() => {
+              arrived.current = null;
+              location.replace("/login");
+            }, ARRIVE_TIMEOUT_MS);
           }
           resolve();
         }, covered);
