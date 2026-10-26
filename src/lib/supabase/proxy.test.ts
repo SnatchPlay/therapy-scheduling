@@ -13,7 +13,7 @@ const open = (path: string) => updateSession(new NextRequest(`http://localhost${
 beforeEach(() => {
   claims = null;
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://localhost:54321");
-  vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "test-publishable-key");
 });
 
 describe("updateSession", () => {
