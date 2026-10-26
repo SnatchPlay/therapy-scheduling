@@ -22,6 +22,8 @@ export type Cue = "emerge" | "rest" | "enter" | "summon" | "arrive";
 const linear: Ease = (x) => x;
 const easeOut: Ease = (x) => 1 - (1 - x) ** 3;
 const easeIn: Ease = (x) => x ** 3;
+// М'якший розгін для польоту на глядача: x³ перші 40 % часу майже стоїть, і політ виглядає як ривок.
+const easeInSoft: Ease = (x) => x ** 2;
 
 export const AT_LOGIN: SmokeState = { scale: 1, alpha: 0.5, warp: 0.22, front: false };
 // На робочих сторінках ледь помітно: вимога PM «інтерфейс не має відволікати».
@@ -33,10 +35,13 @@ const CUES: Record<Cue, { steps: Step[]; finish?: boolean }> = {
   emerge: { steps: [{ to: { scale: 1.25, alpha: 1, warp: 0.14 }, ms: 900, ease: easeOut }] },
   // Вхід не вдався: хрест повертається у фон. Лише після emerge (див. play): інакше нічого не робить.
   rest: { steps: [{ to: AT_LOGIN, ms: 600, ease: easeOut }] },
-  // Вхід удався: хрест летить на глядача, розсіюється, і на тлі застосунку лишається ледь помітний слід.
+  // Вхід удався (вхід швидкий, тож це вже нова робоча сторінка): хрест росте ще позаду її вмісту, тоді виходить уперед,
+  // летить на глядача й розсіюється, і на тлі лишається ледь помітний слід. Вперед — лише великим: маленький непрозорий
+  // хрест над сторінкою виглядав як пляма, а не політ.
   enter: {
     steps: [
-      { to: COVER, ms: 650, ease: easeIn, front: true },
+      { to: { scale: 2.2, alpha: 1, warp: 0.3 }, ms: 350, ease: easeInSoft, front: false },
+      { to: COVER, ms: 450, ease: easeInSoft, front: true },
       { to: { alpha: 0 }, ms: 450, ease: easeOut },
       { to: { scale: AMBIENT.scale, warp: AMBIENT.warp }, ms: 0, front: false },
       { to: { alpha: AMBIENT.alpha }, ms: 800, ease: easeOut },
@@ -88,7 +93,7 @@ export class SmokeTimeline {
     this.last = null;
   }
 
-  /** Момент, після якого стан не змінюється: далі досить одного нерухомого кадру. */
+  /** Момент, після якого стан сталий: далі рухається лише сам дим, і частоту кадрів можна знизити. */
   get endsAt(): number {
     return this.keyframes[this.keyframes.length - 1].at;
   }

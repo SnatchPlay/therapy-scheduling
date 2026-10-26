@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Сторінка без Next і бази: requireRole дає фейковий Supabase; Link і signOut — заглушки.
+// Сторінка без Next і бази: requireRole дає фейковий Supabase; Link — заглушка.
 // Тут лише відображення даних і запит тижня; що розклад обмежено власним і непростроченим, доводять тести бази
 // (tests/db/schedule-db.test.ts).
 type Slot = {
@@ -34,7 +34,6 @@ vi.mock("@/lib/supabase/viewer", async (importActual) => ({
   ...(await importActual<typeof import("@/lib/supabase/viewer")>()),
   requireRole: (...roles: string[]) => requireRole(...roles),
 }));
-vi.mock("@/app/login/actions", () => ({ signOut: async () => {} }));
 vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a> }));
 
 const { default: SchedulePage } = await import("./page");

@@ -9,7 +9,6 @@ vi.mock("@/lib/supabase/viewer", async (importActual) => ({
   requireRole,
 }));
 vi.mock("../_components/client-card-form", () => ({ ClientCardForm: () => <form data-testid="card-form" /> }));
-vi.mock("@/app/login/actions", () => ({ signOut: async () => {} }));
 vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a> }));
 
 const { default: NewClientPage } = await import("./page");

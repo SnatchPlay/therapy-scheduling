@@ -27,3 +27,5 @@ date,step,instrument,diff_lines,tokens,minutes,findings_real,findings_nit,findin
 2026-10-26,T-14,blind-review,615,197000,7,7,0,0,2,correctness and principles reviewers; both found the stuck cover
 2026-10-26,T-14,stryker,,,40,1,0,0,0,148 mutants 141 killed; 3 real survivors fixed; 4 equivalent
 2026-10-26,T-14,coderabbit,,,10,1,0,0,0,white mix against DESIGN rule
+2026-10-26,T-15,browser,,,40,2,0,0,0,frame-by-frame video of production build; sign-in jump and sign-out order
+2026-10-26,T-15,blind-review,160,212000,4,6,0,0,3,motion reviewer 5 low; auth reviewer 1 high (Back cache) confirmed by hand mutation

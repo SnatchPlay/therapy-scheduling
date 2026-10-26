@@ -27,9 +27,11 @@ export async function login(formData: FormData) {
   redirect("/");
 }
 
+// Останній крок виходу (SignOutButton): сесію вже закрив браузерний клієнт, а тут, коли /login уже поточна сторінка,
+// revalidatePath("/", "layout") очищає кеш сторінок Next у браузері (revalidatePath.md у документації Next): без цього
+// «Назад» показав би попередню сторінку з даними з пам'яті. auth.signOut() тут — на випадок, якщо cookie сесії ще є.
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
-  redirect("/login");
 }

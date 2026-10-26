@@ -15,7 +15,6 @@ vi.mock("next/navigation", () => ({
     throw new Error("NOT_FOUND");
   },
 }));
-vi.mock("@/app/login/actions", () => ({ signOut: async () => {} }));
 vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a> }));
 
 const { default: ClientPage } = await import("./page");
