@@ -1,21 +1,32 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { createSmokeRenderer, cssColorToRgb } from "./renderer";
 import { type Cue, cueForNavigation, restingState, SmokeTimeline } from "./timeline";
 
 // settle — анімацію перервала помилка: хрест іде під вміст і в стан поточної сторінки.
-// leave — сесію вже закрито: відкрити сторінку входу, щойно хрест перекриє екран (кінець summon).
-type PageCue = Extract<Cue, "emerge" | "rest" | "summon"> | "settle" | "leave";
+type PageCue = Extract<Cue, "emerge" | "rest" | "summon"> | "settle";
+
+type Smoke = {
+  cue: (cue: PageCue) => void;
+  /**
+   * Сесію вже закрито: відкрити /login, щойно хрест перекриє екран (проміс — коли перехід запущено), і викликати
+   * onArrive, коли /login уже поточна сторінка. Чекати сам перехід у form action не можна: навігація не завершиться,
+   * поки триває дія.
+   */
+  leave: (onArrive: () => Promise<void>) => Promise<void>;
+};
 
 // Без SmokeBackdrop (тести сторінок, Storybook) кнопки входу й виходу нічого не анімують і нікуди не переходять.
-const SmokeCue = createContext<(cue: PageCue) => void>(() => {});
-export const useSmokeCue = () => useContext(SmokeCue);
+const SmokeContext = createContext<Smoke>({ cue: () => {}, leave: async () => {} });
+export const useSmoke = () => useContext(SmokeContext);
 
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
 const AMBIENT_FPS = 30;
 const reducedMotion = () => matchMedia(REDUCED_MOTION).matches;
+// Очищення після виходу не вдалося (мережа): повне перезавантаження /login теж скидає все, що вкладка пам'ятає.
+const arriveSafely = (onArrive: () => Promise<void>) => onArrive().catch(() => location.replace("/login"));
 
 // Канва в кореневому layout: між сторінками вона не перемонтовується, тож анімація входу й виходу триває через перехід.
 export function SmokeBackdrop({ children }: { children: ReactNode }) {
@@ -27,6 +38,8 @@ export function SmokeBackdrop({ children }: { children: ReactNode }) {
   const restart = useRef(() => {});
   // Чи справді малюємо: без WebGL чи після втрати контексту анімації не видно — і чекати її нема чого.
   const drawing = useRef(false);
+  // onArrive з leave(): що зробити, коли /login стане поточною сторінкою.
+  const arrived = useRef<(() => Promise<void>) | null>(null);
 
   useEffect(() => {
     const el = canvas.current!;
@@ -93,32 +106,51 @@ export function SmokeBackdrop({ children }: { children: ReactNode }) {
     path.current = pathname;
     if (cue && !reducedMotion()) timeline.play(cue, performance.now());
     restart.current();
+    if (pathname === "/login" && arrived.current) {
+      void arriveSafely(arrived.current);
+      arrived.current = null;
+    }
   }, [pathname, timeline]);
 
   const cue = useCallback(
     (next: PageCue) => {
-      const now = performance.now();
-      if (next === "leave") {
-        const covered = drawing.current && !reducedMotion() ? Math.max(0, timeline.endsAt - now) : 0;
-        setTimeout(() => router.replace("/login"), covered);
-        return;
-      }
       if (reducedMotion()) return;
+      const now = performance.now();
       if (next === "settle") timeline.settle(restingState(path.current), now);
       else timeline.play(next, now);
       restart.current();
     },
+    [timeline],
+  );
+
+  const leave = useCallback(
+    (onArrive: () => Promise<void>) =>
+      new Promise<void>((resolve) => {
+        const covered = drawing.current && !reducedMotion() ? Math.max(0, timeline.endsAt - performance.now()) : 0;
+        setTimeout(() => {
+          // Вихід зі сторінки помилки на /login: шлях не зміниться — одразу onArrive.
+          if (path.current === "/login") {
+            void arriveSafely(onArrive);
+          } else {
+            arrived.current = onArrive;
+            router.replace("/login");
+          }
+          resolve();
+        }, covered);
+      }),
     [timeline, router],
   );
 
+  const smoke = useMemo(() => ({ cue, leave }), [cue, leave]);
+
   return (
-    <SmokeCue value={cue}>
+    <SmokeContext value={smoke}>
       <canvas
         ref={canvas}
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-10 size-full data-[front=true]:z-50"
       />
       {children}
-    </SmokeCue>
+    </SmokeContext>
   );
 }

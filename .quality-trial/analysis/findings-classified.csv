@@ -101,3 +101,7 @@ T14-06,2026-10-26,T-14,blind-review,real,UI,,static,,,double click on Sign out r
 T14-07,2026-10-26,T-14,blind-review,real,UI,,static,,,smoothstep edge order and colour above alpha in premultiplied output,L
 T14-08,2026-10-26,T-14,stryker,real,TEST,,mutation,,,easing shape settle queue reset and queue replacement unpinned,L
 T14-09,2026-10-26,T-14,coderabbit,real,DOC,,static,,,white mixed into smoke colour against DESIGN primary-only rule,L
+T15-01,2026-10-26,T-15,browser,real,UI,,run,,,sign-in cross jumped in front while small and the cubic ease jerked,M
+T15-02,2026-10-26,T-15,browser,real,UI,,run,,,sign-out showed login page before the cover (cookie delete in server action re-renders),M
+T15-03,2026-10-26,T-15,blind-review,real,DOC,,static,,,comments and DESIGN out of date after motion change; 30 fps check skipped frames,L
+T15-04,2026-10-26,T-15,blind-review,real,SEC,,static,,,browser sign-out left Next client cache: Back showed client data,H
