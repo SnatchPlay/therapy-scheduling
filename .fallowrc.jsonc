@@ -1,0 +1,70 @@
+{
+  "$schema": "./node_modules/fallow/schema.json",
+  // Конфіг fallow 3.35.0. Основа — koldovsky/2026-quitcode-08-quality-hw/materials/gates/.fallowrc.jsonc, підлаштована
+  // під цей репо. Кожен ignore… — з причиною: без причини правило не вимикаємо.
+  //
+  // Скрипти з package.json fallow бачить сам. Сюди — лише те, що запускає не npm і не import.
+  // Хуки Claude Code запускає .claude/settings.json (команда `node …/scripts/hooks/*.mjs`), а не import.
+  "entry": ["scripts/hooks/*.mjs"],
+  // Дані для тестів скриптів шаблону — навмисно «зламані» файли.
+  "ignorePatterns": ["tests/fixtures/**"],
+  "ignoreDependencies": [
+    // Tailwind 4 підключено рядком у next.config.ts (turbopack.rules.loaders) — fallow цього не бачить.
+    "@tailwindcss/turbopack",
+    // Vitest вантажить провайдер покриття за назвою з конфігу (provider: "v8"), а не через import.
+    "@vitest/coverage-v8"
+  ],
+  "ignoreExports": [
+    // Компоненти дизайн-системи (shadcn/ui) навмисно експортують усі частини.
+    { "file": "src/components/ui/**", "exports": ["*"] },
+    // Спільна бібліотека скриптів шаблону курсу: цей експорт ніхто не читає і в чистому шаблоні; правки шаблону
+    // переносимо cherry-pick з шаблону, а не локально.
+    { "file": "scripts/lib/spec-lib.mjs", "exports": ["AC_ID_GLOBAL"] }
+  ],
+  // Експорт, який використано лише у власному файлі, — живий код (зайвий лише `export`), а не мертвий: не шумимо.
+  "ignoreExportsUsedInFile": true,
+  "duplicates": {
+    // Згенерований `supabase gen types`: структурно повторювані блоки таблиць, ручних змін немає.
+    // Два скрипти нижче взято з матеріалів курсу й лишено як є (.quality-trial/known-debt.md): спільні обхід файлів і
+    // розбір аргументів виносять у матеріалах, а не локально.
+    "ignore": [
+      "src/lib/supabase/database.types.ts",
+      "scripts/check-design-tokens.mjs",
+      "scripts/check-server-boundary.mjs"
+    ]
+  },
+  "rules": {
+    // Кожен експорт "use server" — публічний POST-ендпойнт: мертвий — прибрати.
+    "unused-server-actions": "error",
+    "invalid-client-export": "error",
+    "misplaced-directive": "error",
+    "mixed-client-server-barrel": "error",
+    // Захист від «агент зробив тести зеленими»: послаблений тест, гілка лише для тестів, нове придушення.
+    "weakened-tests": "error",
+    "test-only-branch": "error",
+    "added-suppression": "warn",
+    // CRAP без файлу покриття — оцінка, не факт.
+    "complexity-crap": "warn"
+  },
+  "health": {
+    // Файли курсу (шаблон і materials/ WS8) ми не міняємо: правки шаблону переносимо cherry-pick, а не локально.
+    // Це `scripts/lib/**`, `check-spec`, `create-demo-users` (шаблон), `smoke.mjs`, `api/health/route.ts` (materials/d0)
+    // і `check-design-tokens`, `check-server-boundary` (матеріали WS7).
+    // Без цього рядка PR, що додає такий файл, червоніє на складності чужого коду (fallow audit рахує новий файл
+    // новою знахідкою). Мертвий код і залежності в них fallow перевіряє й далі — виняток лише для складності.
+    "ignore": [
+      "scripts/lib/**",
+      "scripts/check-spec.mjs",
+      "scripts/create-demo-users.mjs",
+      "scripts/check-design-tokens.mjs",
+      "scripts/check-server-boundary.mjs",
+      "scripts/smoke.mjs",
+      "src/app/api/health/route.ts"
+    ],
+    "thresholdOverrides": [
+      { "files": ["tests/**"], "maxUnitSize": 500, "reason": "describe()-блоки довгі за задумом" }
+    ]
+  },
+  // Ворота валять лише НОВІ знахідки відносно бази PR; успадковані fallow показує як контекст.
+  "audit": { "gate": "new-only" }
+}

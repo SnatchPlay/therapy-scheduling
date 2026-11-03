@@ -13,6 +13,8 @@
 | `npm run build` | застосунок збирається; у виводі є `ƒ Proxy (Middleware)` |
 | `npm run spec:validate`, `npm run spec:check` | OpenSpec strict; denylist і формат специфікації |
 | `npm run ac:coverage` | AC → сценарій → тест → рядок матриці |
+| `npm run gates` | `lint`, `typecheck` і `fallow audit --base origin/main`: лише нові знахідки мертвого коду, дублів і складності (CI: `quality.yml`) |
+| `npm run test:coverage` | підлога покриття (90/85/90/90) для доменних файлів зі списку `FLOORED` у `vitest.coverage.config.mts`; таблиця — `npm run coverage:summary` |
 | `node scripts/check-migration-order.mjs` | нова міграція новіша за `origin/main`; застосовані файли не змінено |
 
 Зміну бази перевіряємо на PGlite (`tests/db/supabase-pglite.ts`, з'являється з першим зрізом, що додає
