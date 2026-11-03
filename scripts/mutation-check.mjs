@@ -24,6 +24,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { mutants } from "./mutants.mjs";
 
+let tmp = null;
 const args = process.argv.slice(2);
 const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
 const only = option("--only")?.split(",").map((s) => s.trim());
@@ -33,6 +34,7 @@ const markdown = args.includes("--markdown");
 
 const fail = (message) => {
   console.error(`✗ ${message}`);
+  if (tmp) rmSync(tmp, { recursive: true, force: true });
   process.exit(2);
 };
 
@@ -55,7 +57,7 @@ const restoreAll = () => {
   for (const [file, bytes] of restoreQueue) writeFileSync(file, bytes);
   restoreQueue.clear();
 };
-for (const sig of ["SIGINT", "SIGTERM"]) {
+for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) {
   process.on(sig, () => {
     restoreAll();
     process.exit(130);
@@ -84,7 +86,7 @@ function applyOnce(text, find, replace) {
 // Vitest напряму через node (без npx і shell): однаково на Windows, macOS і Linux.
 const vitestBin = path.join("node_modules", "vitest", "vitest.mjs");
 if (!existsSync(vitestBin)) fail("немає node_modules/vitest — спершу npm ci");
-const tmp = mkdtempSync(path.join(tmpdir(), "mutation-check-"));
+tmp = mkdtempSync(path.join(tmpdir(), "mutation-check-"));
 
 function readReport(file) {
   try {
@@ -109,10 +111,16 @@ function loadProblems(report, files) {
 
 function runTests(files, label) {
   const out = path.join(tmp, `${label}.json`);
+  // Весь цикл синхронний, тож обробник сигналів не встигне: сигнал дитини перевіряємо тут, а зависання обмежуємо таймаутом.
   const run = spawnSync(process.execPath, [vitestBin, "run", ...files, "--reporter=json", `--outputFile=${out}`], {
     stdio: "ignore",
     env: { ...process.env, FORCE_COLOR: "0" },
+    timeout: 600_000,
   });
+  if (run.signal === "SIGINT" || run.signal === "SIGTERM" || run.signal === "SIGHUP") {
+    restoreAll();
+    process.exit(130);
+  }
   const report = readReport(out);
   if (!report) return { error: `Vitest не дав звіту (код виходу ${run.status ?? run.signal})`, failed: [] };
   const failed = report.testResults.flatMap((f) =>

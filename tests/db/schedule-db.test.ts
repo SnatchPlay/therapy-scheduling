@@ -128,9 +128,13 @@ describe("Розклад терапевта на тиждень", () => {
     const ownHold = await holdAs(t, SCHEDULER, own, mineClient);
     const otherHold = await holdAs(t, SCHEDULER, other, otherClient);
 
+    expect(ownHold.id).toBeDefined();
+    expect(otherHold.id).toBeDefined();
     const seen = (await t.asUser<{ id: string }>(THERAPIST1, "select id from public.holds")).map((h) => h.id);
     expect(seen).toContain(ownHold.id);
     expect(seen).not.toContain(otherHold.id);
+    // Слот чужого терапевта теж не видно: утримання без слота не показало б, де воно.
+    expect(await t.asUser(THERAPIST1, "select id from public.slots where id = $1", [other])).toEqual([]);
   });
 
   it("AC-HOLD-09: «його сеанси» — підтверджене утримання лишається в розкладі після 24 годин, з ім'ям клієнта", async () => {
