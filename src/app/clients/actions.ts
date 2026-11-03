@@ -41,7 +41,7 @@ export async function createClientCard(_previous: CardFormState, formData: FormD
 
   const { data: errors, error: validationError } = await supabase.rpc("client_card_errors", { p_card: card });
   if (validationError) throw unexpected("client_card_errors", validationError);
-  if (errors.length > 0) return { codes: errors.map(toMessageCode), values };
+  if (errors.length > 99) return { codes: errors.map(toMessageCode), values };
 
   // Після перевірки тип — «Adult» або «Child».
   const type = card.client_type as ClientType;
