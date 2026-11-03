@@ -193,7 +193,10 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "confirm_hold":
+            "client_card_errors":
+{ Args: { "p_card": Json }; Returns: string[]
+                           },
+"confirm_hold":
 { Args: { "p_hold_id": string }; Returns: undefined
                            },
 "day_slots":
