@@ -35,8 +35,8 @@ vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; chil
 
 const { default: SlotsPage } = await import("./page");
 
-async function render() {
-  const props = { params: Promise.resolve({}), searchParams: Promise.resolve({ therapist: "t1", day: "2026-11-04" }) };
+async function render(extra: Record<string, string> = {}) {
+  const props = { params: Promise.resolve({}), searchParams: Promise.resolve({ therapist: "t1", day: "2026-11-04", ...extra }) };
   return renderToStaticMarkup(await SlotsPage(props as PageProps<"/slots">));
 }
 const slot = (time: string, status: string, holdable: boolean): Slot => ({
@@ -83,6 +83,46 @@ describe("/slots", () => {
     expect(html).toContain(">Client One (client1@example.test)<");
   });
 
+  it("AC-CARD-02: клієнта-дитину знаходять за email опікуна: у виборі лише він, з email опікуна, а поле пошуку зберігає запит", async () => {
+    slots = [slot("10:00", "Free", true), slot("11:00", "Free", true)];
+    const html = await render({ client: "guardian7@example.test" });
+    expect(html.match(/>Client Seven \(guardian: guardian7@example\.test\)</g)).toHaveLength(2); // по одному в кожному вільному слоті
+    expect(html).not.toContain("Client One");
+    expect(html).toContain('value="guardian7@example.test"');
+    expect(html).toContain(">Find a client</label>");
+    // Поле належить GET-формі (поряд із терапевтом і днем) і має ім'я `client`, інакше запит ніколи не дійшов би до сторінки.
+    const getForm = html.slice(html.indexOf('method="get"'));
+    expect(getForm.slice(0, getForm.indexOf("</form>"))).toMatch(/<input[^>]*name="client"/);
+  });
+
+  it("AC-CARD-02: клієнта знаходять і за серединою email (не лише за початком); два значення ?client= — запит ігнорується, у виборі всі", async () => {
+    slots = [slot("10:00", "Free", true)];
+    expect(await render({ client: "7@example" })).not.toContain("Client One");
+    const props = { params: Promise.resolve({}), searchParams: Promise.resolve({ therapist: "t1", day: "2026-11-04", client: ["a", "b"] }) };
+    const html = renderToStaticMarkup(await SlotsPage(props as unknown as PageProps<"/slots">));
+    expect(html).toContain("Client One");
+    expect(html).toContain("Client Seven");
+  });
+
+  it("AC-CARD-02: без запиту у виборі всі клієнти; за іменем знаходять і дорослого", async () => {
+    slots = [slot("10:00", "Free", true)];
+    const all = await render();
+    expect(all).toContain("Client One");
+    expect(all).toContain("Client Seven");
+    const byName = await render({ client: "one" });
+    expect(byName).toContain(">Client One (client1@example.test)<");
+    expect(byName).not.toContain("Client Seven");
+  });
+
+  it("AC-CARD-02: запит без збігів — слот без вибору й кнопки Hold, з поясненням «No clients match.» (а не «Create a client first»)", async () => {
+    slots = [slot("10:00", "Free", true)];
+    const html = await render({ client: "nobody" });
+    expect(html.match(/No clients match\./g)).toHaveLength(1); // одним рядком над списком, а не в кожному слоті
+    expect(html).not.toContain(">Hold<");
+    expect(html).not.toContain("Create a client first");
+    expect(html).not.toContain("Choose a client");
+  });
+
   it("AC-CARD-01: без жодного клієнта вільний слот веде створити картку, а не показує вибір", async () => {
     withClients = false;
     slots = [slot("10:00", "Free", true)];
@@ -90,6 +130,7 @@ describe("/slots", () => {
     expect(html).toContain('href="/clients/new"');
     expect(html).toContain("Create a client first");
     expect(html).not.toContain("Choose a client");
+    expect(html).not.toContain("No clients match.");
   });
 
   it("AC-HOLD-01: вільний слот — кнопка Hold лише в нього, повідомлення немає", async () => {
