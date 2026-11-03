@@ -111,13 +111,14 @@ function loadProblems(report, files) {
 
 function runTests(files, label) {
   const out = path.join(tmp, `${label}.json`);
-  // Весь цикл синхронний, тож обробник сигналів не встигне: сигнал дитини перевіряємо тут, а зависання обмежуємо таймаутом.
+  // Весь цикл синхронний, тож обробник сигналів не встигне: перервання (Ctrl+C) бачимо за дитиною — Vitest на сигнал
+  // виходить з кодом 128+N, а не сигналом, — а зависання обмежуємо таймаутом.
   const run = spawnSync(process.execPath, [vitestBin, "run", ...files, "--reporter=json", `--outputFile=${out}`], {
     stdio: "ignore",
     env: { ...process.env, FORCE_COLOR: "0" },
     timeout: 600_000,
   });
-  if (run.signal === "SIGINT" || run.signal === "SIGTERM" || run.signal === "SIGHUP") {
+  if (["SIGINT", "SIGTERM", "SIGHUP"].includes(run.signal) || [129, 130, 143].includes(run.status)) {
     restoreAll();
     process.exit(130);
   }
