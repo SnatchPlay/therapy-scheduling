@@ -3,6 +3,7 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import storybook from "eslint-plugin-storybook";
 import vitest from "@vitest/eslint-plugin";
+import playwright from "eslint-plugin-playwright";
 
 // AC ID, як його читає ac:coverage (AC_ID у scripts/lib/spec-lib.mjs): лише на початку назви тесту.
 const AC = String.raw`AC-[A-Z]{2,12}-\d{2}`;
@@ -61,6 +62,18 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // E2E/UAT (Playwright) — лише tests/e2e/**. Правила recommended закривають те, чого Playwright не має сам: тест без
+  // перевірки (expect-expect), пропущений чи сфокусований тест, waitForTimeout і networkidle. lint іде з --max-warnings 0,
+  // тож і «warn» тут — червоний app. Основа блоку — koldovsky/2026-quitcode-08-quality-hw/materials/gates.
+  {
+    ...playwright.configs["flat/recommended"],
+    files: ["tests/e2e/**"],
+    rules: {
+      ...playwright.configs["flat/recommended"].rules,
+      // Перевірки AC живуть у thenStep(…) (tests/e2e/support/uat.ts): він і є expect для цього правила.
+      "playwright/expect-expect": ["error", { assertFunctionNames: ["thenStep"] }],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
@@ -77,6 +90,10 @@ const eslintConfig = defineConfig([
     ".fallow/**",
     "reports/**",
     ".stryker-tmp/**",
+    "test-results/**",
+    "playwright-report/**",
+    "blob-report/**",
+    "playwright/.auth/**",
   ]),
 ]);
 

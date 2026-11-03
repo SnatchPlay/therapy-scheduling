@@ -1,0 +1,78 @@
+# E2E (Playwright): AC, що їх перевіряють у браузері — tests/e2e/**/*.spec.ts (ac:coverage рахує їх лише завдяки цьому
+# workflow). Збирається код PR (npm run build) і працює на localhost:3000 проти вашого проекту Supabase; запис не створюється:
+# тести лише читають і входять синтетичними акаунтами *@example.test (supabase/demo-users.json).
+# Без перевірки агента-рецензента: вона й звіт для PM — `npm run uat` (docs/qa/uat/).
+#
+# Налаштування (Settings → Secrets and variables → Actions); без них прогін червоний з підказкою:
+#   Variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY   (публічні значення, ті самі, що у Vercel)
+#   Secrets:   DEMO_USER_PASSWORD                                                (пароль акаунтів users:demo)
+#
+# Тести читають живі дані прода: AC-CARD-05 потребує клієнта, який є «своїм» лише для одного з двох терапевтів (його
+# дає утримання майбутнього слота, воно спливає за 24 год або з початком слота). Без такого клієнта прогін червоний —
+# це дані, а не код. Тому job НЕ додаємо в обов'язкові перевірки ruleset-у `solo-main`.
+name: e2e
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/e2e/**"
+      - "playwright.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/e2e.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Новий push у PR скасовує застарілий прогін цього PR (як у ci.yml).
+concurrency:
+  group: e2e-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: "E2E: Playwright"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      DEMO_USER_PASSWORD: ${{ secrets.DEMO_USER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # secrets.* не можна використати в if на рівні job, тому перевіряємо змінні кроком (значення не друкуємо).
+      - name: Налаштування є
+        run: |
+          missing=""
+          [ -n "$NEXT_PUBLIC_SUPABASE_URL" ] || missing="$missing NEXT_PUBLIC_SUPABASE_URL(variable)"
+          [ -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ] || missing="$missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY(variable)"
+          [ -n "$DEMO_USER_PASSWORD" ] || missing="$missing DEMO_USER_PASSWORD(secret)"
+          if [ -n "$missing" ]; then
+            echo "::error title=e2e::Не задано:$missing. Settings → Secrets and variables → Actions (див. шапку e2e.yml)."
+            exit 1
+          fi
+      - run: npx playwright install --with-deps chromium
+      - name: Збірка застосунку (код цього PR)
+        run: npm run build
+      # playwright.config.ts: без UAT_BASE_URL піднімає `npm run start` на localhost:3000 і спершу виконує setup входу ролей.
+      - name: Playwright (chromium)
+        run: npx playwright test --project=chromium
+      # Лише кадри, відео й пояснення помилок: trace.zip не вантажимо (у ньому заголовки запитів, зокрема cookie сесій).
+      - name: Докази впалого прогону
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-failure
+          path: |
+            test-results/artifacts/**/*.png
+            test-results/artifacts/**/*.webm
+            test-results/artifacts/**/error-context.md
+          retention-days: 3
+          if-no-files-found: ignore

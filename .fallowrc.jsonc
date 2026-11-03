@@ -50,7 +50,7 @@
   "health": {
     // Файли курсу (шаблон і materials/ WS8) ми не міняємо: правки шаблону переносимо cherry-pick, а не локально.
     // Це `scripts/lib/**`, `check-spec`, `create-demo-users` (шаблон), `smoke.mjs`, `api/health/route.ts` (materials/d0),
-    // `mutation-check.mjs` (materials/testing)
+    // `mutation-check.mjs` (materials/testing), `scripts/uat/**` (materials/uat)
     // і `check-design-tokens`, `check-server-boundary` (матеріали WS7).
     // Без цього рядка PR, що додає такий файл, червоніє на складності чужого коду (fallow audit рахує новий файл
     // новою знахідкою). Мертвий код і залежності в них fallow перевіряє й далі — виняток лише для складності.
@@ -62,6 +62,7 @@
       "scripts/check-server-boundary.mjs",
       "scripts/smoke.mjs",
       "scripts/mutation-check.mjs",
+      "scripts/uat/**",
       "src/app/api/health/route.ts"
     ],
     "thresholdOverrides": [
