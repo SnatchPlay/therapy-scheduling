@@ -6,11 +6,12 @@ import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-const projectId = /^project_id\s*=\s*"([^"]+)"/m.exec(readFileSync("supabase/config.toml", "utf8"))?.[1];
+const projectId = /^project_id\s*=\s*"([^"]+)"/m.exec(readFileSync(new URL("../supabase/config.toml", import.meta.url), "utf8"))?.[1];
+if (!process.env.DB_CONTAINER && !projectId) throw new Error("У supabase/config.toml немає project_id: задайте DB_CONTAINER.");
 const container = process.env.DB_CONTAINER ?? `supabase_db_${projectId}`;
-const HOLD_SECONDS = 5; // скільки перша сесія тримає замок
-const START_DELAY_MS = 2000; // коли стартує друга: перша вже вставила утримання й тримає замок
-const MIN_WAIT_MS = 1500; // друга має чекати на замок хоча б стільки, інакше вона відмовила не через замок
+const HOLD_SECONDS = 3; // скільки перша сесія тримає замок (pg_sleep усередині відкритої транзакції)
+const MIN_WAIT_MS = 1000; // друга має чекати на замок хоча б стільки, інакше вона відмовила не через замок
+const LOCK_HELD_TIMEOUT_MS = 15_000;
 
 const psql = (sql) =>
   new Promise((resolve) => {
@@ -19,6 +20,8 @@ const psql = (sql) =>
     let err = "";
     child.stdout.on("data", (d) => (out += d));
     child.stderr.on("data", (d) => (err += d));
+    child.on("error", (e) => resolve({ code: -1, out: "", err: String(e) }));
+    child.stdin.on("error", () => {});
     child.on("close", (code) => resolve({ code, out: out.trim(), err: err.trim() }));
     child.stdin.end(sql);
   });
@@ -62,10 +65,23 @@ const check = (ok, message) => {
   if (!ok) failures.push(message);
 };
 
+// Друга сесія стартує лише коли перша вже вставила утримання й спить у відкритій транзакції (за pg_stat_activity), а не за таймером.
+async function waitUntilFirstHoldsLock() {
+  const deadline = Date.now() + LOCK_HELD_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const { out } = await psql(
+      `select count(*) from pg_stat_activity where wait_event = 'PgSleep' and query like '%pg_sleep(${HOLD_SECONDS})%' and pid <> pg_backend_pid()`,
+    );
+    if (out === "1") return;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  throw new Error("перша сесія не дійшла до утримання замка за відведений час");
+}
+
 async function race(name, a, b, expectedError, countSql, expectedCount) {
   console.log(`\n${name}`);
   const first = psql(holdSession(a, HOLD_SECONDS));
-  await new Promise((r) => setTimeout(r, START_DELAY_MS));
+  await waitUntilFirstHoldsLock();
   const startedB = Date.now();
   const second = await psql(holdSession(b, 0));
   const waitedMs = Date.now() - startedB;
@@ -104,7 +120,10 @@ try {
     delete from public.clients where id in ('${client1}', '${client2}', '${client3}');
     delete from auth.users where id in ('${schedulerA}', '${schedulerB}');
   `);
-  if (cleanup.code !== 0) console.error(`Не вдалося прибрати тестові дані (${tag}): ${cleanup.err}`);
+  if (cleanup.code !== 0) {
+    console.error(`Не вдалося прибрати тестові дані (${tag}): ${cleanup.err}`);
+    process.exitCode = 1;
+  }
 }
 
 if (failures.length > 0) {
