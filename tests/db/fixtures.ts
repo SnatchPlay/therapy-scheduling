@@ -48,6 +48,14 @@ export async function ageHold(t: TestDb, holdId: string, minutes: number) {
   ]);
 }
 
+/** Слот, що почався: утримати його вже не можна, тож утримання створюємо до початку й пересуваємо слот. sqlTime — довірений SQL-вираз часу з тесту (підставляється в запит як є). */
+export async function startSlotAt(t: TestDb, slotId: string, sqlTime: string) {
+  await t.asService(
+    "update public.slots set starts_at = " + sqlTime + ", ends_at = " + sqlTime + " + interval '60 minutes' where id = $1",
+    [slotId],
+  );
+}
+
 export type BoardRow = {
   slot_id: string;
   starts_at: string;

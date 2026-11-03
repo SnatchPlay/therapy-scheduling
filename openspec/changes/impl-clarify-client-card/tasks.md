@@ -2,10 +2,10 @@
 
 ## 12. «Свій клієнт» до початку слоту (PR `task/own-client-until-start`)
 
-- [ ] 12.1 Міграція: `private.own_client_ids()` — «Held» лише до початку слоту, «Confirmed» без обмеження (Р17)
-- [ ] 12.2 Тести бази за прийомом AC-HOLD-42 (межа 09:59 / 10:00, минулий «Confirmed», чужий клієнт) і сторінки `/clients`; мутаційна таблиця й червоний прогін у PR
-- [ ] 12.3 Тест `AC-HOLD-43` у `tests/db/hold-list-db.test.ts` (Р22; міграції не потрібно)
-- [ ] 12.4 Рядки `docs/conformance.md` для AC-CARD-04, AC-CARD-14, AC-HOLD-43
+- [x] 12.1 Міграція: `private.own_client_ids()` — «Held» лише до початку слоту, «Confirmed» без обмеження (Р17)
+- [x] 12.2 Тести бази за прийомом AC-HOLD-42 (межа 09:59 / 10:00, минулий «Confirmed», чужий клієнт) і сторінки `/clients`; мутаційна таблиця й червоний прогін у PR
+- [x] 12.3 Тест `AC-HOLD-43` у `tests/db/hold-list-db.test.ts` (Р22; міграції не потрібно)
+- [x] 12.4 Рядки `docs/conformance.md` для AC-CARD-04, AC-CARD-14, AC-HOLD-43
 
 Done when: AC-CARD-04, AC-CARD-14, AC-HOLD-43
 

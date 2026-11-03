@@ -3,7 +3,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { clientErrorCode, MESSAGES, type ClientType } from "@/lib/messages";
 import { addDays, practiceDate } from "@/lib/time";
-import { ageHold, createSlot, holdAs } from "./fixtures";
+import { ageHold, createSlot, holdAs, startSlotAt } from "./fixtures";
 import { createTestDb, type TestDb } from "./supabase-pglite";
 
 let t: TestDb;
@@ -335,6 +335,45 @@ describe("Доступ до карток", () => {
     await ageHold(t, hold, 1440);
     expect(await visibleTo(THERAPIST1)).not.toContain(lapsed);
     expect(await t.asUser(THERAPIST1, "select * from public.clients where id = $1", [lapsed])).toEqual([]);
+  });
+
+  it("AC-CARD-14: «Held» робить клієнта своїм до початку слоту — за хвилину до початку ще свій, з початку (включно) вже ні, за посиланням відмова", async () => {
+    expect(await createCardAs(SCHEDULER, { name: "Client Started", email: "started@example.test", birth: "1992-02-02", language: "English" })).toBe("created");
+    const started = await idByName("Client Started");
+    const slot = await createSlot(t, "therapist1@example.test", "now() + interval '9 days'");
+    expect((await holdAs(t, SCHEDULER, slot, started)).id).toBeDefined();
+
+    await startSlotAt(t, slot, "now() + interval '1 minute'");
+    expect(await visibleTo(THERAPIST1)).toContain(started);
+    await startSlotAt(t, slot, "now()");
+    expect(await visibleTo(THERAPIST1)).not.toContain(started);
+    expect(await t.asUser(THERAPIST1, "select * from public.clients where id = $1", [started])).toEqual([]);
+    await startSlotAt(t, slot, "now() - interval '2 hours'");
+    expect(await visibleTo(THERAPIST1)).not.toContain(started);
+  });
+
+  it("AC-CARD-14: «Confirmed» без обмеження в часі — слот сеансу почався місяць тому, а клієнт лишається своїм", async () => {
+    expect(await createCardAs(SCHEDULER, { name: "Client Past", email: "past@example.test", birth: "1994-04-04", language: "English" })).toBe("created");
+    const past = await idByName("Client Past");
+    const slot = await createSlot(t, "therapist1@example.test", "now() + interval '12 days'");
+    const hold = await holdAs(t, SCHEDULER, slot, past);
+    await t.asUser(SCHEDULER, "select public.confirm_hold($1)", [hold.id]);
+    await startSlotAt(t, slot, "now() - interval '30 days'");
+    expect(await visibleTo(THERAPIST1)).toContain(past);
+  });
+
+  it("AC-CARD-14: інше утримання «Held» із майбутнім слотом тримає клієнта своїм, навіть коли слот першого вже почався", async () => {
+    expect(await createCardAs(SCHEDULER, { name: "Client Both", email: "both@example.test", birth: "1993-03-03", language: "English" })).toBe("created");
+    const both = await idByName("Client Both");
+    const first = await createSlot(t, "therapist1@example.test", "now() + interval '10 days'");
+    const second = await createSlot(t, "therapist1@example.test", "now() + interval '11 days'");
+    expect((await holdAs(t, SCHEDULER, first, both)).id).toBeDefined();
+    expect((await holdAs(t, SCHEDULER, second, both)).id).toBeDefined();
+    await startSlotAt(t, first, "now()");
+    expect(await visibleTo(THERAPIST1)).toContain(both);
+    // Інший час, ніж у першого слоту: початок слоту терапевта унікальний, а два now() можуть збігтися.
+    await startSlotAt(t, second, "now() - interval '1 hour'");
+    expect(await visibleTo(THERAPIST1)).not.toContain(both);
   });
 
   it("AC-CARD-09: therapist2 без «Held» і «Confirmed» бачить порожній список клієнтів", async () => {
