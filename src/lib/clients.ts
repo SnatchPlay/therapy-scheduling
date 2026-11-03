@@ -8,7 +8,7 @@ type Findable = { full_name: string; email: string | null; guardian_email: strin
 export function filterClients<T extends Findable>(clients: T[], query: string): T[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return clients;
-  return clients.filter((c) => [c.full_name, c.email].some((v) => v?.toLowerCase().includes(needle)));
+  return clients.filter((c) => [c.full_name, c.email, c.guardian_email].some((v) => v?.toLowerCase().includes(needle)));
 }
 
 /** Підпис клієнта у виборі під час утримання: дорослий — з власним email, дитина — з email опікуна (AC-CARD-02). */
