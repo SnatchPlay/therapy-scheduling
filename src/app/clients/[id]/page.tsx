@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { AppShell } from "@/app/_components/app-shell";
 import { buttonVariants } from "@/components/ui/button";
 import { noticeFor } from "@/lib/messages";
@@ -10,8 +9,8 @@ import { CLIENT_COLUMNS, ClientCard } from "../_components/client-card";
 const INVALID_ID = "22P02";
 
 // Картку віддає лише RLS: чужа й неіснуюча картка — нуль рядків. Терапевт у обох випадках бачить ту саму відмову без
-// даних (AC-CARD-05, 08): інакше за адресами можна було б дізнатися, хто є клієнтом практики. Для планувальника й
-// адміністратора неіснуюча картка — 404.
+// даних (AC-CARD-05, 08, 16): інакше за адресами можна було б дізнатися, хто є клієнтом практики. Планувальник і
+// адміністратор бачать усі картки, тож нуль рядків для них — картки немає (AC-CARD-16).
 export default async function ClientPage({ params }: PageProps<"/clients/[id]">) {
   const { supabase, role, email } = await requireRole(...ALL_ROLES);
   const { id } = await params;
@@ -20,9 +19,13 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
   if (error && error.code !== INVALID_ID) throw error;
 
   if (!data) {
-    if (STAFF.includes(role)) notFound();
     return (
-      <AppShell role={role} email={email} title="Client" notice={noticeFor("CLIENT_ACCESS_DENIED")}>
+      <AppShell
+        role={role}
+        email={email}
+        title="Client"
+        notice={noticeFor(STAFF.includes(role) ? "CLIENT_NOT_FOUND" : "CLIENT_ACCESS_DENIED")}
+      >
         <div>
           <Link href="/clients" className={buttonVariants({ variant: "outline" })}>
             Back to clients

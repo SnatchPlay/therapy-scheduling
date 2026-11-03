@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { noticeFor } from "@/lib/messages";
-import { requireRole, STAFF } from "@/lib/supabase/viewer";
+import { ALL_ROLES, requireRole, STAFF } from "@/lib/supabase/viewer";
 import { formatPracticeDateTime } from "@/lib/time";
 import { confirmHold } from "./actions";
 
@@ -12,8 +12,10 @@ import { confirmHold } from "./actions";
 // сеанси й утримання зі слотом, що почався, зникають; старе прострочене утримання зникає після повторного утримання тим
 // самим клієнтом): це робить hold_list. Порядок — за часом слоту від найближчого.
 export default async function HoldsPage({ searchParams }: PageProps<"/holds">) {
-  const { supabase, role, email } = await requireRole(...STAFF);
+  const { supabase, role, email } = await requireRole(...ALL_ROLES);
   const { msg } = await searchParams;
+  // AC-HOLD-44: терапевту за прямим посиланням — відмова без даних; запитів до бази немає.
+  if (!STAFF.includes(role)) return <AppShell role={role} email={email} title="Holds" notice={noticeFor("PAGE_FORBIDDEN")} />;
 
   const { data: holds, error } = await supabase
     .from("hold_list")

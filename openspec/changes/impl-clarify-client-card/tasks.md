@@ -11,10 +11,11 @@ Done when: AC-CARD-04, AC-CARD-14, AC-HOLD-43
 
 ## 13. Відмови з текстом замість перенаправлення (PR `task/denied-pages`)
 
-- [ ] 13.1 Компонент `AccessDenied`; `/clients/new` (AC-CARD-06), `/slots` і `/holds` (AC-HOLD-44) для терапевта
-- [ ] 13.2 `holdSlot` і `confirmHold`: відмова ролі — на `/schedule?msg=…`; оновити коментарі про головну (Р20)
-- [ ] 13.3 `/clients`: порожній список staff (AC-CARD-15); `/clients/[id]`: картки немає (AC-CARD-16); «Sign out» у тесті без ролі (AC-CARD-11)
-- [ ] 13.4 Тести сторінок і дій перевіряють показ тексту, а не лише адресу; відхилення #47 і #48 закрити коментарем із посиланням на PR
+- [x] 13.1 `/clients/new` (AC-CARD-06), `/slots` і `/holds` (AC-HOLD-44) для терапевта: `AppShell` із відмовою без даних і форм (Р20)
+- [x] 13.2 `holdSlot` і `confirmHold`: відмова ролі — на `/schedule?msg=…`; оновити коментарі про головну (Р20)
+- [x] 13.3 `/clients`: порожній список staff (AC-CARD-15); `/clients/[id]`: картки немає (AC-CARD-16); «Sign out» у тесті без ролі (AC-CARD-11)
+- [x] 13.4 Тести сторінок і дій перевіряють показ тексту, а не лише адресу
+- [ ] 13.5 Відхилення #47 і #48: коментар із посиланням на PR (після злиття)
 
 Done when: AC-CARD-06, AC-CARD-11, AC-CARD-15, AC-CARD-16, AC-HOLD-44
 

@@ -62,8 +62,8 @@ AC-HOLD-37). AC-HOLD-24 змінив лише дату прикладу, AC-HOLD
 
 Загальне правило: відмова за роллю — це сторінка з текстом PM і без даних і форм, а не мовчазне перенаправлення.
 
-- Компонент `AccessDenied` (`src/app/_components/access-denied.tsx`): `AppShell` із заголовком сторінки й `notice`.
-  Вживають `/clients/new` (терапевт: «Only schedulers and admins can create client cards.», AC-CARD-06), `/slots` і
+- Окремого компонента немає: сторінка повертає `AppShell` із заголовком і `notice` (як уже робить `/clients/[id]`) — три
+  рядки, а не абстракція. Так роблять `/clients/new` (терапевт: «Only schedulers and admins can create client cards.», AC-CARD-06), `/slots` і
   `/holds` (терапевт: новий код `PAGE_FORBIDDEN` «Only schedulers and admins can view this page.», AC-HOLD-44; слоти
   `therapist2` — той самий екран, бо запит до бази не виконується). Користувач без ролі (`role === null`) лишається на
   `requireRole`: повернення на `/` з «Your account has no access yet…» (AC-CARD-11) і дією «Sign out» (її дає `AppShell`).

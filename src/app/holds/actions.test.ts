@@ -50,9 +50,9 @@ describe("confirmHold", () => {
     }
   });
 
-  it("AC-HOLD-14: терапевт — повідомлення на головній, бо /holds його туди перенаправляє", async () => {
+  it("AC-HOLD-14: відмова ролі — на розклад терапевта, який показує ?msg= (головна його не читає)", async () => {
     rpc.mockResolvedValue({ error: { code: "42501", message: "CONFIRM_FORBIDDEN" } });
-    expect(await redirectTarget(confirmHold(form({ hold_id: "h1" })))).toBe("/?msg=CONFIRM_FORBIDDEN");
+    expect(await redirectTarget(confirmHold(form({ hold_id: "h1" })))).toBe("/schedule?msg=CONFIRM_FORBIDDEN");
   });
 
   it("непередбачена помилка бази (зокрема HOLD_NOT_FOUND) кидається далі — лог сервера, error.tsx", async () => {

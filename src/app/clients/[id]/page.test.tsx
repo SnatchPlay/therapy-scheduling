@@ -1,18 +1,17 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Страницю без Next і бази: Supabase віддає те, що дав би RLS (нуль рядків для чужої картки), notFound кидає виняток, як у Next.
+// Страницю без Next і бази: Supabase віддає те, що дав би RLS (нуль рядків для чужої картки), як у Next.
 let role = "therapist";
 let result: { data: unknown; error: { code?: string; message: string } | null } = { data: null, error: null };
 const eq = vi.fn(() => ({ maybeSingle: async () => result }));
 const supabase = { from: () => ({ select: () => ({ eq }) }) };
 vi.mock("@/lib/supabase/viewer", async (importActual) => ({
   ...(await importActual<typeof import("@/lib/supabase/viewer")>()),
-  requireRole: async () => ({ supabase, role, email: `${role}@example.test` }),
-}));
-vi.mock("next/navigation", () => ({
-  notFound: () => {
-    throw new Error("NOT_FOUND");
+  // Як справжній requireRole: ролі, якої немає в переданому списку, — перенаправлення на головну.
+  requireRole: async (...roles: string[]) => {
+    if (!roles.includes(role)) throw new Error("REDIRECT /");
+    return { supabase, role, email: `${role}@example.test` };
   },
 }));
 vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a> }));
@@ -60,12 +59,23 @@ describe("/clients/[id]", () => {
     expect(html).not.toContain("have access");
   });
 
-  it("AC-CARD-10: планувальник бачить будь-яку картку; неіснуюча — 404", async () => {
+  it("AC-CARD-10: планувальник бачить будь-яку картку", async () => {
     role = "scheduler";
     result = { data: card, error: null };
     expect(await open("c7")).toContain("Guardian Seven");
-    result = { data: null, error: null };
-    await expect(open("missing")).rejects.toThrow("NOT_FOUND");
+  });
+
+  it("AC-CARD-16: картки немає — планувальник бачить «This client card doesn't exist.», терапевт — відмову як для чужої, даних немає", async () => {
+    for (const r of ["scheduler", "admin"]) {
+      role = r;
+      const html = await open("missing");
+      expect(html).toContain("This client card doesn&#x27;t exist.");
+      expect(html).not.toContain("have access");
+    }
+    role = "therapist";
+    const html = await open("missing");
+    expect(html).toContain("You don&#x27;t have access to this client.");
+    expect(html).not.toContain("exist");
   });
 
   it("збій бази — помилка, а не відмова в доступі", async () => {

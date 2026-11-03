@@ -19,13 +19,19 @@ beforeEach(() => {
 });
 
 describe("/clients/new", () => {
-  it("AC-CARD-06: терапевт за прямим посиланням бачить форму (відмову на спробу створити дає база)", async () => {
-    expect(renderToStaticMarkup(await NewClientPage())).toContain('data-testid="card-form"');
+  it("AC-CARD-06: терапевт за прямим посиланням одразу бачить відмову, форми немає (спробу в обхід відхиляє база)", async () => {
+    const html = renderToStaticMarkup(await NewClientPage());
+    expect(html).toContain("Only schedulers and admins can create client cards.");
+    expect(html).toContain('role="alert"');
+    expect(html).not.toContain('data-testid="card-form"');
     expect(requireRole).toHaveBeenCalledWith("admin", "scheduler", "therapist");
   });
 
-  it("AC-CARD-01: планувальник бачить ту саму форму під заголовком «New client»", async () => {
-    role = "scheduler";
-    expect(renderToStaticMarkup(await NewClientPage())).toContain(">New client<");
+  it.each(["scheduler", "admin"])("AC-CARD-01: %s бачить форму під заголовком «New client», без відмови", async (r) => {
+    role = r;
+    const html = renderToStaticMarkup(await NewClientPage());
+    expect(html).toContain(">New client<");
+    expect(html).toContain('data-testid="card-form"');
+    expect(html).not.toContain("Only schedulers and admins");
   });
 });

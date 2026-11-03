@@ -96,8 +96,13 @@ describe("/clients", () => {
     expect(html).toContain("client1@example.test");
   });
 
-  it("порожній список планувальника — підказка створити першу картку", async () => {
-    expect(await render()).toContain("Create the first client card.");
+  it.each(["scheduler", "admin"])("AC-CARD-15: порожній список (%s) — повідомлення PM, кнопка створення лишається", async (r) => {
+    role = r;
+    const html = await render();
+    expect(html).toContain("No clients yet. Create a client card from an intake form.");
+    expect(html).toContain('href="/clients/new"');
+    expect(html).not.toContain('data-testid="client-card"');
+    expect(html).not.toContain("Clients appear here");
   });
 
   it("запит до бази однаковий для всіх ролей: будь-яка роль із профілем, без ролі — на головну (requireRole)", async () => {

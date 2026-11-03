@@ -104,7 +104,7 @@
 | Немає вільного слота у дні | абзац `text-muted-foreground` над списком слотів (слоти лишаються) | «No free slots on this day.» |
 | Помилка дії | `Alert` (destructive) над вмістом | «This slot is no longer available.» |
 | Успіх | `Alert` (default) над вмістом | «Slot held.», «Hold confirmed.» |
-| Відмова в доступі | повідомлення на головній без даних | «Only schedulers and admins can confirm holds.» |
+| Відмова в доступі | сторінка з повідомленням, без даних і форм (`AppShell` з `notice`); після відмови дії — розклад терапевта з `?msg=` | «Only schedulers and admins can view this page.», «Only schedulers and admins can confirm holds.» |
 | Помилка поля | межа `border-destructive`, текст `text-destructive` під полем | «Enter the client's name and a valid email.» |
 | Вимкнена дія | `disabled` (прозорість 50 %) | — |
 | Помилка сторінки | `error.tsx` з `Alert` і кнопкою `Try again` | «Something went wrong. Try again.» |
