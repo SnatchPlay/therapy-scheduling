@@ -1,9 +1,9 @@
 {
   "kind": "uat",
-  "generatedAt": "2026-11-03T20:20:51.427Z",
+  "generatedAt": "2026-11-03T20:26:45.530Z",
   "baseURL": "https://therapy-scheduling-weld.vercel.app",
   "deployedSha": "12a33a73fb609d5b3d5c8940cfdf442f80c42031",
-  "testsCommit": "1ce49fbd8d23cead0a54f5015b56c7875f068d09",
+  "testsCommit": "ba3f6048d0e38c44155941fa0b2fd69d674ff21a",
   "reviewer": {
     "model": "claude-haiku-5-5",
     "disputes": "claude-sonnet-5-5"
@@ -21,7 +21,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі frame-then-1.png сторінки /clients/dd538e17-... (користувач therapist1@example.test) видно червоний блок із текстом «You don't have access to this client.», дослівно збігається з критерієм. На сторінці немає жодних даних клієнта, але це з розділу «Не з кадрів», тому не оцінювалося. Кадр один і читабельний."
+        "notes": "На кадрі сторінки /clients/dd538e17-6827-41d4-b9b3-4208a15ca5a9 (залогінений therapist1@example.test) видно червоний блок з текстом «You don't have access to this client.» і кнопку «Back to clients». Імені, email чи дат клієнта на кадрі немає, але за переліком ці пункти не з кадрів і я їх не оцінював."
       },
       "agentModel": "claude-haiku-5-5",
       "agentVerdicts": {
@@ -38,9 +38,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 12326,
-      "reviewCostUsd": 0.00185,
-      "reviewWallMs": 6747
+      "playwrightMs": 7916,
+      "reviewCostUsd": 0.00187,
+      "reviewWallMs": 8543
     },
     {
       "id": "AC-CARD-16",
@@ -53,7 +53,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На frame-then-1.png (scheduler1@example.test) на сторінці /clients/...016 видно червоний напис «This client card doesn't exist.», без жодних карток чи email клієнта. На frame-then-2.png (therapist1@example.test) видно «You don't have access to this client.» і також без даних клієнта. Обидві видимі частини «Тоді» підтверджено дослівно."
+        "notes": "На frame-then-1.png видно сесію scheduler1@example.test зі сторінкою «Client» і червоним повідомленням «This client card doesn't exist.». На frame-then-2.png видно сесію therapist1@example.test на тій самій адресі з повідомленням «You don't have access to this client.». Обидва тексти збігаються з критерієм посимвольно; даних клієнтів на кадрах немає, але цю частину я не оцінював, як і вимагають правила."
       },
       "agentModel": "claude-haiku-5-5",
       "agentVerdicts": {
@@ -74,9 +74,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 5885,
-      "reviewCostUsd": 0.00236,
-      "reviewWallMs": 7788
+      "playwrightMs": 5790,
+      "reviewCostUsd": 0.00249,
+      "reviewWallMs": 10068
     },
     {
       "id": "AC-HOLD-44",
@@ -89,7 +89,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На обох кадрах (заголовки «Holds» і «Slots», користувач therapist1@example.test · therapist) під заголовком є червоний рамковий напис «Only schedulers and admins can view this page.», який збігається з критерієм посимвольно. Список утримань, таблиць і адрес email на кадрах немає, тож цю частину не оцінював, як і вимагають правила; частину «жодне утримання не змінилося» теж не оцінював, бо це не з кадрів."
+        "notes": "На обох кадрах (/holds і /slots) видно однаковий червоний напис «Only schedulers and admins can view this page.», посимвольно збіжний із критерієм, і жодних списків, таблиць чи email на екрані немає. Частини про відсутність даних і незмінність утримань не з кадрів, тому їх не оцінюю."
       },
       "agentModel": "claude-haiku-5-5",
       "agentVerdicts": {
@@ -110,9 +110,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 11626,
-      "reviewCostUsd": 0.00248,
-      "reviewWallMs": 9170
+      "playwrightMs": 10304,
+      "reviewCostUsd": 0.00245,
+      "reviewWallMs": 8513
     }
   ],
   "negativeControls": []
