@@ -58,3 +58,8 @@ accounts.txt
 /.fallow/
 /.stryker-tmp/
 /reports/
+# Playwright (e2e/UAT): звіти, відео, траси й кадри лише локально; playwright/.auth — живі cookie сесій тестових ролей
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.auth/

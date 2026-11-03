@@ -27,7 +27,11 @@
     "coverage:summary": "node scripts/coverage-summary.mjs",
     "mutation:ts": "stryker run",
     "mutation:sql": "node scripts/mutation-check.mjs --kind sql",
-    "mutation:points": "node scripts/mutation-check.mjs --kind ts"
+    "mutation:points": "node scripts/mutation-check.mjs --kind ts",
+    "test:e2e": "playwright test",
+    "uat": "node scripts/uat/run.mjs",
+    "uat:nc": "node scripts/uat/run.mjs --negative-controls",
+    "uat:review": "node scripts/uat/review.mjs && node scripts/uat/report.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
@@ -43,6 +47,7 @@
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
     "@fission-ai/openspec": "1.14.1",
+    "@playwright/test": "1.64.1",
     "@storybook/addon-a11y": "10.6.3",
     "@storybook/addon-docs": "10.6.3",
     "@storybook/nextjs-vite": "10.6.3",
@@ -57,6 +62,7 @@
     "@vitest/eslint-plugin": "1.6.27",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
+    "eslint-plugin-playwright": "2.12.1",
     "eslint-plugin-storybook": "10.6.3",
     "fallow": "3.35.0",
     "storybook": "10.6.3",

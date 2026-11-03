@@ -1,0 +1,119 @@
+{
+  "kind": "uat",
+  "generatedAt": "2026-11-03T20:26:45.530Z",
+  "baseURL": "https://therapy-scheduling-weld.vercel.app",
+  "deployedSha": "12a33a73fb609d5b3d5c8940cfdf442f80c42031",
+  "testsCommit": "ba3f6048d0e38c44155941fa0b2fd69d674ff21a",
+  "reviewer": {
+    "model": "claude-haiku-5-5",
+    "disputes": "claude-sonnet-5-5"
+  },
+  "note": "Відео й траси не в git і не в CI (лише test-results/ на машині прогону). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
+  "results": [
+    {
+      "id": "AC-CARD-05",
+      "proof": "AC-CARD-05",
+      "title": "AC-CARD-05: терапевт відкриває за прямим посиланням картку клієнта іншого терапевта — повідомлення «You don't have access to this client.», даних клієнта немає, картка не змінилась",
+      "screenshot": "docs/qa/uat/2026-11-03/frames/AC-CARD-05-then-1.png",
+      "video": "test-results/artifacts/client-card-AC-CARD-05-AC--c46a0-а-немає-картка-не-змінилась-chromium/video.webm",
+      "trace": "test-results/artifacts/client-card-AC-CARD-05-AC--c46a0-а-немає-картка-не-змінилась-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі сторінки /clients/dd538e17-6827-41d4-b9b3-4208a15ca5a9 (залогінений therapist1@example.test) видно червоний блок з текстом «You don't have access to this client.» і кнопку «Back to clients». Імені, email чи дат клієнта на кадрі немає, але за переліком ці пункти не з кадрів і я їх не оцінював."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "You don't have access to this client.",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 7916,
+      "reviewCostUsd": 0.00187,
+      "reviewWallMs": 8543
+    },
+    {
+      "id": "AC-CARD-16",
+      "proof": "AC-CARD-16",
+      "title": "AC-CARD-16: картки, на яку веде посилання, не існує — scheduler бачить «This client card doesn't exist.», therapist — «You don't have access to this client.», даних клієнтів немає",
+      "screenshot": "docs/qa/uat/2026-11-03/frames/AC-CARD-16-then-1.png",
+      "video": "test-results/artifacts/client-card-AC-CARD-16-AC--81867-ient-»-даних-клієнтів-немає-chromium/video.webm",
+      "trace": "test-results/artifacts/client-card-AC-CARD-16-AC--81867-ient-»-даних-клієнтів-немає-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На frame-then-1.png видно сесію scheduler1@example.test зі сторінкою «Client» і червоним повідомленням «This client card doesn't exist.». На frame-then-2.png видно сесію therapist1@example.test на тій самій адресі з повідомленням «You don't have access to this client.». Обидва тексти збігаються з критерієм посимвольно; даних клієнтів на кадрах немає, але цю частину я не оцінював, як і вимагають правила."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "This client card doesn't exist.",
+          "onPage": true
+        },
+        {
+          "quote": "You don't have access to this client.",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 5790,
+      "reviewCostUsd": 0.00249,
+      "reviewWallMs": 10068
+    },
+    {
+      "id": "AC-HOLD-44",
+      "proof": "AC-HOLD-44",
+      "title": "AC-HOLD-44: терапевт відкриває за прямим посиланням список утримань планувальника, а потім слоти іншого терапевта — повідомлення «Only schedulers and admins can view this page.», без утримань і даних клієнтів",
+      "screenshot": "docs/qa/uat/2026-11-03/frames/AC-HOLD-44-then-1.png",
+      "video": "test-results/artifacts/slots-holds-AC-HOLD-44-тер-61e7f-з-утримань-і-даних-клієнтів-chromium/video.webm",
+      "trace": "test-results/artifacts/slots-holds-AC-HOLD-44-тер-61e7f-з-утримань-і-даних-клієнтів-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На обох кадрах (/holds і /slots) видно однаковий червоний напис «Only schedulers and admins can view this page.», посимвольно збіжний із критерієм, і жодних списків, таблиць чи email на екрані немає. Частини про відсутність даних і незмінність утримань не з кадрів, тому їх не оцінюю."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Only schedulers and admins can view this page.",
+          "onPage": true
+        },
+        {
+          "quote": "Only schedulers and admins can view this page.",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 10304,
+      "reviewCostUsd": 0.00245,
+      "reviewWallMs": 8513
+    }
+  ],
+  "negativeControls": []
+}
