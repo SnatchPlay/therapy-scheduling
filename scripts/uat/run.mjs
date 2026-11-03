@@ -90,7 +90,10 @@ if (!cases.length) {
   process.exitCode = 1;
 } else {
   if (!skipReview) await review();
-  const { outDir, rows } = report(combine(), { out: negativeControls ? "test-results/uat-report-nc" : undefined });
+  // Звіт дня в docs/qa/uat лише з повного прогону: --grep чи --skip-review не мають його перезаписати.
+  const partial = argv.length > 0 || skipReview;
+  const out = negativeControls ? "test-results/uat-report-nc" : partial ? "test-results/uat-report-partial" : undefined;
+  const { outDir, rows } = report(combine(), { out });
   console.log(`\nЗвіт: ${rel(outDir)}/report.md`);
   for (const r of rows) console.log(`  ${r.caseId}: ${r.verdict} — ${r.ruleText}`);
   const real = rows.filter((r) => !r.negativeControl);

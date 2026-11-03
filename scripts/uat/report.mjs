@@ -73,7 +73,7 @@ export function report(rows = combine(), { out } = {}) {
     deployedSha: run.deployedSha ?? null,
     testsCommit: run.gitSha ?? null,
     reviewer: { model: HAIKU, disputes: SONNET },
-    note: "Відео й траси не в git (test-results/ локально, артефакт CI). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
+    note: "Відео й траси не в git і не в CI (лише test-results/ на машині прогону). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
     results: real.map(entry),
     negativeControls: nc.map(entry),
   };
@@ -86,7 +86,7 @@ export function report(rows = combine(), { out } = {}) {
     `- **Код тестів:** \`${run.gitBranch ?? "?"}\` @ \`${(run.gitSha ?? "?").slice(0, 7)}\`${run.gitDirty ? " + незакомічені зміни" : ""}`,
     `- **Прогін:** ${kyivTime(started)} (Київ), Playwright ${run.playwrightMs ? sec(run.playwrightMs) : "—"}; AC: ${real.length} — PASS ${count("PASS")}, FAIL ${count("FAIL")}, NEEDS-HUMAN ${count("NEEDS-HUMAN")}${nc.length ? `; негативних контролів: ${nc.length}` : ""}`,
     `- **Рецензент:** \`${HAIKU}\`; суперечки → \`${SONNET}\`. Разом за розбір: ${usd(totalCost)} (ціни API; за підпискою — у межах ліміту плану)`,
-    "- **Відео й траси:** не в git — `test-results/` локально або артефакт CI; трасу відкриває `npx playwright show-trace <trace.zip>`",
+    "- **Відео й траси:** не в git і не в CI — лише `test-results/` на машині прогону; трасу відкриває `npx playwright show-trace <trace.zip>`",
     "",
     "| AC | Перевірки | Агент | Підсумок | Чому | Playwright | Розбір |",
     "|---|---|---|---|---|---|---|",

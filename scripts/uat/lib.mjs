@@ -68,3 +68,29 @@ export function quoteInAria(quote, aria) {
   const flat = norm(aria.replace(/^(\s*)- [a-z]+: "(.*)"$/gm, "$1$2").replace(/\\"/g, '"'));
   return flat.includes(norm(quote));
 }
+
+/** Aria-знімки сторінки всіх кадрів «Тоді» випадку, одним текстом (private/aria-then-N.yml). */
+export const ariaOf = (caseDir) =>
+  readdirSync(path.join(caseDir, "private"))
+    .filter((f) => f.startsWith("aria-then-"))
+    .map((f) => readFileSync(path.join(caseDir, "private", f), "utf8"))
+    .join("\n");
+
+/** Видимі частини «Тоді», які агент підтвердив (met), і цитати з них. */
+export function metVisible(verdict) {
+  const parts = (verdict?.then_parts ?? []).filter((p) => p.observable === "visible" && p.status === "met");
+  const quotes = parts.flatMap((p) => p.quoted_text.split(";").map((q) => q.trim()).filter(Boolean));
+  return { parts, quotes };
+}
+
+/**
+ * Чому вердикту PASS не можна вірити без людини: "ac" — вердикт про інший AC; "quotes" — підтверджено менше видимих
+ * частин «Тоді», ніж очікують перевірки, немає цитат або цитати немає на сторінці (aria). null — довіряти.
+ */
+export function agentDoubt(assertions, verdict, aria) {
+  if (verdict.ac_id !== assertions.acId) return "ac";
+  const expected = assertions.thens.reduce((n, t) => n + t.visible.length, 0);
+  const { parts, quotes } = metVisible(verdict);
+  if (parts.length < expected || quotes.length === 0 || quotes.some((q) => !quoteInAria(q, aria))) return "quotes";
+  return null;
+}

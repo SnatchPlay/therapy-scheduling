@@ -7,11 +7,11 @@
 // Використання: node scripts/uat/review.mjs [--only AC-USERS-07] [--model claude-haiku-5-5] [--no-escalate]
 // Потрібен Claude Code (`claude` у PATH) з входом за підпискою або ANTHROPIC_API_KEY.
 import { spawn } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { HAIKU, SONNET, caseDirs, readJson, quoteInAria } from "./lib.mjs";
+import { HAIKU, SONNET, agentDoubt, ariaOf, caseDirs, readJson } from "./lib.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const prompt = readFileSync(path.join(here, "review-prompt.uk.md"), "utf8");
@@ -70,14 +70,7 @@ export function isDispute(caseDir, review) {
   if (a.status !== "passed") return false; // FAIL вирішує перевірка; агент лише для розбору
   const v = verdictOf(review);
   if (!v || v.verdict !== "PASS") return true;
-  const aria = readdirSync(path.join(caseDir, "private"))
-    .filter((f) => f.startsWith("aria-then-"))
-    .map((f) => readFileSync(path.join(caseDir, "private", f), "utf8"))
-    .join("\n");
-  const quotes = v.then_parts
-    .filter((p) => p.observable === "visible" && p.status === "met")
-    .flatMap((p) => p.quoted_text.split(";").map((q) => q.trim()).filter(Boolean));
-  return quotes.length === 0 || quotes.some((q) => !quoteInAria(q, aria));
+  return agentDoubt(a, v, ariaOf(caseDir)) !== null;
 }
 
 async function reviewCase(caseDir, { model, escalate }) {
@@ -115,6 +108,13 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     console.error("Немає test-results/uat — спершу npx playwright test і node scripts/uat/pack.mjs");
     process.exitCode = 1;
   } else {
-    await review({ only: opt("--only"), model: opt("--model") ?? HAIKU, escalate: !argv.includes("--no-escalate") });
+    const model = opt("--model") ?? HAIKU;
+    if (model !== HAIKU && model !== SONNET) {
+      // combine.mjs читає review.<модель>.json лише цих двох: інша модель дала б NEEDS-HUMAN у кожному випадку.
+      console.error(`Модель ${model} не підтримується: combine.mjs читає лише ${HAIKU} і ${SONNET}.`);
+      process.exitCode = 1;
+    } else {
+      await review({ only: opt("--only"), model, escalate: !argv.includes("--no-escalate") });
+    }
   }
 }

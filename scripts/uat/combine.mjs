@@ -1,22 +1,22 @@
 // Крок 3 UAT: підсумковий вердикт рахує КОД, а не агент.
 //   R1 перевірка впала                                         → FAIL (агент не може перекрити; його думка — лише для розбору)
-//   R2 немає вердикту агента / зламаний JSON / немає кадру     → NEEDS-HUMAN
+//   R2 немає вердикту агента / зламаний JSON / він про інший AC / немає кадру → NEEDS-HUMAN
 //   R3 перевірки пройшли, агент каже FAIL чи NEEDS-HUMAN       → NEEDS-HUMAN (розбіжність вирішує людина)
-//   R4 агент каже PASS, але його цитати немає в aria-знімку    → NEEDS-HUMAN (цитату не підтверджено)
+//   R4 агент каже PASS, але підтвердив не всі видимі частини «Тоді» чи його цитати немає в aria-знімку → NEEDS-HUMAN
 //   R5 помилки сторінки або відповіді 5xx під час сценарію     → NEEDS-HUMAN
 //   R6 перевірки + агент + підтверджені цитати збігаються      → PASS
 // Агент — Haiku; якщо була суперечка (review.mjs), рішення агента — за Sonnet, а вердикт Haiku лишається у звіті.
 // Використання: node scripts/uat/combine.mjs  → test-results/uat/combined.json
-import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { HAIKU, SONNET, WORK, caseDirs, quoteInAria, readJson } from "./lib.mjs";
+import { HAIKU, SONNET, WORK, agentDoubt, ariaOf, caseDirs, metVisible, quoteInAria, readJson } from "./lib.mjs";
 
 export const RULES = {
   R1: "R1: перевірка впала — FAIL завжди, агент не перекриває",
-  R2: "R2: немає вердикту агента або кадру",
+  R2: "R2: немає вердикту агента (або він про інший AC) чи кадру",
   R3: "R3: перевірки пройшли, агент не погоджується — вирішує людина",
-  R4: "R4: цитати агента немає на сторінці (aria) — не підтверджено",
+  R4: "R4: не всі видимі частини підтверджено або цитат агента немає на сторінці (aria)",
   R5: "R5: помилка сторінки або 5xx під час сценарію",
   R6: "R6: перевірки, агент і цитати збігаються",
 };
@@ -33,25 +33,20 @@ export function combineCase(dir) {
   const sonnet = loadReview(dir, SONNET);
   const final = sonnet ?? haiku; // Sonnet є лише після суперечки
   const v = final?.out?.structured_output ?? null;
-  const aria = readdirSync(path.join(dir, "private"))
-    .filter((f) => f.startsWith("aria-then-"))
-    .map((f) => readFileSync(path.join(dir, "private", f), "utf8"))
-    .join("\n");
+  const aria = ariaOf(dir);
   const frames = readdirSync(path.join(dir, "agent")).filter((f) => /^frame-then-\d+\.png$/.test(f));
 
-  const quotes = (v?.then_parts ?? [])
-    .filter((p) => p.observable === "visible" && p.status === "met")
-    .flatMap((p) => p.quoted_text.split(";").map((q) => q.trim()).filter(Boolean))
-    .map((q) => ({ quote: q, onPage: quoteInAria(q, aria) }));
+  const quotes = metVisible(v).quotes.map((q) => ({ quote: q, onPage: quoteInAria(q, aria) }));
+  const doubt = v ? agentDoubt(a, v, aria) : null;
   const runtimeBad =
     (a.runtime?.pageErrors?.length ?? 0) > 0 || (a.runtime?.failed ?? []).some((f) => / → 5\d\d$/.test(f));
 
   let verdict;
   let rule;
   if (a.status !== "passed") [verdict, rule] = ["FAIL", "R1"];
-  else if (!v || !frames.length) [verdict, rule] = ["NEEDS-HUMAN", "R2"];
+  else if (!v || !frames.length || doubt === "ac") [verdict, rule] = ["NEEDS-HUMAN", "R2"];
   else if (v.verdict !== "PASS") [verdict, rule] = ["NEEDS-HUMAN", "R3"];
-  else if (!quotes.length || quotes.some((q) => !q.onPage)) [verdict, rule] = ["NEEDS-HUMAN", "R4"];
+  else if (doubt) [verdict, rule] = ["NEEDS-HUMAN", "R4"];
   else if (runtimeBad) [verdict, rule] = ["NEEDS-HUMAN", "R5"];
   else [verdict, rule] = ["PASS", "R6"];
 
