@@ -84,13 +84,22 @@ export function metVisible(verdict) {
 }
 
 /**
- * Чому вердикту PASS не можна вірити без людини: "ac" — вердикт про інший AC; "quotes" — підтверджено менше видимих
- * частин «Тоді», ніж очікують перевірки, немає цитат або цитати немає на сторінці (aria). null — довіряти.
+ * Чому вердикту PASS не можна вірити без людини: "ac" — вердикт про інший AC; "quotes" — якась очікувана видима частина
+ * «Тоді» не має власного підтвердженого (met) запису з тим самим текстом у `part` (запис зараховується лише раз:
+ * дубль однієї частини не покриває іншу), немає цитат або цитати немає на сторінці (aria). null — довіряти.
  */
 export function agentDoubt(assertions, verdict, aria) {
   if (verdict.ac_id !== assertions.acId) return "ac";
-  const expected = assertions.thens.reduce((n, t) => n + t.visible.length, 0);
   const { parts, quotes } = metVisible(verdict);
-  if (parts.length < expected || quotes.length === 0 || quotes.some((q) => !quoteInAria(q, aria))) return "quotes";
+  const free = parts.map((p) => norm(p.part));
+  const covered = assertions.thens
+    .flatMap((t) => t.visible)
+    .every((expected) => {
+      const i = free.indexOf(norm(expected));
+      if (i < 0) return false;
+      free.splice(i, 1);
+      return true;
+    });
+  if (!covered || quotes.length === 0 || quotes.some((q) => !quoteInAria(q, aria))) return "quotes";
   return null;
 }
