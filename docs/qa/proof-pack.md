@@ -133,3 +133,22 @@ UAT-тести лише читають. Один запис створено в�
 - Негативні контролі (`npm run uat:nc`) не запускали.
 - Фільтр `ac:coverage` для e2e покритий тестами скрипта (`e2e-counted`, `e2e-not-run`); сам job `e2e` на GitHub — ні.
 - Відкриті знахідки self-review (файли з матеріалів курсу, Low): список — у `.quality-trial/findings-log.md`, запис «WS8 C».
+
+## D. Eval рецензентів
+
+- PR з вадами (не злитий, закривається після eval): [#63](https://github.com/SnatchPlay/therapy-scheduling/pull/63), гілка `task/holds-header-cleanup`, нейтральні назви й опис, 3 вади + 1 приманка. CI на ній зелений, прод-базу вади не чіпають (міграція не застосовується до злиття, функція не викликається).
+- Ключ і таблиця з цитатами: [коментар у PR 63](https://github.com/SnatchPlay/therapy-scheduling/pull/63#issuecomment-6615866191). Ключ лежав поза репо, доки обидва рецензенти не відпрацювали.
+- Правило: [PR 64](https://github.com/SnatchPlay/therapy-scheduling/pull/64), коміт `c66a17c` — абзац «Рев'ю (серйозність)» в `AGENTS.md`.
+- Повторний прогін: [коментар у PR 63](https://github.com/SnatchPlay/therapy-scheduling/pull/63#issuecomment-6616033756).
+
+| Вада | CodeRabbit | `/code-review high` |
+|---|---|---|
+| роль з `user_metadata` (`viewer.ts:36`) | знайшов, але **Minor** і «база не віддасть дані» | знайшов, **HIGH** |
+| `security definer` без `search_path` (міграція) | знайшов частково, Minor (лише `search_path`) | знайшов, MEDIUM (+ без перевірки ролі, рахує Expired, функція не використана) |
+| тест AC-HOLD-44 послаблено | знайшов, Trivial | знайшов, MEDIUM |
+| приманка `isStaff` | не згадав (хибної тривоги немає) | Low: часткове перенесення (слушне, не про безпеку) |
+
+Рецензентів запущено так: CodeRabbit — `@coderabbitai review`, перший запит впав у ліміт безкоштовних рев'ю, повторний дав рев'ю за 10 хвилин; `/code-review high` — окремим агентом, який не бачив ні ключа, ні коментарів CodeRabbit.
+
+**Правило й повторний прогін.** Слабка ланка — CodeRabbit (вада №1 як Minor). Правило загострює її: роль не з `profiles.role` — «must fix / Critical», RLS її не пом'якшує. Повторний `@coderabbitai full review` о 23:34 відхилено лімітом («next included review will be available in 43 minutes», [коментар](https://github.com/SnatchPlay/therapy-scheduling/pull/63#issuecomment-6615979832)): **ефект правила на CodeRabbit не виміряно**. `/code-review` повторно знайшов усе, роль із `user_metadata` — HIGH і до правила, і після. Повторний прогін CodeRabbit буде зроблено після скидання ліміту окремим коментарем у PR 63.
+
