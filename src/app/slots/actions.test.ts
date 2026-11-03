@@ -47,16 +47,16 @@ describe("holdSlot", () => {
   });
 
   // Помилки правил (не ролі) повертають на /slots з ?msg=; відмову ролі показує розклад терапевта (AC-HOLD-08 нижче).
-  const messageOnSlots = async (code: string) => {
+  const expectMessageOnSlots = async (code: string) => {
     rpc.mockResolvedValue({ error: { code: "P0001", message: code } });
     const url = await redirectOf(holdSlot(form(FIELDS)));
     expect(url.pathname).toBe("/slots");
     expect(url.searchParams.get("msg")).toBe(code);
   };
 
-  it("AC-HOLD-03: код помилки бази → його повідомлення", () => messageOnSlots("SLOT_UNAVAILABLE"));
+  it("AC-HOLD-03: код помилки бази → його повідомлення", () => expectMessageOnSlots("SLOT_UNAVAILABLE"));
 
-  it("AC-HOLD-25: перетин у часі клієнта → його повідомлення", () => messageOnSlots("CLIENT_OVERLAP"));
+  it("AC-HOLD-25: перетин у часі клієнта → його повідомлення", () => expectMessageOnSlots("CLIENT_OVERLAP"));
 
   it("непередбачена помилка бази кидається далі (лог сервера, error.tsx)", async () => {
     const failure = { code: "22P02", message: 'invalid input syntax for type uuid: "x"' };
