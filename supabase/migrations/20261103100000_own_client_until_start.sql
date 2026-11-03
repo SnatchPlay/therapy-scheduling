@@ -17,6 +17,6 @@ as $$
   where s.therapist_id = (select private.current_therapist_id())
     and (
       h.confirmed_at is not null
-      or (private.hold_status(h.confirmed_at, h.created_at) = 'Held' and not private.slot_started(s.starts_at))
+      or (h.confirmed_at is null and not private.slot_started(s.starts_at))
     );
 $$;
