@@ -27,9 +27,7 @@ export default async function ClientsPage({ searchParams }: PageProps<"/clients"
         </div>
       ) : null}
       {clients.length === 0 ? (
-        <EmptyState title={isStaff ? "No clients yet." : MESSAGES.NO_CLIENTS}>
-          {isStaff ? "Create the first client card." : null}
-        </EmptyState>
+        <EmptyState title={isStaff ? MESSAGES.NO_CLIENTS_STAFF : MESSAGES.NO_CLIENTS} />
       ) : (
         <ul className="flex flex-col gap-4">
           {clients.map((c) => (

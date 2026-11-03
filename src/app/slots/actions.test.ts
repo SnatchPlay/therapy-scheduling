@@ -46,7 +46,7 @@ describe("holdSlot", () => {
     expect(revalidatePath).toHaveBeenCalledWith("/slots");
   });
 
-  // Роль staff бачить повідомлення бази на /slots, а не на головній.
+  // Помилки правил (не ролі) повертають на /slots з ?msg=; відмову ролі показує розклад терапевта (AC-HOLD-08 нижче).
   const messageOnSlots = async (code: string) => {
     rpc.mockResolvedValue({ error: { code: "P0001", message: code } });
     const url = await redirectOf(holdSlot(form(FIELDS)));
@@ -64,10 +64,10 @@ describe("holdSlot", () => {
     await expect(holdSlot(form(FIELDS))).rejects.toBe(failure);
   });
 
-  it("AC-HOLD-08: терапевт — повідомлення на головній, бо /slots його туди перенаправляє", async () => {
+  it("AC-HOLD-08: відмова ролі — на розклад терапевта, який показує ?msg= (головна його не читає)", async () => {
     rpc.mockResolvedValue({ error: { code: "42501", message: "HOLD_FORBIDDEN" } });
     const url = await redirectOf(holdSlot(form(FIELDS)));
-    expect(url.pathname + url.search).toBe("/?msg=HOLD_FORBIDDEN");
+    expect(url.pathname + url.search).toBe("/schedule?msg=HOLD_FORBIDDEN");
   });
 
   it("поле без значення чи файл замість тексту — без запиту до бази", async () => {

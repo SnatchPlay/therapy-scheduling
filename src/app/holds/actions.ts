@@ -22,8 +22,8 @@ export async function confirmHold(formData: FormData) {
     const code = dbMessageCode(error);
     // Непередбачена помилка (зокрема HOLD_NOT_FOUND) — у лог сервера й на сторінку помилки (error.tsx).
     if (code === "UNEXPECTED") throw error;
-    // /holds лише для staff: терапевта звідти перенаправило б на головну без тексту, тож текст — одразу там.
-    redirect(code === "CONFIRM_FORBIDDEN" ? `/?msg=${code}` : `/holds?msg=${code}`);
+    // Відмову за роллю показує розклад терапевта (він читає ?msg=); користувача без ролі звідти поверне на головну.
+    redirect(code === "CONFIRM_FORBIDDEN" ? `/schedule?msg=${code}` : `/holds?msg=${code}`);
   }
   revalidatePath("/holds");
   redirect("/holds?msg=CONFIRMED");

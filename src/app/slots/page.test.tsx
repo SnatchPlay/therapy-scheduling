@@ -5,19 +5,30 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 type Slot = { slot_id: string; starts_at: string; ends_at: string; status: string; holdable: boolean };
 let slots: Slot[] = [];
 let withClients = true;
+let role = "scheduler";
+let queries = 0; // запити до бази: відмова ролі їх не робить
 const clientRows = [
   { id: "c1", full_name: "Client One", client_type: "Adult", email: "client1@example.test", guardian_email: null },
   { id: "c7", full_name: "Client Seven", client_type: "Child", email: null, guardian_email: "guardian7@example.test" },
 ];
 const query = (data: unknown[]) => ({ select: () => ({ order: async () => ({ data, error: null }) }) });
 const supabase = {
-  from: (table: string) =>
-    query(table === "therapists" ? [{ id: "t1", full_name: "Therapist One" }] : withClients ? clientRows : []),
-  rpc: async () => ({ data: slots, error: null }),
+  from: (table: string) => {
+    queries++;
+    return query(table === "therapists" ? [{ id: "t1", full_name: "Therapist One" }] : withClients ? clientRows : []);
+  },
+  rpc: async () => {
+    queries++;
+    return { data: slots, error: null };
+  },
 };
 vi.mock("@/lib/supabase/viewer", async (importActual) => ({
   ...(await importActual<typeof import("@/lib/supabase/viewer")>()),
-  requireRole: async () => ({ supabase, role: "scheduler", email: "scheduler1@example.test" }),
+  // Як справжній requireRole: ролі, якої немає в переданому списку, — перенаправлення на головну.
+  requireRole: async (...roles: string[]) => {
+    if (!roles.includes(role)) throw new Error("REDIRECT /");
+    return { supabase, role, email: `${role}@example.test` };
+  },
 }));
 vi.mock("./actions", () => ({ holdSlot: async () => {} }));
 vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a> }));
@@ -40,9 +51,31 @@ const NO_FREE = "No free slots on this day.";
 beforeEach(() => {
   slots = [];
   withClients = true;
+  role = "scheduler";
+  queries = 0;
 });
 
 describe("/slots", () => {
+  it("AC-HOLD-44: терапевт за посиланням на слоти (у тому числі іншого терапевта) бачить лише відмову, без слотів і клієнтів і без запитів до бази", async () => {
+    role = "therapist";
+    slots = [slot("10:00", "Free", true)];
+    const html = await render();
+    expect(html).toContain("Only schedulers and admins can view this page.");
+    expect(html).toContain('role="alert"');
+    for (const text of ['data-testid="slot"', "Therapist One", "Client One", "guardian7@example.test", ">Hold<", NO_FREE]) {
+      expect(html).not.toContain(text);
+    }
+    expect(queries).toBe(0);
+  });
+
+  it.each(["scheduler", "admin"])("AC-HOLD-44: %s бачить слоти без відмови", async (r) => {
+    role = r;
+    slots = [slot("10:00", "Free", true)];
+    const html = await render();
+    expect(html).toContain('data-testid="slot"');
+    expect(html).not.toContain("Only schedulers and admins can view this page.");
+  });
+
   it("AC-CARD-02: у виборі клієнта біля дитини показано email опікуна, біля дорослого — його власний", async () => {
     slots = [slot("10:00", "Free", true)];
     const html = await render();

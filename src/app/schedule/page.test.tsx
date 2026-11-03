@@ -63,6 +63,19 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("/schedule", () => {
+  // Дія після відмови ролі веде терапевта сюди з ?msg=<код>: тут перевіряємо, що текст PM справді видно.
+  it("AC-HOLD-08: після відмови утримати слот терапевт бачить «Only schedulers and admins can hold slots.»", async () => {
+    const html = await render({ week: "2026-11-04", msg: "HOLD_FORBIDDEN" });
+    expect(html).toContain("Only schedulers and admins can hold slots.");
+    expect(html).toContain('role="alert"');
+  });
+
+  it("AC-HOLD-14: після відмови підтвердити утримання терапевт бачить «Only schedulers and admins can confirm holds.»", async () => {
+    const html = await render({ week: "2026-11-04", msg: "CONFIRM_FORBIDDEN" });
+    expect(html).toContain("Only schedulers and admins can confirm holds.");
+    expect(html).toContain('role="alert"');
+  });
+
   it("сторінка лише для терапевта", async () => {
     await render();
     expect(requireRole).toHaveBeenCalledWith("therapist");

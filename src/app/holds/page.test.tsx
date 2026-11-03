@@ -5,26 +5,35 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 type Hold = { hold_id: string; therapist_name: string; starts_at: string; client_name: string; held_until: string | null; status: string };
 let holds: Hold[] = [];
 let failure: unknown = null;
+let role = "scheduler";
+let queries = 0; // запити до бази: відмова ролі їх не робить
 // select().order().order(): сторінка сортує за часом слоту й за id; ключі сортування запам'ятовуємо.
 const orders: string[] = [];
 const supabase = {
-  from: () => ({
-    select: () => ({
-      order: (column: string) => {
-        orders.push(column);
-        return {
-          order: async (second: string) => {
-            orders.push(second);
-            return { data: failure ? null : holds, error: failure };
-          },
-        };
-      },
-    }),
-  }),
+  from: () => {
+    queries++;
+    return {
+      select: () => ({
+        order: (column: string) => {
+          orders.push(column);
+          return {
+            order: async (second: string) => {
+              orders.push(second);
+              return { data: failure ? null : holds, error: failure };
+            },
+          };
+        },
+      }),
+    };
+  },
 };
 vi.mock("@/lib/supabase/viewer", async (importActual) => ({
   ...(await importActual<typeof import("@/lib/supabase/viewer")>()),
-  requireRole: async () => ({ supabase, role: "scheduler", email: "scheduler1@example.test" }),
+  // Як справжній requireRole: ролі, якої немає в переданому списку, — перенаправлення на головну.
+  requireRole: async (...roles: string[]) => {
+    if (!roles.includes(role)) throw new Error("REDIRECT /");
+    return { supabase, role, email: `${role}@example.test` };
+  },
 }));
 vi.mock("./actions", () => ({ confirmHold: async () => {} }));
 vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a> }));
@@ -48,9 +57,29 @@ beforeEach(() => {
   holds = [];
   failure = null;
   orders.length = 0;
+  role = "scheduler";
+  queries = 0;
 });
 
 describe("/holds", () => {
+  it("AC-HOLD-44: терапевт за прямим посиланням на список утримань бачить лише відмову, без утримань, імен і email клієнтів і без запитів до бази", async () => {
+    role = "therapist";
+    holds = [hold("h1", "Held", "2026-11-03T14:30:00-08:00")];
+    const html = await render();
+    expect(html).toContain("Only schedulers and admins can view this page.");
+    expect(html).toContain('role="alert"');
+    for (const text of ["client1", "Therapist One", ">Confirm<", "hold-status"]) expect(html).not.toContain(text);
+    expect(queries).toBe(0);
+  });
+
+  it.each(["scheduler", "admin"])("AC-HOLD-44: %s бачить список утримань без відмови", async (r) => {
+    role = r;
+    holds = [hold("h1", "Held", "2026-11-03T14:30:00-08:00")];
+    const html = await render();
+    expect(html).toContain("client1");
+    expect(html).not.toContain("Only schedulers and admins can view this page.");
+  });
+
   it("AC-HOLD-20: прострочене утримання client1 видно зі статусом «Expired», без кнопки підтвердження", async () => {
     // hold_list віддає held_until для кожного непідтвердженого утримання, зокрема прострочених: «Held until» лише в «Held».
     holds = [hold("h1", "Expired", "2026-11-03T14:30:00-08:00")];
