@@ -5,7 +5,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { clientOptionLabel } from "@/lib/clients";
+import { clientOptionLabel, filterClients } from "@/lib/clients";
 import { MESSAGES, noticeFor } from "@/lib/messages";
 import { hasHoldableSlot, withSlotTimes } from "@/lib/slots";
 import { ALL_ROLES, requireRole, STAFF } from "@/lib/supabase/viewer";
@@ -26,6 +26,9 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
   if (clientsResult.error) throw clientsResult.error;
   const therapists = therapistsResult.data;
   const clients = clientsResult.data;
+  // AC-CARD-02: пошук клієнта за іменем чи email, дитини — і за email опікуна; список вибору в кожному слоті лише з знайдених.
+  const find = typeof params.client === "string" ? params.client : "";
+  const found = filterClients(clients, find);
 
   // Лише терапевт зі списку: довільний ?therapist= не доходить до бази.
   const therapistId = therapists.find((t) => t.id === params.therapist)?.id ?? therapists[0]?.id;
@@ -54,6 +57,10 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
           <Label htmlFor="day">Day</Label>
           <Input id="day" type="date" name="day" defaultValue={day} />
         </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="client">Find a client</Label>
+          <Input id="client" name="client" defaultValue={find} placeholder="Name or email" autoComplete="off" />
+        </div>
         <Button type="submit" variant="outline">
           Show slots
         </Button>
@@ -66,6 +73,12 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
           {MESSAGES.NO_FREE_SLOTS}
         </p>
       )}
+
+      {clients.length > 0 && found.length === 0 && rows.some((s) => s.holdable) ? (
+        <p className="text-sm text-muted-foreground" data-testid="no-client-match">
+          No clients match.
+        </p>
+      ) : null}
 
       <ul className="flex flex-col divide-y divide-border text-sm">
         {rows.map((s) => (
@@ -85,7 +98,7 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
                 Create a client first
               </Link>
             ) : null}
-            {s.holdable && clients.length > 0 ? (
+            {s.holdable && found.length > 0 ? (
               <form action={holdSlot} className="ml-auto flex gap-2">
                 <input type="hidden" name="slot_id" value={s.slot_id} />
                 <input type="hidden" name="therapist" value={therapistId ?? ""} />
@@ -95,7 +108,7 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
                   <NativeSelectOption value="" disabled>
                     Choose a client
                   </NativeSelectOption>
-                  {clients.map((c) => (
+                  {found.map((c) => (
                     <NativeSelectOption key={c.id} value={c.id}>
                       {clientOptionLabel(c)}
                     </NativeSelectOption>

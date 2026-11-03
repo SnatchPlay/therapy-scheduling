@@ -30,8 +30,8 @@ Done when: AC-CARD-12, AC-CARD-13 (і AC-CARD-01, 03, AC-HOLD-10, 11, 15, 16, 34
 
 ## 15. Пошук клієнта під час утримання (PR `task/client-picker-search`)
 
-- [ ] 15.1 `filterClients` і поле «Find a client» на `/slots` (Р21)
-- [ ] 15.2 Тест AC-CARD-02: client7 знаходять за email опікуна, біля нього показано email опікуна
+- [x] 15.1 `filterClients` і поле «Find a client» на `/slots` (Р21)
+- [x] 15.2 Тест AC-CARD-02: client7 знаходять за email опікуна, біля нього показано email опікуна
 
 Done when: AC-CARD-02
 
