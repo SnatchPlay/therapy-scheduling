@@ -33,7 +33,7 @@ export async function getViewer() {
     supabase,
     id: claims.sub,
     email: profile?.email ?? claims.email ?? null,
-    role: isRole(profile?.role) ? profile.role : null,
+    role: isRole(profile?.role) ? profile.role : isRole(claims.user_metadata?.role) ? claims.user_metadata.role : null,
   };
 }
 
