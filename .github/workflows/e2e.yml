@@ -1,21 +1,22 @@
 # E2E (Playwright): AC, що їх перевіряють у браузері — tests/e2e/**/*.spec.ts (ac:coverage рахує їх лише завдяки цьому
-# workflow). Збирається код PR (npm run build) і працює на localhost:3000 проти вашого проекту Supabase; запис не створюється:
-# тести лише читають і входять синтетичними акаунтами *@example.test (supabase/demo-users.json).
-# Без перевірки агента-рецензента: вона й звіт для PM — `npm run uat` (docs/qa/uat/).
+# workflow). Збирається код PR (npm run build) і працює на localhost:3000 проти ОДНОРАЗОВОЇ локальної бази Supabase в
+# раннері (supabase start; міграції цього PR), а не проти вашого прода: у прод job нічого не пише й не читає.
+# Передумови тестів дає tests/e2e/fixtures/e2e-data.sql (клієнт лише для therapist2, утримання для списку планувальника);
+# доводить його tests/db/e2e-fixture-db.test.ts. Акаунти *@example.test створює scripts/create-demo-users.mjs з випадковим
+# паролем цього прогону: секретів і змінних репозиторію не потрібно. Тести лише читають; пишеться лише в локальну базу.
+# Без перевірки агента-рецензента: вона й звіт для PM — `npm run uat` проти прода (docs/qa/uat/).
 #
-# Налаштування (Settings → Secrets and variables → Actions); без них прогін червоний з підказкою:
-#   Variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY   (публічні значення, ті самі, що у Vercel)
-#   Secrets:   DEMO_USER_PASSWORD                                                (пароль акаунтів users:demo)
-#
-# Тести читають живі дані прода: AC-CARD-05 потребує клієнта, який є «своїм» лише для одного з двох терапевтів (його
-# дає утримання майбутнього слота, воно спливає за 24 год або з початком слота). Без такого клієнта прогін червоний —
-# це дані, а не код. Тому job НЕ додаємо в обов'язкові перевірки ruleset-у `solo-main`.
+# На стан прод-UAT це не впливає: `npm run uat` читає живі дані прода (docs/qa/proof-pack.md, розділ C).
+# НЕ додавати цей job в обов'язкові перевірки ruleset-у `solo-main`, поки діє фільтр `paths` нижче: PR без цих шляхів
+# (наприклад, лише `docs/**`) job не запускає, і обов'язкова перевірка висіла б «Expected — waiting».
 name: e2e
 
 on:
   pull_request:
     paths:
       - "src/**"
+      - "supabase/**"
+      - "scripts/create-demo-users.mjs"
       - "tests/e2e/**"
       - "playwright.config.ts"
       - "package.json"
@@ -36,10 +37,6 @@ jobs:
     name: "E2E: Playwright"
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
-      DEMO_USER_PASSWORD: ${{ secrets.DEMO_USER_PASSWORD }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -47,17 +44,23 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      # secrets.* не можна використати в if на рівні job, тому перевіряємо змінні кроком (значення не друкуємо).
-      - name: Налаштування є
+      # Лише те, що потрібне застосунку: база, Auth (gotrue), REST (postgrest) і шлюз (kong).
+      - name: Одноразова локальна база Supabase (міграції цього PR)
+        run: npx supabase start -x studio,realtime,storage-api,imgproxy,mailpit,postgres-meta,edge-runtime,logflare,vector,supavisor
+      - name: Акаунти e2e й дані передумов
         run: |
-          missing=""
-          [ -n "$NEXT_PUBLIC_SUPABASE_URL" ] || missing="$missing NEXT_PUBLIC_SUPABASE_URL(variable)"
-          [ -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ] || missing="$missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY(variable)"
-          [ -n "$DEMO_USER_PASSWORD" ] || missing="$missing DEMO_USER_PASSWORD(secret)"
-          if [ -n "$missing" ]; then
-            echo "::error title=e2e::Не задано:$missing. Settings → Secrets and variables → Actions (див. шапку e2e.yml)."
-            exit 1
-          fi
+          eval "$(npx supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY|SECRET_KEY)=')"
+          : "${API_URL:?supabase status не віддав API_URL}" "${PUBLISHABLE_KEY:?немає PUBLISHABLE_KEY}" "${SECRET_KEY:?немає SECRET_KEY}"
+          password="$(openssl rand -hex 16)"
+          echo "::add-mask::$password"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUBLISHABLE_KEY"
+            echo "DEMO_USER_PASSWORD=$password"
+          } >> "$GITHUB_ENV"
+          NEXT_PUBLIC_SUPABASE_URL="$API_URL" SUPABASE_SECRET_KEY="$SECRET_KEY" DEMO_USER_PASSWORD="$password" \
+            node scripts/create-demo-users.mjs
+          npx supabase db query --local -f "$PWD/tests/e2e/fixtures/e2e-data.sql"
       - run: npx playwright install --with-deps chromium
       - name: Збірка застосунку (код цього PR)
         run: npm run build
