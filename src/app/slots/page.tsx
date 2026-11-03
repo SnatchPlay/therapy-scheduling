@@ -16,7 +16,7 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
   const { supabase, role, email } = await requireRole(...ALL_ROLES);
   const params = await searchParams;
   // AC-HOLD-44: терапевту за прямим посиланням (зокрема на слоти іншого терапевта) — відмова без даних; запитів до бази немає.
-  if (!STAFF.includes(role) && role !== "therapist") return <AppShell role={role} email={email} title="Slots" notice={noticeFor("PAGE_FORBIDDEN")} />;
+  if (!STAFF.includes(role)) return <AppShell role={role} email={email} title="Slots" notice={noticeFor("PAGE_FORBIDDEN")} />;
 
   const [therapistsResult, clientsResult] = await Promise.all([
     supabase.from("therapists").select("id, full_name").order("full_name"),
