@@ -3,9 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // Server action без Next і бази: getViewer дає фейковий клієнт Supabase, redirect кидає ціль (як у Next).
 const insert = vi.fn();
 const from = vi.fn<(table: string) => { insert: typeof insert }>(() => ({ insert }));
+// client_card_errors: усі помилки картки одним запитом (правила — у базі, tests/db/client-card-db.test.ts).
+const rpc = vi.fn();
 const revalidatePath = vi.fn();
 let role: string | null = "scheduler";
-const getViewer = vi.fn(async () => ({ supabase: { from }, role }));
+const getViewer = vi.fn(async () => ({ supabase: { from, rpc }, role }));
 vi.mock("@/lib/supabase/viewer", async (importActual) => ({
   ...(await importActual<typeof import("@/lib/supabase/viewer")>()),
   getViewer,
@@ -58,13 +60,18 @@ async function redirectOf(action: Promise<unknown>) {
 beforeEach(() => {
   vi.clearAllMocks();
   insert.mockReset();
+  rpc.mockReset();
+  rpc.mockResolvedValue({ data: [], error: null });
   role = "scheduler";
 });
 
 describe("createClientCard", () => {
-  it("AC-CARD-01: поля картки дорослого йдуть у свої колонки, успіх → повідомлення про створення", async () => {
+  it("AC-CARD-01: усі поля йдуть у перевірку бази, потім поля картки дорослого — у свої колонки, успіх → повідомлення про створення", async () => {
     insert.mockResolvedValue({ error: null });
     expect(await redirectOf(createClientCard(null, adult()))).toBe("/clients?msg=CLIENT_CREATED");
+    expect(rpc).toHaveBeenCalledWith("client_card_errors", {
+      p_card: expect.objectContaining({ client_type: "Adult", full_name: "Client Six", email: "client6@example.test", birth_date: "1990-05-14", session_language: "English" }),
+    });
     expect(from).toHaveBeenCalledWith("clients");
     expect(insert).toHaveBeenCalledWith({
       client_type: "Adult",
@@ -89,73 +96,87 @@ describe("createClientCard", () => {
     });
   });
 
-  it("AC-CARD-03: база відмовила через опікуна — повідомлення про опікуна, введені дані лишаються у формі", async () => {
-    insert.mockResolvedValue({ error: { code: "23514", message: 'violates check constraint "clients_guardian_check"' } });
+  it("AC-CARD-12: база повернула кілька помилок — усі коди одразу, введені дані лишаються, запису немає", async () => {
+    rpc.mockResolvedValue({ data: ["INVALID_CLIENT_NAME", "INVALID_BIRTH_DATE", "INVALID_LANGUAGE"], error: null });
+    const state = await createClientCard(null, child({ full_name: "", birth_date: "2999-01-01", session_language: "" }));
+    expect(state).toEqual({
+      codes: ["INVALID_CLIENT_NAME", "INVALID_BIRTH_DATE", "INVALID_LANGUAGE"],
+      values: expect.objectContaining({ guardian_name: "Guardian Seven", guardian_email: "guardian7@example.test", birth_date: "2999-01-01" }),
+    });
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("AC-CARD-03: помилка опікуна — повідомлення про опікуна, введені дані лишаються у формі", async () => {
+    rpc.mockResolvedValue({ data: ["INVALID_GUARDIAN"], error: null });
     const state = await createClientCard(null, child({ guardian_email: "" }));
     expect(state).toEqual({
-      code: "INVALID_GUARDIAN",
+      codes: ["INVALID_GUARDIAN"],
       values: expect.objectContaining({ full_name: "Client Seven", birth_date: "2015-03-02", guardian_name: "Guardian Seven", guardian_email: "" }),
     });
   });
 
-  it("AC-CARD-01: порожня дата чи не РРРР-ММ-ДД (`epoch`, `-infinity`, 06.05.1990, 2015-02-30) — відмова без запиту до бази, дані лишаються", async () => {
-    for (const birth_date of ["  ", "epoch", "-infinity", "yesterday", "06.05.1990", "1990-5-14", "2015-02-30"]) {
-      const state = await createClientCard(null, adult({ birth_date }));
-      expect(state).toEqual({ code: "INVALID_BIRTH_DATE", values: expect.objectContaining({ full_name: "Client Six" }) });
-    }
+  it("AC-CARD-12: код, якого немає в повідомленнях, не доходить до форми як текст — це збій", async () => {
+    rpc.mockResolvedValue({ data: ["NOT_A_CODE"], error: null });
+    expect(await createClientCard(null, adult())).toMatchObject({ codes: ["UNEXPECTED"] });
+  });
+
+  it("AC-CARD-12: файл замість тексту — порожнє значення (а не «[object File]») і в перевірці, і у формі", async () => {
+    rpc.mockResolvedValue({ data: ["INVALID_CLIENT"], error: null });
+    const state = await createClientCard(null, adult({ full_name: new File(["x"], "name.txt"), client_type: "Foo" }));
+    expect(rpc).toHaveBeenCalledWith("client_card_errors", { p_card: expect.objectContaining({ full_name: "", client_type: "Foo" }) });
+    expect(state).toMatchObject({ values: expect.objectContaining({ full_name: "" }) });
+  });
+
+  it("AC-CARD-01: пробіли навколо дати прибираємо перед перевіркою, у форму повертаємо як ввели", async () => {
+    insert.mockResolvedValue({ error: null });
+    await redirectOf(createClientCard(null, adult({ birth_date: " 1990-05-14 " })));
+    expect(rpc).toHaveBeenCalledWith("client_card_errors", { p_card: expect.objectContaining({ birth_date: "1990-05-14" }) });
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ birth_date: "1990-05-14" }));
+    rpc.mockResolvedValue({ data: ["INVALID_BIRTH_DATE"], error: null });
+    expect(await createClientCard(null, adult({ birth_date: " epoch " }))).toMatchObject({ values: expect.objectContaining({ birth_date: " epoch " }) });
+  });
+
+  it("AC-CARD-06: терапевт — перевірка бази повертає відмову за правами, запису немає, дані лишаються", async () => {
+    role = "therapist";
+    rpc.mockResolvedValue({ data: ["CARD_FORBIDDEN"], error: null });
+    const state = await createClientCard(null, adult());
+    expect(state).toMatchObject({ codes: ["CARD_FORBIDDEN"], values: expect.objectContaining({ full_name: "Client Six" }) });
     expect(insert).not.toHaveBeenCalled();
   });
 
-  it("AC-CARD-01: дата з майбутнього й мова не вибрана — відмова бази → повідомлення про дату чи мову", async () => {
-    insert.mockResolvedValueOnce({ error: { code: "P0001", message: "INVALID_BIRTH_DATE" } });
-    expect(await createClientCard(null, adult({ birth_date: "2999-01-01" }))).toMatchObject({ code: "INVALID_BIRTH_DATE" });
-    insert.mockResolvedValueOnce({ error: { code: "23514", message: 'violates check constraint "clients_session_language_check"' } });
-    expect(await createClientCard(null, adult({ session_language: "" }))).toMatchObject({ code: "INVALID_LANGUAGE" });
-    expect(insert).toHaveBeenLastCalledWith(expect.objectContaining({ session_language: "" }));
-  });
-
-  it("AC-CARD-06: терапевт доходить до бази, і відмову дає RLS — повідомлення про права, дані лишаються", async () => {
+  it("AC-CARD-06: якщо запис усе ж дійшов до бази, відмову за правами дає RLS — те саме повідомлення", async () => {
     role = "therapist";
     insert.mockResolvedValue({ error: { code: "42501", message: 'new row violates row-level security policy for table "clients"' } });
-    const state = await createClientCard(null, adult());
-    expect(state).toMatchObject({ code: "CARD_FORBIDDEN", values: expect.objectContaining({ full_name: "Client Six" }) });
-    expect(insert).toHaveBeenCalledTimes(1);
-  });
-
-  it("AC-CARD-06: терапевт із порожньою формою доходить до бази й бачить відмову за правами, а не повідомлення про дату", async () => {
-    role = "therapist";
-    insert.mockResolvedValue({ error: { code: "42501", message: 'new row violates row-level security policy for table "clients"' } });
-    const state = await createClientCard(null, adult({ full_name: "", email: "", birth_date: "", session_language: "" }));
-    expect(state).toMatchObject({ code: "CARD_FORBIDDEN" });
-    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ birth_date: null }));
+    expect(await createClientCard(null, adult())).toMatchObject({ codes: ["CARD_FORBIDDEN"] });
   });
 
   it("AC-CARD-11: користувач без ролі повертається на головну, до бази не доходить", async () => {
     role = null;
     expect(await redirectOf(createClientCard(null, adult()))).toBe("/");
+    expect(rpc).not.toHaveBeenCalled();
     expect(insert).not.toHaveBeenCalled();
   });
 
-  it("AC-HOLD-11: порожнє ім'я йде в базу як є — її обмеження відмовляють", async () => {
-    insert.mockResolvedValue({ error: { code: "23514", message: 'violates check constraint "clients_full_name_check"' } });
-    expect(await createClientCard(null, adult({ full_name: "" }))).toMatchObject({ code: "INVALID_CLIENT" });
-    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ full_name: "" }));
-  });
-
-  it("AC-HOLD-11: файл замість тексту й невідомий тип — порожнє значення, а не «[object File]»", async () => {
-    insert.mockResolvedValue({ error: { code: "23514", message: 'violates check constraint "clients_full_name_check"' } });
-    await createClientCard(null, adult({ full_name: new File(["x"], "name.txt"), client_type: "Foo" }));
-    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ client_type: "Adult", full_name: "" }));
+  it("AC-CARD-13: помилка унікального індексу картки дитини → повідомлення про дублікат", async () => {
+    insert.mockResolvedValue({ error: { code: "23505", message: 'duplicate key value violates unique constraint "clients_child_unique"' } });
+    expect(await createClientCard(null, child())).toMatchObject({ codes: ["CLIENT_DUPLICATE"], values: expect.objectContaining({ guardian_name: "Guardian Seven" }) });
   });
 
   it("AC-HOLD-16: помилка унікальності email → повідомлення про наявного клієнта", async () => {
     insert.mockResolvedValue({ error: { code: "23505", message: 'violates unique constraint "clients_email_key"' } });
-    expect(await createClientCard(null, adult({ email: "client1@example.test" }))).toMatchObject({ code: "CLIENT_EXISTS" });
+    expect(await createClientCard(null, adult({ email: "client1@example.test" }))).toMatchObject({ codes: ["CLIENT_EXISTS"] });
   });
 
-  it("непередбачена помилка бази кидається далі (лог сервера, error.tsx)", async () => {
-    const failure = { code: "42501", message: "permission denied for table clients" };
+  it("збій перевірки чи запису кидається далі (лог сервера, error.tsx)", async () => {
+    const validationFailure = { code: "42883", message: "function does not exist" };
+    rpc.mockResolvedValue({ data: null, error: validationFailure });
+    await expect(createClientCard(null, adult())).rejects.toThrow("client_card_errors: 42883 function does not exist");
+    rpc.mockResolvedValue({ data: [], error: null });
+    // details бази містить рядок із даними картки: до винятку (лог сервера) він не потрапляє.
+    const failure = { code: "42501", message: "permission denied for table clients", details: "Failing row contains (Client Six, client6@example.test)" };
     insert.mockResolvedValue({ error: failure });
-    await expect(createClientCard(null, adult())).rejects.toBe(failure);
+    const thrown = await createClientCard(null, adult()).then(() => null, (e: unknown) => e as Error);
+    expect(thrown?.message).toBe("insert into clients: 42501 permission denied for table clients");
+    expect(thrown?.message).not.toContain("client6@example.test");
   });
 });

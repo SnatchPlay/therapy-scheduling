@@ -49,7 +49,8 @@ describe("pm-users.json", () => {
 describe("Сценарій приймання на акаунтах PM", () => {
   it("AC-CARD-04: клієнт, утриманий у pm-therapist, — свій для нього й чужий для pm-therapist2, а pm-noaccess не бачить нічого", async () => {
     const [client] = await t.asService<{ id: string }>(
-      `insert into public.clients (full_name, email, created_by) values ('Client PM', 'client-pm@example.test', $1) returning id`,
+      `insert into public.clients (full_name, email, birth_date, session_language, created_by)
+       values ('Client PM', 'client-pm@example.test', date '1990-01-01', 'English', $1) returning id`,
       [ids["pm-admin@example.test"]],
     );
     const slot = await createSlot(t, "pm-therapist@example.test", "now() + interval '3 days'");

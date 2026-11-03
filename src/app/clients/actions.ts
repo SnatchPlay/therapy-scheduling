@@ -2,12 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { clientErrorCode, type ClientType, type MessageCode } from "@/lib/messages";
-import { getViewer, STAFF } from "@/lib/supabase/viewer";
-import { isIsoDate } from "@/lib/time";
+import { clientErrorCode, toMessageCode, type ClientType, type MessageCode } from "@/lib/messages";
+import { getViewer } from "@/lib/supabase/viewer";
 
-/** Результат дії для форми: код повідомлення й введені значення (у форму їх повертає дія, а не адреса: персональні дані не в URL). */
-export type CardFormState = { code: MessageCode; values: Record<string, string> } | null;
+/** Результат дії для форми: коди повідомлень (усі одразу) і введені значення (у форму їх повертає дія, а не адреса: персональні дані не в URL). */
+export type CardFormState = { codes: MessageCode[]; values: Record<string, string> } | null;
 
 const FIELDS = [
   "client_type",
@@ -19,12 +18,14 @@ const FIELDS = [
   "guardian_email",
 ] as const;
 
+/** Помилка для логу без `details` бази: там рядок із персональними даними картки (ім'я, email, дата народження). */
+const unexpected = (what: string, error: { code?: string; message?: string }) => new Error(`${what}: ${error.code} ${error.message}`);
+
 /**
- * AC-CARD-01, 02, 03, 06; AC-HOLD-10, 11, 15, 16, 39, 41: картка клієнта з анкети. Правила (непорожнє ім'я, формат і
- * унікальність email, дата не з майбутнього, мова зі списку, опікун дитини, право створювати картку) перевіряє лише
- * база (обмеження, тригер і RLS clients): вони діють і для прямого запису через Data API, а друга копія в коді
- * розійшлася б із ними. Тут — лише тип полів, обов'язковість дати народження (база приймає картки зрізу 1 без неї) і
- * переклад помилки бази в код повідомлення. Роль не перевіряємо вручну: терапевту відмовляє RLS (AC-CARD-06).
+ * AC-CARD-01, 02, 03, 06, 12, 13; AC-HOLD-10, 11, 15, 16, 39, 41: картка клієнта з анкети. Правила (тип, непорожнє ім'я,
+ * формат email, дата РРРР-ММ-ДД не з майбутнього, мова зі списку, опікун дитини, право створювати картку) — лише в базі:
+ * client_card_errors повертає всі помилки одразу (AC-CARD-12), а обмеження, тригер, унікальні індекси й RLS таблиці clients
+ * лишаються останньою брамою для прямого запису через Data API. Тут — лише тип полів і переклад кодів у повідомлення.
  */
 export async function createClientCard(_previous: CardFormState, formData: FormData): Promise<CardFormState> {
   const { supabase, role } = await getViewer();
@@ -36,32 +37,29 @@ export async function createClientCard(_previous: CardFormState, formData: FormD
     const value = formData.get(field);
     values[field] = typeof value === "string" ? value : "";
   }
-  const type: ClientType = values.client_type === "Child" ? "Child" : "Adult";
-  values.client_type = type;
+  const card: Record<string, string> = { ...values, birth_date: values.birth_date.trim() };
 
-  // Дата народження обов'язкова в формі картки (AC-CARD-01) і має формат РРРР-ММ-ДД (припущення PM): база приймає ще й
-  // `06.05.1990` (як 5 червня), `epoch`, `-infinity`. «Не з майбутнього» перевіряє база.
-  // Терапевт дійде до бази й без дати: відмову за правами (AC-CARD-06) дає RLS раніше за обмеження, тож порожня форма
-  // показує саме її. Без дати йде null, бо текст `''` база не прочитала б як дату ще до RLS.
-  const birthDate = values.birth_date.trim();
-  const hasDate = isIsoDate(birthDate);
-  if (!hasDate && STAFF.includes(role)) return { code: "INVALID_BIRTH_DATE", values };
+  const { data: errors, error: validationError } = await supabase.rpc("client_card_errors", { p_card: card });
+  if (validationError) throw unexpected("client_card_errors", validationError);
+  if (errors.length > 0) return { codes: errors.map(toMessageCode), values };
 
+  // Після перевірки тип — «Adult» або «Child».
+  const type = card.client_type as ClientType;
   const { error } = await supabase.from("clients").insert({
     client_type: type,
-    full_name: values.full_name,
-    birth_date: hasDate ? birthDate : null,
-    session_language: values.session_language,
+    full_name: card.full_name,
+    birth_date: card.birth_date,
+    session_language: card.session_language,
     ...(type === "Child"
-      ? { guardian_name: values.guardian_name, guardian_email: values.guardian_email }
-      : { email: values.email }),
+      ? { guardian_name: card.guardian_name, guardian_email: card.guardian_email }
+      : { email: card.email }),
   });
 
   if (error) {
     const code = clientErrorCode(error, type);
     // Непередбачена помилка — у лог сервера й на сторінку помилки (error.tsx), а не лише загальний текст.
-    if (code === "UNEXPECTED") throw error;
-    return { code, values };
+    if (code === "UNEXPECTED") throw unexpected("insert into clients", error);
+    return { codes: [code], values };
   }
 
   revalidatePath("/clients");

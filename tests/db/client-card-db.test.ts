@@ -239,23 +239,155 @@ describe("Створення картки (планувальник, адмін�
   });
 
   it("AC-HOLD-41: ім'я лише з пробілів — клієнта не створено, ім'я з пробілами по краях зберігається обрізаним", async () => {
-    expect(await createCardAs(SCHEDULER, { name: "   ", email: "client5@example.test" })).toBe(
+    expect(await createCardAs(SCHEDULER, { name: "   ", email: "client5@example.test", birth: "1990-01-01", language: "English" })).toBe(
       "Enter the client's name and a valid email.",
     );
-    expect(await createCardAs(SCHEDULER, { name: " Client Four ", email: "client4@example.test" })).toBe("created");
+    expect(await createCardAs(SCHEDULER, { name: " Client Four ", email: "client4@example.test", birth: "1990-01-01", language: "English" })).toBe("created");
     const [row] = await t.asUser<{ full_name: string }>(SCHEDULER, "select full_name from public.clients where email = 'client4@example.test'");
     expect(row.full_name).toBe("Client Four");
     expect(await t.asService("select 1 from public.clients where email = 'client5@example.test'")).toEqual([]);
   });
 
-  it("AC-HOLD-10: картки зрізу 1 (ім'я й email) лишаються дійсними: тип «Adult», решта полів порожня", async () => {
-    expect(await createCardAs(SCHEDULER, { name: "Client Legacy", email: "legacy@example.test" })).toBe("created");
-    const [row] = await t.asUser<Record<string, unknown>>(
-      SCHEDULER,
-      "select client_type, birth_date, session_language, guardian_name from public.clients where email = 'legacy@example.test'",
-    );
-    expect(row).toEqual({ client_type: "Adult", birth_date: null, session_language: null, guardian_name: null });
+  it("AC-HOLD-10: після зрізу 2 клієнта створюють лише повною формою: картка лише з ім'ям і email не створюється, а повна — так", async () => {
+    // Швидкої форми немає (PM, Sofiia-pm/therapy-scheduling-spec#20): ім'я й email перевіряють у повній формі.
+    expect(await t.asUser(SCHEDULER, "select to_jsonb(public.client_card_errors($1::jsonb)) as e", [JSON.stringify({ client_type: "Adult", full_name: "Client Legacy", email: "legacy@example.test" })]))
+      .toEqual([{ e: ["INVALID_BIRTH_DATE", "INVALID_LANGUAGE"] }]);
+    // Застосунок сюди не дійде (його зупиняє функція), але база сама теж відмовляє: обмеження повноти, без свого повідомлення.
+    expect(await createCardAs(SCHEDULER, { name: "Client Legacy", email: "legacy@example.test" })).toBe(MESSAGES.UNEXPECTED);
+    expect(await t.asService("select 1 from public.clients where email = 'legacy@example.test'")).toEqual([]);
+    expect(await createCardAs(SCHEDULER, { name: "Client Legacy", email: "legacy@example.test", birth: "1990-01-01", language: "English" })).toBe("created");
   });
+
+  it("AC-HOLD-10: картки зрізу 1 лишаються дійсними — обмеження повноти й email створено not valid (діють лише на нові й змінені рядки)", async () => {
+    const rows = await t.asOwner<{ conname: string; convalidated: boolean }>(
+      "select conname, convalidated from pg_constraint where conrelid = 'public.clients'::regclass and conname in ('clients_complete_check', 'clients_email_check') order by conname",
+    );
+    expect(rows).toEqual([
+      { conname: "clients_complete_check", convalidated: false },
+      { conname: "clients_email_check", convalidated: false },
+    ]);
+  });
+});
+
+/** Усі помилки картки за один запит (функція бази); результат — коди повідомлень у порядку полів форми. */
+const errorsOf = async (userId: string, card: Record<string, string>) =>
+  (await t.asUser<{ e: string[] }>(userId, "select to_jsonb(public.client_card_errors($1::jsonb)) as e", [JSON.stringify(card)]))[0].e;
+
+const FULL_ADULT = { client_type: "Adult", full_name: "Client Nine", email: "nine@example.test", birth_date: "1990-01-01", session_language: "English" };
+const FULL_CHILD = {
+  client_type: "Child",
+  full_name: "Client Ten",
+  birth_date: "2015-03-02",
+  session_language: "Spanish",
+  guardian_name: "Guardian Ten",
+  guardian_email: "guardian10@example.test",
+};
+
+describe("Усі помилки картки за один запит (AC-CARD-12)", () => {
+  it("AC-CARD-12: дитина з порожнім ім'ям, датою народження завтра й без мови — три помилки одразу, картку не створено", async () => {
+    const card = { ...FULL_CHILD, full_name: "", birth_date: addDays(practiceDate(), 1), session_language: "" };
+    expect(await errorsOf(SCHEDULER, card)).toEqual(["INVALID_CLIENT_NAME", "INVALID_BIRTH_DATE", "INVALID_LANGUAGE"]);
+    const before = await clientCount();
+    expect(
+      await createCardAs(SCHEDULER, { type: "Child", name: "", birth: card.birth_date, language: null, guardianName: "Guardian Ten", guardianEmail: "guardian10@example.test" }),
+    ).not.toBe("created");
+    expect(await clientCount()).toBe(before);
+  });
+
+  it("AC-CARD-12: кожне поле дає свій код, один раз на пару «ім'я й email дорослого» і на пару опікуна", async () => {
+    const cases: [string, Record<string, string>, string[]][] = [
+      ["повна картка дорослого", FULL_ADULT, []],
+      ["повна картка дитини", FULL_CHILD, []],
+      ["тип не вибрано", { ...FULL_ADULT, client_type: "" }, ["INVALID_TYPE"]],
+      ["невідомий тип", { ...FULL_ADULT, client_type: "Foo" }, ["INVALID_TYPE"]],
+      ["без нічого", {}, ["INVALID_TYPE", "INVALID_CLIENT_NAME", "INVALID_BIRTH_DATE", "INVALID_LANGUAGE"]],
+      ["ім'я дорослого з пробілів", { ...FULL_ADULT, full_name: "   " }, ["INVALID_CLIENT"]],
+      ["email дорослого без «@»", { ...FULL_ADULT, email: "nine.example.test" }, ["INVALID_CLIENT"]],
+      ["ім'я й email дорослого разом — одне повідомлення", { ...FULL_ADULT, full_name: "", email: "x" }, ["INVALID_CLIENT"]],
+      ["email дорослого з пробілами й великими літерами — коректний", { ...FULL_ADULT, email: "  Nine@Example.TEST " }, []],
+      ["дата сьогодні коректна", { ...FULL_ADULT, birth_date: practiceDate() }, []],
+      ["дата завтра", { ...FULL_ADULT, birth_date: addDays(practiceDate(), 1) }, ["INVALID_BIRTH_DATE"]],
+      ["дата не у форматі РРРР-ММ-ДД", { ...FULL_ADULT, birth_date: "06.05.1990" }, ["INVALID_BIRTH_DATE"]],
+      ["неіснуюча дата", { ...FULL_ADULT, birth_date: "2026-02-30" }, ["INVALID_BIRTH_DATE"]],
+      ["слово замість дати", { ...FULL_ADULT, birth_date: "epoch" }, ["INVALID_BIRTH_DATE"]],
+      ["мова не зі списку", { ...FULL_ADULT, session_language: "French" }, ["INVALID_LANGUAGE"]],
+      ["без імені опікуна", { ...FULL_CHILD, guardian_name: " " }, ["INVALID_GUARDIAN"]],
+      ["email опікуна некоректний", { ...FULL_CHILD, guardian_email: "guardian@example" }, ["INVALID_GUARDIAN"]],
+      ["ім'я й email опікуна разом — одне повідомлення", { ...FULL_CHILD, guardian_name: "", guardian_email: "" }, ["INVALID_GUARDIAN"]],
+      ["ім'я дитини порожнє — повідомлення без email", { ...FULL_CHILD, full_name: "" }, ["INVALID_CLIENT_NAME"]],
+    ];
+    for (const [name, card, expected] of cases) expect(await errorsOf(SCHEDULER, card), name).toEqual(expected);
+  });
+
+  it("AC-CARD-12: функція й обмеження таблиці згодні — картка без помилок вставляється, з помилкою — ні (правила не розходяться)", async () => {
+    // «{n}» — номер варіанта: імена й email унікальні, тож дублікат не вплутується в порівняння.
+    const adult = { client_type: "Adult", full_name: "Agree {n}", email: "agree{n}@example.test", birth_date: "1990-01-01", session_language: "English" };
+    const child = { client_type: "Child", full_name: "Agree Child {n}", birth_date: "2015-03-02", session_language: "Spanish", guardian_name: "Guardian {n}", guardian_email: "guardian{n}@example.test" };
+    const variants: Record<string, string>[] = [
+      adult, child,
+      { ...adult, full_name: "   " }, { ...adult, email: "x" }, { ...adult, email: "a@b" }, { ...adult, email: "a b@c.test" },
+      { ...adult, email: "  Agree{n}@Example.TEST " },
+      // «» — поле не заповнено (null у вставці): повноту картки тримає обмеження, а не лише обмеження мови.
+      { ...adult, birth_date: "" }, { ...adult, birth_date: addDays(practiceDate(), 1) }, { ...adult, birth_date: practiceDate() },
+      { ...adult, session_language: "" }, { ...adult, session_language: "French" },
+      { ...child, full_name: "" }, { ...child, guardian_name: "  " }, { ...child, guardian_email: "g@x" }, { ...child, guardian_email: " G{n}@Example.TEST " },
+    ];
+    for (const [i, variant] of variants.entries()) {
+      const card = JSON.parse(JSON.stringify(variant).replaceAll("{n}", String(i))) as Record<string, string>;
+      const errors = await errorsOf(SCHEDULER, card);
+      const result = await createCardAs(SCHEDULER, {
+        type: card.client_type as ClientType,
+        name: card.full_name,
+        email: card.email ?? null,
+        birth: card.birth_date || null,
+        language: card.session_language || null,
+        guardianName: card.guardian_name ?? null,
+        guardianEmail: card.guardian_email ?? null,
+      });
+      expect(result === "created", JSON.stringify([card, errors, result])).toBe(errors.length === 0);
+    }
+  });
+
+  it("AC-CARD-12: терапевт отримує лише CARD_FORBIDDEN, а без входу функція недоступна", async () => {
+    expect(await errorsOf(THERAPIST1, {})).toEqual(["CARD_FORBIDDEN"]);
+    expect(await errorsOf(THERAPIST1, FULL_ADULT)).toEqual(["CARD_FORBIDDEN"]);
+    expect(await errorsOf(NEWUSER, FULL_ADULT)).toEqual(["CARD_FORBIDDEN"]); // без ролі
+    expect(await errorsOf(ADMIN, FULL_ADULT)).toEqual([]);
+    // Права на саму функцію: anon не виконує (а не лише відмова десь усередині), authenticated виконує.
+    const [{ anon, authenticated }] = await t.asOwner<{ anon: boolean; authenticated: boolean }>(
+      `select has_function_privilege('anon', 'public.client_card_errors(jsonb)', 'execute') as anon,
+              has_function_privilege('authenticated', 'public.client_card_errors(jsonb)', 'execute') as authenticated`,
+    );
+    expect({ anon, authenticated }).toEqual({ anon: false, authenticated: true });
+  });
+});
+
+describe("Дублікат картки дитини (AC-CARD-13)", () => {
+  const twin = (extra: Partial<Card> = {}): Card => ({
+    type: "Child",
+    name: "Client Twin",
+    birth: "2015-03-02",
+    language: "English",
+    guardianName: "Guardian Twin",
+    guardianEmail: "guardian-twin@example.test",
+    ...extra,
+  });
+
+  it("AC-CARD-13: та сама дитина з іншим регістром і пробілами в імені та регістром email опікуна — другу картку не створено, повідомлення PM", async () => {
+    expect(await createCardAs(SCHEDULER, twin())).toBe("created");
+    const before = await clientCount();
+    expect(await createCardAs(SCHEDULER2, twin({ name: " client TWIN ", language: "Spanish", guardianName: "Another Name", guardianEmail: "GUARDIAN-TWIN@example.test" }))).toBe(
+      "A client with these details already exists.",
+    );
+    expect(await clientCount()).toBe(before);
+  });
+
+  it("AC-CARD-13: близнюки з одним опікуном (інше ім'я), інша дата народження чи інший опікун — не дублікати", async () => {
+    expect(await createCardAs(SCHEDULER, twin({ name: "Client Twin Two" }))).toBe("created");
+    expect(await createCardAs(SCHEDULER, twin({ birth: "2016-03-02" }))).toBe("created");
+    expect(await createCardAs(SCHEDULER, twin({ guardianEmail: "guardian-other@example.test" }))).toBe("created");
+  });
+
 });
 
 describe("Доступ до карток", () => {

@@ -3,11 +3,12 @@
 export const MESSAGES = {
   INVALID_CLIENT: "Enter the client's name and a valid email.", // AC-HOLD-11, AC-HOLD-15
   CLIENT_EXISTS: "A client with this email already exists.", // AC-HOLD-16
-  INVALID_GUARDIAN: "Enter the guardian's name and a valid email.", // AC-CARD-03
-  // Тексти без AC: PM ще не відповіла (Sofiia-pm/therapy-scheduling-spec#21), взято з рекомендації до того питання.
-  INVALID_CLIENT_NAME: "Enter the client's name.",
-  INVALID_BIRTH_DATE: "Enter a date of birth that is not in the future.",
-  INVALID_LANGUAGE: "Select a session language.",
+  INVALID_GUARDIAN: "Enter the guardian's name and a valid email.", // AC-CARD-03, AC-CARD-12
+  INVALID_TYPE: "Select a client type.", // AC-CARD-12
+  INVALID_CLIENT_NAME: "Enter the client's name.", // AC-CARD-12
+  INVALID_BIRTH_DATE: "Enter a date of birth that is not in the future.", // AC-CARD-12
+  INVALID_LANGUAGE: "Select a session language.", // AC-CARD-12
+  CLIENT_DUPLICATE: "A client with these details already exists.", // AC-CARD-13
   CARD_FORBIDDEN: "Only schedulers and admins can create client cards.", // AC-CARD-06
   CLIENT_ACCESS_DENIED: "You don't have access to this client.", // AC-CARD-05, AC-CARD-08
   NO_CLIENTS: "No clients yet. Clients appear here when a scheduler holds a slot with you.", // AC-CARD-09
@@ -36,6 +37,11 @@ function isMessageCode(value: unknown): value is MessageCode {
   return typeof value === "string" && Object.hasOwn(MESSAGES, value);
 }
 
+/** Код повідомлення з тексту, який віддала база (raise exception '<КОД>', client_card_errors); невідомий текст — збій. */
+export function toMessageCode(value: unknown): MessageCode {
+  return isMessageCode(value) ? value : "UNEXPECTED";
+}
+
 const SUCCESS_CODES: readonly MessageCode[] = ["CLIENT_CREATED", "HELD", "CONFIRMED"];
 
 export type Notice = { text: string; tone: "success" | "error" };
@@ -48,7 +54,7 @@ export function noticeFor(code: unknown): Notice | undefined {
 
 /** Помилка функції бази (raise exception '<КОД>', міграція slots_and_holds) → код повідомлення. */
 export function dbMessageCode(error: { message?: string }): MessageCode {
-  return isMessageCode(error.message) ? error.message : "UNEXPECTED";
+  return toMessageCode(error.message);
 }
 
 export type ClientType = "Adult" | "Child";
@@ -57,6 +63,7 @@ export type ClientType = "Adult" | "Child";
 // код Postgres (без `codes` — будь-який) і текст, який його ідентифікує. Для дитини помилка імені не згадує email.
 const CLIENT_ERRORS: { codes?: string[]; match: RegExp; message: MessageCode | ((type: ClientType) => MessageCode) }[] = [
   { codes: ["23505"], match: /clients_email_key/, message: "CLIENT_EXISTS" },
+  { codes: ["23505"], match: /clients_child_unique/, message: "CLIENT_DUPLICATE" },
   { codes: ["23514"], match: /clients_(guardian|child_shape)_check/, message: "INVALID_GUARDIAN" },
   { codes: ["23514"], match: /clients_session_language_check/, message: "INVALID_LANGUAGE" },
   {

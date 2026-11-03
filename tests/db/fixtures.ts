@@ -21,8 +21,8 @@ export function practiceTime(day: string, time: string) {
 
 export async function ensureClient(t: TestDb, name: string, email: string): Promise<string> {
   const [row] = await t.asService<{ id: string }>(
-    `insert into public.clients (full_name, email, created_by)
-     values ($1, $2, (select id from public.profiles where role = 'admin' limit 1))
+    `insert into public.clients (full_name, email, birth_date, session_language, created_by)
+     values ($1, $2, date '1990-01-01', 'English', (select id from public.profiles where role = 'admin' limit 1))
      on conflict (email) do update set full_name = excluded.full_name
      returning id`,
     [name, email],

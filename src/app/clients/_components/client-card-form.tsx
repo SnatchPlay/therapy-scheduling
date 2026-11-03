@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,11 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { MESSAGES, type MessageCode } from "@/lib/messages";
 import { type CardFormState, createClientCard } from "../actions";
 
-// Поля, які стосуються повідомлення: їм ставимо aria-invalid, щоб помилку було видно й скрінрідеру, а не лише в Alert.
+// Повідомлення, що стосуються полів: текст показуємо під першим полем групи, а всім полям групи ставимо aria-invalid і
+// aria-describedby на цей текст (AC-CARD-12: усі помилки одразу, кожна біля свого поля). Інші коди (відмова за правами,
+// дублікат картки, збій) — загальні, їх показує Alert над формою.
 const FIELDS_OF: Partial<Record<MessageCode, string[]>> = {
+  INVALID_TYPE: ["client_type"],
   INVALID_CLIENT: ["full_name", "email"],
   INVALID_CLIENT_NAME: ["full_name"],
   CLIENT_EXISTS: ["email"],
@@ -18,24 +21,42 @@ const FIELDS_OF: Partial<Record<MessageCode, string[]>> = {
   INVALID_LANGUAGE: ["session_language"],
   INVALID_GUARDIAN: ["guardian_name", "guardian_email"],
 };
+const errorId = (code: MessageCode) => `error-${code}`;
+const isFieldCode = (code: MessageCode) => code in FIELDS_OF;
+
+/** Атрибути поля: invalid і посилання на повідомлення (одне чи кілька), що його стосуються. */
+function describe(field: string, codes: MessageCode[]) {
+  const ids = codes.filter((c) => FIELDS_OF[c]?.includes(field)).map(errorId);
+  return { "aria-invalid": ids.length > 0 || undefined, "aria-describedby": ids.join(" ") || undefined };
+}
+
+function FieldErrors({ field, codes }: { field: string; codes: MessageCode[] }) {
+  return codes
+    .filter((c) => FIELDS_OF[c]?.[0] === field)
+    .map((c) => (
+      <p key={c} id={errorId(c)} className="text-sm text-destructive">
+        {MESSAGES[c]}
+      </p>
+    ));
+}
 
 function Field({
   name,
   label,
-  invalid,
+  codes,
   value,
   placeholder,
 }: {
   name: string;
   label: string;
-  invalid: boolean;
+  codes: MessageCode[];
   value: string | undefined;
   placeholder?: string;
 }) {
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={name}>{label}</Label>
-      {/* Без required і type=email: браузер інакше сам відмовив би своїм текстом, а текст відмови дає база (AC-CARD-03). */}
+      {/* Без required і type=email: браузер інакше сам відмовив би своїм текстом, а текст відмови дає база (AC-CARD-12). */}
       <Input
         id={name}
         name={name}
@@ -43,9 +64,9 @@ function Field({
         placeholder={placeholder}
         autoComplete="off"
         aria-required="true"
-        aria-invalid={invalid || undefined}
-        aria-describedby={invalid ? "card-form-error" : undefined}
+        {...describe(name, codes)}
       />
+      <FieldErrors field={name} codes={codes} />
     </div>
   );
 }
@@ -53,9 +74,9 @@ function Field({
 export function ClientCardForm() {
   const [state, action, pending] = useActionState(createClientCard, null);
   // React 19 скидає форму після кожної дії й губить значення керованих і вже змонтованих полів (select). Тому поля
-  // монтуємо наново з результатом дії: ключ міняється, коли міняються повернені значення чи код, і defaultValue
+  // монтуємо наново з результатом дії: ключ міняється, коли міняються повернені значення чи коди, і defaultValue
   // (а з ним тип клієнта й мова) береться з них заново. Без цього після відмови «Child» ставав «Adult» (AC-CARD-03).
-  const key = state ? `${state.code}:${JSON.stringify(state.values)}` : "initial";
+  const key = state ? `${state.codes.join(",")}:${JSON.stringify(state.values)}` : "initial";
   return <CardFields key={key} state={state} action={action} pending={pending} />;
 }
 
@@ -69,29 +90,49 @@ function CardFields({
   pending: boolean;
 }) {
   const values = state?.values ?? {};
-  const [type, setType] = useState(values.client_type === "Child" ? "Child" : "Adult");
-  const invalid = (name: string) => FIELDS_OF[state?.code ?? "UNEXPECTED"]?.includes(name) ?? false;
+  const codes = state?.codes ?? [];
+  const initialType = values.client_type === "Child" || values.client_type === "Adult" ? values.client_type : "";
+  // Тип лише підказує, які поля показати; значення select — defaultValue, як у мови: React 19 після кожної дії скидає
+  // форму до defaultValue, а керований value повторне надсилання тих самих даних перетворювало б на «Adult».
+  const [type, setType] = useState(initialType);
+  const form = useRef<HTMLFormElement>(null);
+  // Після кожної відмови (форму змонтовано наново чи кнопка була вимкнена на час запиту) фокус губиться: ставимо його на
+  // перше поле з помилкою, його текст читає скрінрідер через aria-describedby.
+  useEffect(() => {
+    form.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [state]);
 
   return (
-    <form action={action} className="flex max-w-xl flex-col gap-4">
-      {state ? (
-        <Alert variant="destructive" id="card-form-error">
-          <AlertTitle>{MESSAGES[state.code]}</AlertTitle>
+    <form ref={form} action={action} className="flex max-w-xl flex-col gap-4">
+      {codes.filter((c) => !isFieldCode(c)).map((c) => (
+        <Alert key={c} variant="destructive" id={errorId(c)}>
+          <AlertTitle>{MESSAGES[c]}</AlertTitle>
         </Alert>
-      ) : null}
+      ))}
       <div className="flex flex-col gap-2">
         <Label htmlFor="client_type">Client type</Label>
-        <NativeSelect id="client_type" name="client_type" value={type} onChange={(e) => setType(e.target.value)}>
+        <NativeSelect
+          id="client_type"
+          name="client_type"
+          defaultValue={initialType}
+          onChange={(e) => setType(e.target.value)}
+          aria-required="true"
+          {...describe("client_type", codes)}
+        >
+          <NativeSelectOption value="" disabled>
+            Choose a type
+          </NativeSelectOption>
           <NativeSelectOption value="Adult">Adult</NativeSelectOption>
           <NativeSelectOption value="Child">Child</NativeSelectOption>
         </NativeSelect>
+        <FieldErrors field="client_type" codes={codes} />
       </div>
-      <Field name="full_name" label="Name" invalid={invalid("full_name")} value={values.full_name} />
-      {type === "Adult" ? <Field name="email" label="Email" invalid={invalid("email")} value={values.email} /> : null}
+      <Field name="full_name" label="Name" codes={codes} value={values.full_name} />
+      {type === "Adult" ? <Field name="email" label="Email" codes={codes} value={values.email} /> : null}
       <Field
         name="birth_date"
         label="Date of birth (YYYY-MM-DD)"
-        invalid={invalid("birth_date")}
+        codes={codes}
         value={values.birth_date}
         placeholder="YYYY-MM-DD"
       />
@@ -102,8 +143,7 @@ function CardFields({
           name="session_language"
           defaultValue={values.session_language ?? ""}
           aria-required="true"
-          aria-invalid={invalid("session_language") || undefined}
-          aria-describedby={invalid("session_language") ? "card-form-error" : undefined}
+          {...describe("session_language", codes)}
         >
           <NativeSelectOption value="" disabled>
             Choose a language
@@ -111,11 +151,12 @@ function CardFields({
           <NativeSelectOption value="English">English</NativeSelectOption>
           <NativeSelectOption value="Spanish">Spanish</NativeSelectOption>
         </NativeSelect>
+        <FieldErrors field="session_language" codes={codes} />
       </div>
       {type === "Child" ? (
         <>
-          <Field name="guardian_name" label="Guardian name" invalid={invalid("guardian_name")} value={values.guardian_name} />
-          <Field name="guardian_email" label="Guardian email" invalid={invalid("guardian_email")} value={values.guardian_email} />
+          <Field name="guardian_name" label="Guardian name" codes={codes} value={values.guardian_name} />
+          <Field name="guardian_email" label="Guardian email" codes={codes} value={values.guardian_email} />
         </>
       ) : null}
       <div>

@@ -17,19 +17,73 @@ beforeEach(() => {
   state = null;
 });
 
+const invalid = (html: string) => html.match(/aria-invalid="true"/g)?.length ?? 0;
+const ids = (html: string) => [...html.matchAll(/<p id="(error-[A-Z_]+)"/g)].map((m) => m[1]);
+
 describe("ClientCardForm", () => {
-  it("AC-CARD-01: початково — картка дорослого: email клієнта, дата народження, мова; без опікуна й без помилки", () => {
+  it("AC-CARD-12: початково — тип не вибрано (перший пункт порожній), без email і опікуна, без помилок", () => {
     const html = render();
-    for (const label of ["Client type", "Name", "Email", "Date of birth (YYYY-MM-DD)", "Session language"]) expect(html).toContain(`>${label}</label>`);
+    for (const label of ["Client type", "Name", "Date of birth (YYYY-MM-DD)", "Session language"]) expect(html).toContain(`>${label}</label>`);
+    expect(html).not.toContain(">Email</label>");
     expect(html).not.toContain("Guardian");
     expect(html).not.toContain('role="alert"');
-    // Мову треба вибрати: перший пункт порожній.
+    expect(invalid(html)).toBe(0);
+    // Тип і мову треба вибрати: перші пункти порожні.
+    expect(html).toMatch(/<option [^>]*value="" disabled="" selected="">Choose a type<\/option>/);
     expect(html).toMatch(/<option [^>]*value="" disabled="" selected="">Choose a language<\/option>/);
   });
 
-  it("AC-CARD-03: після відмови введені дані лишаються у формі, а повідомлення про опікуна показано з прив'язкою до полів", () => {
+  it("AC-CARD-01: тип «Adult» — email клієнта без опікуна", () => {
+    state = { codes: [], values: { client_type: "Adult" } };
+    const html = render();
+    expect(html).toContain(">Email</label>");
+    expect(html).not.toContain("Guardian");
+  });
+
+  it("AC-CARD-12: кілька помилок одразу — окремий текст під кожним полем, кожне поле пов'язане зі своїм текстом, дані лишаються", () => {
     state = {
-      code: "INVALID_GUARDIAN",
+      codes: ["INVALID_CLIENT_NAME", "INVALID_BIRTH_DATE", "INVALID_LANGUAGE"],
+      values: {
+        client_type: "Child",
+        full_name: "",
+        birth_date: "2999-01-01",
+        session_language: "",
+        guardian_name: "Guardian Eight",
+        guardian_email: "guardian8@example.test",
+      },
+    };
+    const html = render();
+    for (const text of ["Enter the client&#x27;s name.", "Enter a date of birth that is not in the future.", "Select a session language."]) {
+      expect(html).toContain(text);
+    }
+    expect(ids(html)).toEqual(["error-INVALID_CLIENT_NAME", "error-INVALID_BIRTH_DATE", "error-INVALID_LANGUAGE"]);
+    expect(invalid(html)).toBe(3);
+    expect(html).toMatch(/id="full_name"[^>]*aria-describedby="error-INVALID_CLIENT_NAME"/);
+    expect(html).toMatch(/id="birth_date"[^>]*aria-describedby="error-INVALID_BIRTH_DATE"/);
+    expect(html).toMatch(/id="session_language"[^>]*aria-describedby="error-INVALID_LANGUAGE"/);
+    // Опікун без помилок, його дані лишились.
+    expect(html).toContain('value="guardian8@example.test"');
+    expect(html).toContain('value="2999-01-01"');
+  });
+
+  it("AC-CARD-12: тип не вибрано — повідомлення під полем типу", () => {
+    state = { codes: ["INVALID_TYPE", "INVALID_CLIENT_NAME"], values: { client_type: "", full_name: "" } };
+    const html = render();
+    expect(html).toContain("Select a client type.");
+    expect(html).toMatch(/id="client_type"[^>]*aria-describedby="error-INVALID_TYPE"/);
+  });
+
+  it("AC-CARD-12: ім'я й email дорослого — одне повідомлення під іменем, обидва поля пов'язані з ним", () => {
+    state = { codes: ["INVALID_CLIENT"], values: { client_type: "Adult", full_name: "", email: "x" } };
+    const html = render();
+    expect(html.match(/Enter the client&#x27;s name and a valid email\./g)).toHaveLength(1);
+    expect(invalid(html)).toBe(2);
+    expect(html.match(/aria-describedby="error-INVALID_CLIENT"/g)).toHaveLength(2);
+  });
+
+  it("AC-CARD-03: помилка опікуна — одне повідомлення, обидва поля опікуна пов'язані з ним, дані лишаються", () => {
+    state = {
+      codes: ["INVALID_GUARDIAN"],
       values: {
         client_type: "Child",
         full_name: "Client Eight",
@@ -40,34 +94,45 @@ describe("ClientCardForm", () => {
       },
     };
     const html = render();
-    expect(html).toContain("Enter the guardian&#x27;s name and a valid email.");
+    expect(html.match(/Enter the guardian&#x27;s name and a valid email\./g)).toHaveLength(1);
     expect(html).toContain('value="Client Eight"');
     expect(html).toContain('value="2016-01-10"');
     expect(html).toContain('value="guardian8@example.test"');
     expect(html).toMatch(/<option [^>]*value="English"[^>]*selected/);
-    // Для дитини власного email немає, а поля опікуна є; відмова пов'язана з полями опікуна, не з іменем.
-    expect(html).not.toContain('>Email</label>');
+    // Для дитини власного email немає, а поля опікуна є; помилка пов'язана лише з ними.
+    expect(html).not.toContain(">Email</label>");
     expect(html).toContain(">Guardian name</label>");
-    expect(html.match(/aria-invalid="true"/g)).toHaveLength(2);
-    expect(html.match(/aria-describedby="card-form-error"/g)).toHaveLength(2);
-    expect(html).toContain('id="card-form-error"');
+    // Тип лишається «Child» (defaultValue), а не повертається до порожнього чи «Adult».
+    expect(html).toMatch(/<option [^>]*value="Child"[^>]*selected/);
+    expect(invalid(html)).toBe(2);
+    expect(html.match(/aria-describedby="error-INVALID_GUARDIAN"/g)).toHaveLength(2);
   });
 
-  it("AC-CARD-06: відмова терапевту показується над формою, дані лишаються", () => {
+  it("AC-CARD-06: відмова терапевту — Alert над формою, дані лишаються, жодне поле не позначено помилкою", () => {
     state = {
-      code: "CARD_FORBIDDEN",
+      codes: ["CARD_FORBIDDEN"],
       values: { client_type: "Adult", full_name: "Client Six", email: "client6@example.test", birth_date: "1990-05-14", session_language: "English" },
     };
     const html = render();
     expect(html).toContain("Only schedulers and admins can create client cards.");
+    expect(html).toContain('data-slot="alert"');
     expect(html).toContain('value="client6@example.test"');
-    expect(html).not.toContain('aria-invalid="true"');
+    expect(invalid(html)).toBe(0);
   });
 
-  it("AC-HOLD-16: дубль email позначає лише поле email", () => {
-    state = { code: "CLIENT_EXISTS", values: { client_type: "Adult", full_name: "Client One", email: "client1@example.test" } };
+  it("AC-CARD-13: дублікат картки дитини — загальний Alert над формою, поля не позначено", () => {
+    state = { codes: ["CLIENT_DUPLICATE"], values: { client_type: "Child", full_name: "Client Seven", guardian_name: "Guardian Seven" } };
     const html = render();
-    expect(html.match(/aria-invalid="true"/g)).toHaveLength(1);
+    expect(html).toContain("A client with these details already exists.");
+    expect(html).toContain('data-slot="alert"');
+    expect(invalid(html)).toBe(0);
+  });
+
+  it("AC-HOLD-16: дубль email позначає лише поле email і показує текст під ним", () => {
+    state = { codes: ["CLIENT_EXISTS"], values: { client_type: "Adult", full_name: "Client One", email: "client1@example.test" } };
+    const html = render();
+    expect(invalid(html)).toBe(1);
     expect(html).toContain("A client with this email already exists.");
+    expect(html).toMatch(/id="email"[^>]*aria-describedby="error-CLIENT_EXISTS"/);
   });
 });

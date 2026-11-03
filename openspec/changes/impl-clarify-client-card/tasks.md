@@ -15,16 +15,16 @@ Done when: AC-CARD-04, AC-CARD-14, AC-HOLD-43
 - [x] 13.2 `holdSlot` і `confirmHold`: відмова ролі — на `/schedule?msg=…`; оновити коментарі про головну (Р20)
 - [x] 13.3 `/clients`: порожній список staff (AC-CARD-15); `/clients/[id]`: картки немає (AC-CARD-16); «Sign out» у тесті без ролі (AC-CARD-11)
 - [x] 13.4 Тести сторінок і дій перевіряють показ тексту, а не лише адресу
-- [ ] 13.5 Відхилення #47 і #48: коментар із посиланням на PR (після злиття)
+- [x] 13.5 Відхилення #47 і #48: коментар із посиланням на PR (після злиття)
 
 Done when: AC-CARD-06, AC-CARD-11, AC-CARD-15, AC-CARD-16, AC-HOLD-44
 
 ## 14. Повнота картки, усі помилки одразу, дублікат (PR `task/card-completeness`)
 
-- [ ] 14.1 Міграція: `check (birth_date is not null and session_language is not null) not valid`; унікальний індекс дитини; `client_card_errors(jsonb)` (Р18, Р19)
-- [ ] 14.2 Фікстура `ensureClient` і тест AC-HOLD-10: картка лише з ім'ям та email більше не створюється
-- [ ] 14.3 Дія `createClientCard` і форма: усі помилки одразу біля полів, порожній пункт типу, `CLIENT_DUPLICATE`; `DESIGN.md` §5, §6
-- [ ] 14.4 Тест бази «функція й обмеження згодні»; тести дублікатів (регістр, пробіли, близнюки) й форми
+- [x] 14.1 Міграція: `check (birth_date is not null and session_language is not null) not valid`; унікальний індекс дитини; `client_card_errors(jsonb)` (Р18, Р19)
+- [x] 14.2 Фікстура `ensureClient` і тест AC-HOLD-10: картка лише з ім'ям та email більше не створюється
+- [x] 14.3 Дія `createClientCard` і форма: усі помилки одразу біля полів, порожній пункт типу, `CLIENT_DUPLICATE`; `DESIGN.md` §5, §6
+- [x] 14.4 Тест бази «функція й обмеження згодні»; тести дублікатів (регістр, пробіли, близнюки) й форми
 
 Done when: AC-CARD-12, AC-CARD-13 (і AC-CARD-01, 03, AC-HOLD-10, 11, 15, 16, 34, 35, 39, 41 лишаються зеленими в повній формі)
 

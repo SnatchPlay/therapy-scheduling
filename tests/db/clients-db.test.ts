@@ -13,15 +13,20 @@ beforeAll(async () => {
   ADMIN = t.users["admin@example.test"];
   THERAPIST = t.users["therapist1@example.test"];
   // Кожен тест бере свої дані; спільне — лише client1, який за AC-HOLD-16 «уже існує».
-  await t.asService("insert into public.clients (full_name, email, created_by) values ('Client One', 'client1@example.test', $1)", [
-    ADMIN,
-  ]);
+  await t.asService(
+    "insert into public.clients (full_name, email, birth_date, session_language, created_by) values ('Client One', 'client1@example.test', date '1990-01-01', 'English', $1)",
+    [ADMIN],
+  );
 }, 60_000);
 
 /** Те саме, що робить server action: insert у clients від імені користувача; помилка → текст повідомлення. */
 async function createClientAs(userId: string, fullName: string, email: string) {
   try {
-    await t.asUser(userId, "insert into public.clients (full_name, email) values ($1, $2)", [fullName, email]);
+    await t.asUser(
+      userId,
+      "insert into public.clients (full_name, email, birth_date, session_language) values ($1, $2, date '1990-01-01', 'English')",
+      [fullName, email],
+    );
     return "created";
   } catch (error) {
     return MESSAGES[clientErrorCode(error as { code?: string; message?: string })];
@@ -132,7 +137,7 @@ describe("Картка клієнта", () => {
 
   it("AC-HOLD-16: зміна email тим, хто обходить RLS (виправлення даних), теж нормалізується", async () => {
     await t.asService(
-      "insert into public.clients (full_name, email, created_by) values ('Client Eight', 'client8@example.test', $1)",
+      "insert into public.clients (full_name, email, birth_date, session_language, created_by) values ('Client Eight', 'client8@example.test', date '1990-01-01', 'English', $1)",
       [ADMIN],
     );
     await expect(
