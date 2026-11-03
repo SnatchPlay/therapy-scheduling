@@ -24,7 +24,10 @@
     "smoke": "node scripts/smoke.mjs",
     "gates": "npm run lint && npm run typecheck && fallow audit --base origin/main",
     "test:coverage": "vitest run --config vitest.coverage.config.mts --coverage",
-    "coverage:summary": "node scripts/coverage-summary.mjs"
+    "coverage:summary": "node scripts/coverage-summary.mjs",
+    "mutation:ts": "stryker run",
+    "mutation:sql": "node scripts/mutation-check.mjs --kind sql",
+    "mutation:points": "node scripts/mutation-check.mjs --kind ts"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
@@ -43,6 +46,8 @@
     "@storybook/addon-a11y": "10.6.3",
     "@storybook/addon-docs": "10.6.3",
     "@storybook/nextjs-vite": "10.6.3",
+    "@stryker-mutator/core": "10.1.1",
+    "@stryker-mutator/vitest-runner": "10.1.1",
     "@tailwindcss/turbopack": "^4",
     "@tailwindcss/vite": "4.3.3",
     "@types/node": "^24",

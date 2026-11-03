@@ -72,9 +72,11 @@ const eslintConfig = defineConfig([
     "storybook-static/**",
     // Дані для тестів скриптів (навмисно «зламані» файли).
     "tests/fixtures/**",
-    // Звіти й тимчасові копії інструментів якості (ESLint не читає .gitignore): покриття, кеш і копії мутантів fallow.
+    // Звіти й тимчасові копії інструментів якості (ESLint не читає .gitignore): покриття, кеш і копії мутантів fallow, звіт і пісочниця Stryker.
     "coverage/**",
     ".fallow/**",
+    "reports/**",
+    ".stryker-tmp/**",
   ]),
 ]);
 

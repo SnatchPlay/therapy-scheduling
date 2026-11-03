@@ -54,5 +54,7 @@ storybook-static
 # Тестові акаунти з паролями — лише локально; у репо — тільки зашифрований accounts.zip.
 accounts.txt
 
-# Інструменти якості: кеш і копії мутантів fallow
+# Інструменти якості: кеш і копії мутантів fallow, пісочниця й звіти Stryker
 /.fallow/
+/.stryker-tmp/
+/reports/

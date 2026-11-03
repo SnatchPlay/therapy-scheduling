@@ -1,12 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Хто увійшов: фейковий Supabase з getClaims і профілем; redirect кидає адресу, як у Next.
-let claims: { sub: string; email: string } | null = null;
-let profile: { email: string; full_name: string; role: string | null } | null = null;
+let claims: { sub: string; email?: string } | null = null;
+let profile: { email: string | null; full_name: string; role: string | null } | null = null;
 let profileError: { message: string } | null = null;
+// Що саме спитали в бази: таблиця, колонки, фільтр.
+let profileQuery: string[] = [];
 const supabase = {
   auth: { getClaims: async () => ({ data: claims ? { claims } : null }) },
-  from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: profile, error: profileError }) }) }) }),
+  from: (table: string) => ({
+    select: (columns: string) => ({
+      eq: (column: string, value: string) => ({
+        maybeSingle: async () => {
+          profileQuery = [table, columns, column, value];
+          return { data: profile, error: profileError };
+        },
+      }),
+    }),
+  }),
 };
 vi.mock("./server", () => ({ createClient: async () => supabase }));
 vi.mock("next/navigation", () => ({
@@ -21,6 +32,7 @@ beforeEach(() => {
   claims = { sub: "u1", email: "user@example.test" };
   profile = { email: "user@example.test", full_name: "User", role: "therapist" };
   profileError = null;
+  profileQuery = [];
 });
 
 describe("getViewer", () => {
@@ -34,6 +46,29 @@ describe("getViewer", () => {
     expect((await getViewer()).role).toBeNull();
     profile = { email: "x@example.test", full_name: "X", role: "superuser" };
     expect((await getViewer()).role).toBeNull();
+  });
+});
+
+describe("getViewer: звідки роль і email", () => {
+  it("AC-CARD-05: роль того, хто відкриває картку (терапевт), береться з profiles за id користувача з сесії, а не з будь-якого рядка", async () => {
+    expect((await getViewer()).role).toBe("therapist");
+    // Фейковий клієнт не читає колонок, тож запит перевіряємо за його аргументами: інакше хибна таблиця чи фільтр лишились би непоміченими.
+    expect(profileQuery).toEqual(["profiles", "email, full_name, role", "id", "u1"]);
+  });
+
+  it("AC-CARD-11: користувач без рядка профілю — без ролі, а не збій; email тоді з сесії", async () => {
+    profile = null;
+    expect(await getViewer()).toMatchObject({ role: null, email: "user@example.test" });
+    await expect(requireRole(...ALL_ROLES)).rejects.toThrow("REDIRECT /");
+  });
+
+  it("email у шапці: з профілю, інакше з сесії, інакше немає", async () => {
+    profile = { email: "profile@example.test", full_name: "P", role: "therapist" };
+    expect((await getViewer()).email).toBe("profile@example.test");
+    profile = { email: null, full_name: "P", role: "therapist" };
+    expect((await getViewer()).email).toBe("user@example.test");
+    claims = { sub: "u1" };
+    expect((await getViewer()).email).toBeNull();
   });
 });
 

@@ -119,6 +119,24 @@ describe("Розклад терапевта на тиждень", () => {
     expect(theirs.map((r) => r.slot_id)).toEqual([other]);
   });
 
+  it("AC-HOLD-44: therapist1 напряму з таблиці holds (Data API) отримує лише утримання власних слотів — утримань слотів therapist2 немає", async () => {
+    const monday = mondayOfNewWeek();
+    const mineClient = await ensureClient(t, "client10", "client10@example.test");
+    const otherClient = await ensureClient(t, "client11", "client11@example.test");
+    const own = await createSlot(t, T1, practiceTime(monday, "10:00"));
+    const other = await createSlot(t, T2, practiceTime(monday, "10:00"));
+    const ownHold = await holdAs(t, SCHEDULER, own, mineClient);
+    const otherHold = await holdAs(t, SCHEDULER, other, otherClient);
+
+    expect(ownHold.id).toBeDefined();
+    expect(otherHold.id).toBeDefined();
+    const seen = (await t.asUser<{ id: string }>(THERAPIST1, "select id from public.holds")).map((h) => h.id);
+    expect(seen).toContain(ownHold.id);
+    expect(seen).not.toContain(otherHold.id);
+    // Слот чужого терапевта теж не видно: утримання без слота не показало б, де воно.
+    expect(await t.asUser(THERAPIST1, "select id from public.slots where id = $1", [other])).toEqual([]);
+  });
+
   it("AC-HOLD-09: «його сеанси» — підтверджене утримання лишається в розкладі після 24 годин, з ім'ям клієнта", async () => {
     const monday = mondayOfNewWeek();
     const client = await ensureClient(t, "client4", "client4@example.test");

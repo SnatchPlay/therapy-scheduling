@@ -16,6 +16,10 @@
 
 ## A. Ворота
 
+- PR воріт: https://github.com/SnatchPlay/therapy-scheduling/pull/60
+- Зелений `quality` на `main`: https://github.com/SnatchPlay/therapy-scheduling/actions/runs/41696972047
+- Обов'язкові перевірки в `solo-main`: ще не додано (див. нижче)
+
 Розбір першого повного прогону `fallow` на `main` (353ab3f): 4 знахідки мертвого коду, 5 груп дублів, 19 функцій
 вище порогу складності. Після конфігу лишаються 0 / 0 / 9; інші групи пояснено нижче. Ворота валять лише нові
 знахідки відносно бази PR (`audit.gate: new-only`).
@@ -35,3 +39,43 @@
 файл окремо ≥ 90 % рядків, функцій і операторів, ≥ 85 % гілок. Перевірено, що підлога падає: з одним
 `src/lib/time.test.ts` кроки «Coverage for … does not meet threshold» дають код помилки.
 Файли сторінок і дій (`src/app/**`) і адаптери Supabase без підлоги: їх доводять тести бази (PGlite) та UAT.
+
+## B. Якість тестів
+
+PR: https://github.com/SnatchPlay/therapy-scheduling/pull/61. Усі посилання на тести — на коміті `ce833c1`.
+
+### Рівень для кожного AC
+
+| AC | Де живе правило | Рівень | Чому | Тест |
+|---|---|---|---|---|
+| AC-CARD-05 | SQL: політика `clients_select_therapist` і `private.own_client_ids()`; текст відмови — `src/app/clients/[id]/page.tsx`, `src/lib/messages.ts`; роль користувача — `src/lib/supabase/viewer.ts` | база (PGlite, `asUser`) + сторінка (Vitest) + `viewer` (unit) + UAT (екран) | правило двічі: SQL — остання межа, без якої сторінка показала б чужу картку; TS — повідомлення PM; мок чи TS-копія SQL-правила не довели б нічого | [client-card-db.test.ts:433](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/tests/db/client-card-db.test.ts#L433), [page.test.tsx:41](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/src/app/clients/%5Bid%5D/page.test.tsx#L41), [viewer.test.ts:53](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/src/lib/supabase/viewer.test.ts#L53) |
+| AC-CARD-16 | TS: `STAFF.includes(role)` у `src/app/clients/[id]/page.tsx` (для бази обидва випадки — нуль рядків) | сторінка (Vitest) + UAT (екран) | різницю текстів для двох ролей SQL не знає; точний текст бачить людина | [page.test.tsx:68](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/src/app/clients/%5Bid%5D/page.test.tsx#L68) |
+| AC-HOLD-44 | TS: перевірка ролі в `src/app/slots/page.tsx` і `src/app/holds/page.tsx`; SQL: політики `slots_select`, `holds_select` | сторінка (Vitest, «без запитів до бази») + база (PGlite) + UAT (екран) | правило двічі: сторінка не питає базу для терапевта, RLS — остання межа; пряме читання таблиці `holds` доведено окремим тестом після вижилого мутанта H2 | [slots/page.test.tsx:59](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/src/app/slots/page.test.tsx#L59), [holds/page.test.tsx:65](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/src/app/holds/page.test.tsx#L65), [schedule-db.test.ts:122](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/tests/db/schedule-db.test.ts#L122) |
+
+### Покриття
+
+`npm run test:coverage` (v8) на цьому коміті.
+
+| Файл за AC | Рядки | Гілки | Чим доведено, якщо 0 % |
+|---|---|---|---|
+| `src/lib/supabase/viewer.ts` | 100 % | 100 % | — |
+| `src/lib/messages.ts` | 100 % | 100 % | — |
+| `src/app/clients/[id]/page.tsx` | 100 % | 100 % | — |
+| `src/app/slots/page.tsx` | 100 % | 79,48 % | — (гілки — рядки пошуку клієнта, поза нашими AC) |
+| `src/app/holds/page.tsx` | 100 % | 88,88 % | — |
+
+Сторінки мають 100 % рядків, бо їх рендерять тести Vitest із фейковим клієнтом Supabase. Це доводить поведінку сторінки, але не реальну сесію: тексти на екрані й вхід під ролями доводить UAT (частина C). Адаптери `src/lib/supabase/{server,proxy}.ts` (0 % і 60 %) тестами Vitest не доводяться, їх перевіряє UAT.
+
+### Доказ мутацією
+
+| Мутант (файл:рядок, що змінено) | AC під загрозою | До | Тест, посилений з тексту AC | Після |
+|---|---|---|---|---|
+| `src/lib/supabase/viewer.ts:23-25` `.from("profiles")`, `.select("email, full_name, role")`, `.eq("id", claims.sub)` → порожні рядки | AC-CARD-05 (роль терапевта визначається за профілем користувача з сесії) | вижили (3) | [viewer.test.ts:53](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/src/lib/supabase/viewer.test.ts#L53): таблиця, колонки й фільтр `id = sub` | убиті |
+| `src/lib/supabase/viewer.ts:33-34` `profile?.role` → `profile.role`, `profile?.email` → `profile.email`, `??` → `&&` | AC-CARD-11 (користувач без профілю — без ролі, не збій) | вижили (4) | [viewer.test.ts:59](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/src/lib/supabase/viewer.test.ts#L59) і тест email у шапці | убиті |
+| `supabase/migrations/20261019143036_slots_and_holds.sql` політика `holds_select`: `true or (…)` (мутант H2) | AC-HOLD-44 (жодних утримань чужих слотів) | вижив | [schedule-db.test.ts:122](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/tests/db/schedule-db.test.ts#L122): `select id from public.holds` як therapist1 | убитий |
+
+- Stryker: `viewer.ts` 78,79 % → 100 % (26 → 33 убито), `messages.ts` 94,19 % (вижилі 5 лише в `clientErrorCode`, AC-CARD-12), весь `src/lib` 93,73 %. Вивід — в описі PR 61.
+- SQL-мутації (`npm run mutation:sql`) і точкові TS-мутанти (`npm run mutation:points`): 9 з 9 убито (P1, P2 — перевірка гарнесу; C1, C2 — AC-CARD-05; H1, H2 — AC-HOLD-44; T1 — AC-CARD-16; T2, T3 — AC-HOLD-44). Таблиця «що зламано → який тест упав» — в описі PR 61.
+- Еквівалентні мутанти: серед наших AC немає.
+- Прогін мутації в CI: червоні кроки `npm test` для відмов того ж класу — `docs/evidence/mutation-card.md`.
+

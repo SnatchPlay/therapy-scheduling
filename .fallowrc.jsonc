@@ -5,7 +5,8 @@
   //
   // Скрипти з package.json fallow бачить сам. Сюди — лише те, що запускає не npm і не import.
   // Хуки Claude Code запускає .claude/settings.json (команда `node …/scripts/hooks/*.mjs`), а не import.
-  "entry": ["scripts/hooks/*.mjs"],
+  // Конфіг Vitest для Stryker читає stryker.config.json, а не import.
+  "entry": ["scripts/hooks/*.mjs", "vitest.stryker.config.mts"],
   // Дані для тестів скриптів шаблону — навмисно «зламані» файли.
   "ignorePatterns": ["tests/fixtures/**"],
   "ignoreDependencies": [
@@ -48,7 +49,8 @@
   },
   "health": {
     // Файли курсу (шаблон і materials/ WS8) ми не міняємо: правки шаблону переносимо cherry-pick, а не локально.
-    // Це `scripts/lib/**`, `check-spec`, `create-demo-users` (шаблон), `smoke.mjs`, `api/health/route.ts` (materials/d0)
+    // Це `scripts/lib/**`, `check-spec`, `create-demo-users` (шаблон), `smoke.mjs`, `api/health/route.ts` (materials/d0),
+    // `mutation-check.mjs` (materials/testing)
     // і `check-design-tokens`, `check-server-boundary` (матеріали WS7).
     // Без цього рядка PR, що додає такий файл, червоніє на складності чужого коду (fallow audit рахує новий файл
     // новою знахідкою). Мертвий код і залежності в них fallow перевіряє й далі — виняток лише для складності.
@@ -59,6 +61,7 @@
       "scripts/check-design-tokens.mjs",
       "scripts/check-server-boundary.mjs",
       "scripts/smoke.mjs",
+      "scripts/mutation-check.mjs",
       "src/app/api/health/route.ts"
     ],
     "thresholdOverrides": [
