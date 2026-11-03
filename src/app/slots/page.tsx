@@ -8,7 +8,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { clientOptionLabel, filterClients } from "@/lib/clients";
 import { MESSAGES, noticeFor } from "@/lib/messages";
 import { hasHoldableSlot, withSlotTimes } from "@/lib/slots";
-import { ALL_ROLES, requireRole, STAFF } from "@/lib/supabase/viewer";
+import { ALL_ROLES, isStaff, requireRole } from "@/lib/supabase/viewer";
 import { formatPracticeDateTime, formatPracticeTime, isIsoDate, practiceDate } from "@/lib/time";
 import { holdSlot } from "./actions";
 
@@ -16,7 +16,7 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
   const { supabase, role, email } = await requireRole(...ALL_ROLES);
   const params = await searchParams;
   // AC-HOLD-44: терапевту за прямим посиланням (зокрема на слоти іншого терапевта) — відмова без даних; запитів до бази немає.
-  if (!STAFF.includes(role)) return <AppShell role={role} email={email} title="Slots" notice={noticeFor("PAGE_FORBIDDEN")} />;
+  if (!isStaff(role)) return <AppShell role={role} email={email} title="Slots" notice={noticeFor("PAGE_FORBIDDEN")} />;
 
   const [therapistsResult, clientsResult] = await Promise.all([
     supabase.from("therapists").select("id, full_name").order("full_name"),

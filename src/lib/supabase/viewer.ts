@@ -13,6 +13,8 @@ export const ALL_ROLES: readonly Role[] = ROLES;
 /** Планувальник і адміністратор: AC-HOLD-19 — admin може все, що й scheduler (private.is_scheduler_or_admin у базі). */
 export const STAFF: readonly Role[] = ["scheduler", "admin"];
 
+export const isStaff = (role: Role) => STAFF.includes(role);
+
 export async function getViewer() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
