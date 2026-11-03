@@ -2,7 +2,7 @@
 // почався), повторне утримання після прострочення й розклад терапевта без email клієнта. Часові межі — зсувом starts_at /
 // created_at від now().
 import { beforeAll, describe, expect, it } from "vitest";
-import { ageHold, createSlot, ensureClient, holdAs } from "./fixtures";
+import { ageHold, createSlot, ensureClient, holdAs, startSlotAt } from "./fixtures";
 import { createTestDb, type TestDb } from "./supabase-pglite";
 
 let t: TestDb;
@@ -31,9 +31,6 @@ const holdList = (slotIds?: string[]) =>
      ${slotIds ? "where slot_id = any($1::uuid[])" : ""} order by starts_at, hold_id`,
     slotIds ? [slotIds] : [],
   );
-// Слот, що почався: утримувати його вже не можна, тож утримання створюємо до початку й пересуваємо слот.
-const startSlotAt = (slotId: string, sqlTime: string) =>
-  t.asService("update public.slots set starts_at = " + sqlTime + ", ends_at = " + sqlTime + " + interval '60 minutes' where id = $1", [slotId]);
 
 describe("Повторне утримання після прострочення", () => {
   it("AC-HOLD-37: слот знову утримано за client1 — нове «Held» на 24 години, а старе прострочене утримання client1 зникло зі списку", async () => {
@@ -92,6 +89,24 @@ describe("Повторне утримання після простроченн�
   });
 });
 
+describe("Прострочене утримання й слот, який утримав інший клієнт", () => {
+  it("AC-HOLD-43: слот прострочено за client1 і утримано за client2 — у списку обидва записи («Held» і «Expired»), а з початку слоту вони зникають (AC-HOLD-29)", async () => {
+    const slot = await createSlot(t, T1, "now() + interval '16 days'");
+    const first = await holdAs(t, SCHEDULER, slot, CLIENT1);
+    await ageHold(t, first.id!, 1500); // «Expired» з 1 години тому
+    expect((await holdAs(t, SCHEDULER, slot, CLIENT2)).id).toBeDefined();
+
+    const rows = (await holdList([slot])).map((r) => [r.client_name, r.status]).sort();
+    expect(rows).toEqual([
+      ["client1", "Expired"],
+      ["client2", "Held"],
+    ]);
+
+    await startSlotAt(t, slot, "now()");
+    expect(await holdList([slot])).toEqual([]);
+  });
+});
+
 describe("Склад і порядок списку", () => {
   it("AC-HOLD-38: лише «Held» і «Expired» за часом слоту від найближчого; підтверджені сеанси (майбутній і минулий) не показано", async () => {
     const expiredLate = await createSlot(t, T1, "now() + interval '9 days'"); // client1, «Expired»
@@ -106,7 +121,7 @@ describe("Склад і порядок списку", () => {
     await t.asUser(SCHEDULER, "select public.confirm_hold($1)", [h3.id]);
     const h4 = await holdAs(t, SCHEDULER, sessionPast, CLIENT4);
     await t.asUser(SCHEDULER, "select public.confirm_hold($1)", [h4.id]);
-    await startSlotAt(sessionPast, "now() - interval '3 hours'");
+    await startSlotAt(t, sessionPast, "now() - interval '3 hours'");
 
     const rows = await holdList([expiredLate, heldEarly, sessionFuture, sessionPast]);
     expect(rows.map((r) => [r.client_name, r.status])).toEqual([
@@ -118,11 +133,11 @@ describe("Склад і порядок списку", () => {
   it("AC-HOLD-42: «Held» зі слотом, що почався — у списку є за хвилину до початку, а з моменту початку немає", async () => {
     const slot = await createSlot(t, T1, "now() + interval '12 days'");
     const hold = await holdAs(t, SCHEDULER, slot, CLIENT2);
-    await startSlotAt(slot, "now() + interval '1 minute'");
+    await startSlotAt(t, slot, "now() + interval '1 minute'");
     expect((await holdList([slot])).map((r) => [r.hold_id, r.status])).toEqual([[hold.id, "Held"]]);
-    await startSlotAt(slot, "now()");
+    await startSlotAt(t, slot, "now()");
     expect(await holdList([slot])).toEqual([]);
-    await startSlotAt(slot, "now() - interval '2 hours'");
+    await startSlotAt(t, slot, "now() - interval '2 hours'");
     expect(await holdList([slot])).toEqual([]);
     // Утримання не зникло: слот лишається «Held» у розкладі, а підтвердити його вже не можна (AC-HOLD-22).
     const [board] = await t.asUser<{ status: string }>(SCHEDULER, "select status from public.slot_board where slot_id = $1", [slot]);

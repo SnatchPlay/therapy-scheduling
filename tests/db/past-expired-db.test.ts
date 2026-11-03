@@ -2,7 +2,7 @@
 // (slot-holds, design.md Р10): представлення slot_board і hold_list. Межі — зсувом starts_at / created_at від now().
 import { beforeAll, describe, expect, it } from "vitest";
 import { hasHoldableSlot } from "@/lib/slots";
-import { ageHold, createSlot, ensureClient, holdAs } from "./fixtures";
+import { ageHold, createSlot, ensureClient, holdAs, startSlotAt } from "./fixtures";
 import { createTestDb, type TestDb } from "./supabase-pglite";
 
 let t: TestDb;
@@ -25,9 +25,6 @@ const boardFor = (userId: string, slotIds: string[]) =>
   );
 const inHoldList = async (userId: string, holdId: string) =>
   (await t.asUser<{ status: string }>(userId, "select status from public.hold_list where hold_id = $1", [holdId]))[0]?.status;
-// Слот, що почався: утримати його вже не можна, тож утримання створюємо до початку й пересуваємо слот у минуле.
-const startSlotAt = (slotId: string, sqlTime: string) =>
-  t.asService("update public.slots set starts_at = " + sqlTime + ", ends_at = " + sqlTime + " + interval '60 minutes' where id = $1", [slotId]);
 
 describe("Статус «Past»", () => {
   it("AC-HOLD-32: вільний слот, що почався, і слот із простроченим утриманням — «Past», не вільні й не утримуються", async () => {
@@ -35,7 +32,7 @@ describe("Статус «Past»", () => {
     const withExpired = await createSlot(t, T1, "now() + interval '3 days'");
     const hold = await holdAs(t, SCHEDULER, withExpired, CLIENT1);
     await ageHold(t, hold.id!, 1500);
-    await startSlotAt(withExpired, "now() - interval '90 minutes'");
+    await startSlotAt(t, withExpired, "now() - interval '90 minutes'");
 
     const rows = await boardFor(SCHEDULER, [free, withExpired]);
     expect(rows).toEqual([
@@ -58,8 +55,8 @@ describe("Статус «Past»", () => {
     await t.asUser(SCHEDULER, "select public.confirm_hold($1)", [confirmedHold.id]);
     // Обидва слоти вже почались (утримання лишається діяти, поки не прострочене; сеанс — завжди).
     // Різний початок: слот терапевта унікальний за початком, а now() у двох запитах поспіль може збігтися.
-    await startSlotAt(held, "now() - interval '10 minutes'");
-    await startSlotAt(confirmed, "now() - interval '20 minutes'");
+    await startSlotAt(t, held, "now() - interval '10 minutes'");
+    await startSlotAt(t, confirmed, "now() - interval '20 minutes'");
 
     const rows = await boardFor(SCHEDULER, [future, held, confirmed]);
     expect(Object.fromEntries(rows.map((r) => [r.slot_id, r.status]))).toEqual({
@@ -110,7 +107,7 @@ describe("Прострочене утримання в списку утрима
     const slot = await createSlot(t, T1, "now() + interval '5 days'");
     const hold = await holdAs(t, SCHEDULER, slot, CLIENT1);
     await ageHold(t, hold.id!, 1500);
-    await startSlotAt(slot, "now() + interval '1 minute'");
+    await startSlotAt(t, slot, "now() + interval '1 minute'");
     expect(await inHoldList(SCHEDULER, hold.id!)).toBe("Expired");
   });
 
@@ -118,9 +115,9 @@ describe("Прострочене утримання в списку утрима
     const slot = await createSlot(t, T1, "now() + interval '6 days'");
     const hold = await holdAs(t, SCHEDULER, slot, CLIENT1);
     await ageHold(t, hold.id!, 1500);
-    await startSlotAt(slot, "now()");
+    await startSlotAt(t, slot, "now()");
     expect(await inHoldList(SCHEDULER, hold.id!)).toBeUndefined();
-    await startSlotAt(slot, "now() - interval '2 hours'");
+    await startSlotAt(t, slot, "now() - interval '2 hours'");
     expect(await inHoldList(SCHEDULER, hold.id!)).toBeUndefined();
   });
 });
