@@ -117,6 +117,10 @@ jobs:
             cat "$RUNNER_TEMP/database.types.ts"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+      # Дві одночасні сесії на справжньому Postgres (PGlite має одне з'єднання): AC-HOLD-04, AC-HOLD-25.
+      # Після кроку типів, щоб відмова гонки не ховала їхній Summary.
+      - name: Concurrent holds (race) on the throwaway database
+        run: node scripts/check-hold-race.mjs
 
   db-deploy:
     # Лише main: push після merge або ручний запуск (Actions → CI → Run workflow, гілка main).
