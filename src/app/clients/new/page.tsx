@@ -7,7 +7,7 @@ import { ClientCardForm } from "../_components/client-card-form";
 // сторінки відхиляє база (RLS clients). Без ролі requireRole повертає на головну з повідомленням про відсутність доступу.
 export default async function NewClientPage() {
   const { role, email } = await requireRole(...ALL_ROLES);
-  if (!STAFF.includes(role)) {
+  if (!STAFF.includes(role) && role !== "therapist") {
     return <AppShell role={role} email={email} title="New client" notice={noticeFor("CARD_FORBIDDEN")} />;
   }
   return (
