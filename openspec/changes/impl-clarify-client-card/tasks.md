@@ -45,7 +45,7 @@ Done when: AC-CARD-05, AC-CARD-08, AC-CARD-11 (відмови доведено �
 
 ## 17. Тест гонки двох утримань на справжньому Postgres (PR `task/hold-race-test`)
 
-- [ ] 17.1 Крок `db-check`: скрипт із двома з'єднаннями `pg` — сесія A тримає `hold_slot` у транзакції через `pg_sleep`, сесія B на той самий слот отримує «This slot is no longer available.»; те саме для двох слотів одного клієнта (AC-HOLD-25)
-- [ ] 17.2 Мутаційний коміт без `for update` у `guard_new_hold` має почервоніти крок; `docs/conformance.md`: AC-HOLD-04 — тест, що доводить гонку
+- [x] 17.1 Крок `db-check`: скрипт із двома з'єднаннями `pg` — сесія A тримає `hold_slot` у транзакції через `pg_sleep`, сесія B на той самий слот отримує «This slot is no longer available.»; те саме для двох слотів одного клієнта (AC-HOLD-25)
+- [x] 17.2 Мутаційний коміт без `for update` у `guard_new_hold` має почервоніти крок; `docs/conformance.md`: AC-HOLD-04 — тест, що доводить гонку
 
 Done when: AC-HOLD-04, AC-HOLD-25
