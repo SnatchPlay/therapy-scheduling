@@ -1,14 +1,14 @@
 {
   "kind": "uat",
-  "generatedAt": "2026-11-03T19:50:29.254Z",
+  "generatedAt": "2026-11-03T20:20:51.427Z",
   "baseURL": "https://therapy-scheduling-weld.vercel.app",
   "deployedSha": "12a33a73fb609d5b3d5c8940cfdf442f80c42031",
-  "testsCommit": "12a33a73fb609d5b3d5c8940cfdf442f80c42031",
+  "testsCommit": "1ce49fbd8d23cead0a54f5015b56c7875f068d09",
   "reviewer": {
     "model": "claude-haiku-5-5",
     "disputes": "claude-sonnet-5-5"
   },
-  "note": "Відео й траси не в git (test-results/ локально, артефакт CI). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
+  "note": "Відео й траси не в git і не в CI (лише test-results/ на машині прогону). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
   "results": [
     {
       "id": "AC-CARD-05",
@@ -21,7 +21,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі видно сторінку «Client» із червоною плашкою «You don't have access to this client.», кнопкою «Back to clients» і шапкою therapist1@example.test. Жодного імені, email чи дат клієнта на сторінці немає. Апостроф у повідомленні виглядає як прямий (') і збігається з критерієм, хоча при такій роздільній здатності відрізнити його від типографського (’) повністю не можна."
+        "notes": "На кадрі frame-then-1.png сторінки /clients/dd538e17-... (користувач therapist1@example.test) видно червоний блок із текстом «You don't have access to this client.», дослівно збігається з критерієм. На сторінці немає жодних даних клієнта, але це з розділу «Не з кадрів», тому не оцінювалося. Кадр один і читабельний."
       },
       "agentModel": "claude-haiku-5-5",
       "agentVerdicts": {
@@ -38,9 +38,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 9806,
-      "reviewCostUsd": 0.00197,
-      "reviewWallMs": 7469
+      "playwrightMs": 12326,
+      "reviewCostUsd": 0.00185,
+      "reviewWallMs": 6747
     },
     {
       "id": "AC-CARD-16",
@@ -53,7 +53,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі frame-then-1.png для scheduler1 видно червоний блок з текстом «This client card doesn't exist.» і заголовок «Client». На frame-then-2.png для therapist1 видно такий самий блок з текстом «You don't have access to this client.». На обох кадрах немає карток клієнтів чи email, але цю частину перевіряють автоматичні перевірки. Апостроф на кадрах виглядає як прямий, як у критерії; з тією ж точністю його можна звірити лише за оригіналом."
+        "notes": "На frame-then-1.png (scheduler1@example.test) на сторінці /clients/...016 видно червоний напис «This client card doesn't exist.», без жодних карток чи email клієнта. На frame-then-2.png (therapist1@example.test) видно «You don't have access to this client.» і також без даних клієнта. Обидві видимі частини «Тоді» підтверджено дослівно."
       },
       "agentModel": "claude-haiku-5-5",
       "agentVerdicts": {
@@ -74,9 +74,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 6559,
-      "reviewCostUsd": 0.00231,
-      "reviewWallMs": 9284
+      "playwrightMs": 5885,
+      "reviewCostUsd": 0.00236,
+      "reviewWallMs": 7788
     },
     {
       "id": "AC-HOLD-44",
@@ -89,7 +89,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На обох кадрах (/holds і /slots) видно однаковий червоний напис «Only schedulers and admins can view this page.» і заголовок сторінки без жодного списку, таблиці чи даних клієнтів. Email у шапці — therapist1@example.test, це email самого користувача, а не клієнта. Частини про відсутність утримань і незмінність даних не з кадрів, тому не оцінювалися."
+        "notes": "На обох кадрах (заголовки «Holds» і «Slots», користувач therapist1@example.test · therapist) під заголовком є червоний рамковий напис «Only schedulers and admins can view this page.», який збігається з критерієм посимвольно. Список утримань, таблиць і адрес email на кадрах немає, тож цю частину не оцінював, як і вимагають правила; частину «жодне утримання не змінилося» теж не оцінював, бо це не з кадрів."
       },
       "agentModel": "claude-haiku-5-5",
       "agentVerdicts": {
@@ -110,9 +110,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 10186,
-      "reviewCostUsd": 0.00237,
-      "reviewWallMs": 9139
+      "playwrightMs": 11626,
+      "reviewCostUsd": 0.00248,
+      "reviewWallMs": 9170
     }
   ],
   "negativeControls": []

@@ -84,7 +84,7 @@ PR: https://github.com/SnatchPlay/therapy-scheduling/pull/61. Усі посил�
 
 Звіт для PM: [docs/qa/uat/2026-11-03/report.md](uat/2026-11-03/report.md) (кадри «Тоді» — `frames/`, підсумок — `manifest.json`).
 Запуск: `npm run uat -- --url https://therapy-scheduling-weld.vercel.app`. Тести — `tests/e2e/*.spec.ts` (Playwright), по одному на AC.
-Задеплоєний код на момент прогону — коміт `12a33a7` (`/api/health`). Відео й траси лежать у `test-results/` і не в git.
+Задеплоєний код на момент прогону — коміт `12a33a7` (`/api/health`). Відео й траси лежать лише в `test-results/` на машині прогону: не в git і не в CI.
 
 | AC | Перевірки Playwright | Агент-рецензент | Підсумок | Що показує екран |
 |---|---|---|---|---|
@@ -92,7 +92,7 @@ PR: https://github.com/SnatchPlay/therapy-scheduling/pull/61. Усі посил�
 | AC-CARD-16 | пройшли | Haiku: PASS | **PASS** | scheduler1 бачить «This client card doesn't exist.», therapist1 — «You don't have access to this client.», даних клієнтів немає |
 | AC-HOLD-44 | пройшли | Haiku: PASS | **PASS** | therapist1 бачить «Only schedulers and admins can view this page.» на `/holds` і на `/slots` therapist2, без утримань, імен і email |
 
-Підсумок рахує код (`scripts/uat/combine.mjs`), а не агент: упала перевірка — завжди FAIL; PASS лише коли збіглися перевірки, вердикт агента і його цитати зі сторінки. Останній прогін: 21:49 за Києвом, розбір агентом коштував $0.0066.
+Підсумок рахує код (`scripts/uat/combine.mjs`), а не агент: упала перевірка — завжди FAIL; PASS лише коли збіглися перевірки, вердикт агента і його цитати зі сторінки. Останній прогін: 22:19 за Києвом на чистому дереві (коміт тестів `1ce49fb`), розбір агентом коштував $0.0067.
 
 ### Як ми дійшли до зеленого прогону
 
@@ -101,6 +101,7 @@ PR: https://github.com/SnatchPlay/therapy-scheduling/pull/61. Усі посил�
 | 1 | AC-HOLD-44 — FAIL; AC-CARD-05 — NEEDS-HUMAN | FAIL: помилка в нашому тесті. Локатор шукав `Therapist Two` за підрядком і на проді знаходив два пункти («Therapist Two» і «PM Therapist Two»); тепер точний збіг. NEEDS-HUMAN: на проді не було клієнта, що є «своїм» лише для therapist2, тож тест поміняв ролі місцями (відкривав therapist2), а агент слушно відзначив розбіжність із AC |
 | 2 | усі три — PASS | Створено тестові дані (див. нижче); сценарій AC-CARD-05 іде дослівно |
 | 3 | усі три — PASS | Після self-review: тест тепер перевіряє, що картку відкрив саме очікуваний терапевт (шапка `viewer`), що до порівняння є хоч одне утримання, і падає одразу з текстом при невірному паролі |
+| 4 | усі три — PASS | Після рев'ю CodeRabbit: PASS потребує, щоб вердикт був про той самий AC і щоб агент підтвердив усі видимі частини «Тоді» (правила R2 і R4); звіт знято на чистому дереві, тож «Код тестів» — справжній коміт |
 
 ### Що записано на прод
 
