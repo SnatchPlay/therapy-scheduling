@@ -24,7 +24,7 @@ export default async function ClientPage({ params }: PageProps<"/clients/[id]">)
         role={role}
         email={email}
         title="Client"
-        notice={noticeFor(!STAFF.includes(role) ? "CLIENT_NOT_FOUND" : "CLIENT_ACCESS_DENIED")}
+        notice={noticeFor(STAFF.includes(role) ? "CLIENT_NOT_FOUND" : "CLIENT_ACCESS_DENIED")}
       >
         <div>
           <Link href="/clients" className={buttonVariants({ variant: "outline" })}>
