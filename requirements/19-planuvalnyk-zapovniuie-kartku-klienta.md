@@ -1,4 +1,4 @@
-> Джерело: https://github.com/Sofiia-pm/therapy-scheduling-spec/issues/19 · оновлено 2026-10-26T20:32:27Z
+> Джерело: https://github.com/HryhoriiHaponiukQuitCode/therapy-scheduling-spec/issues/19 · оновлено 2026-10-26T20:32:27Z
 
 # Вимога: Планувальник заповнює картку клієнта з анкети, а терапевт бачить картки лише своїх клієнтів
 
