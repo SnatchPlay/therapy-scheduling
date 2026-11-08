@@ -26,6 +26,16 @@ describe("updateSession", () => {
     },
   );
 
+  it("AC-INS-06: без входу картка клієнта за прямим посиланням веде лише на сторінку входу — ні статусу страхування, ні даних клієнта у відповіді", async () => {
+    // Статус показує сторінка картки, а вона без сесії не відкривається: відповідь — перенаправлення без тіла.
+    const response = await open("/clients/6f1c2b1e-0d5a-4f3e-9a6b-3c2f1d9e8a77?msg=INSURANCE_SAVED");
+    expect(response.status).toBe(307);
+    expect(new URL(response.headers.get("location") ?? "").pathname).toBe("/login");
+    const body = await response.text();
+    expect(body).not.toContain("Insurance");
+    expect(body).not.toContain("Client");
+  });
+
   it("AC-CARD-07: сторінка входу доступна без входу", async () => {
     const response = await open("/login");
     expect(response.headers.get("location")).toBeNull();

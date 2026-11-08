@@ -15,9 +15,15 @@ const adult = {
   session_language: "English",
   guardian_name: null,
   guardian_email: null,
+  insurance_status: "Not set",
 };
 
 export const Adult: Story = { args: { client: adult, linked: true } };
+
+// Статус страхування (AC-INS-01…04): рядок «Insurance: <статус>» — текстом, не лише кольором; усі чотири значення.
+export const InsuranceVerified: Story = { args: { client: { ...adult, insurance_status: "Verified" } } };
+export const InsuranceNotAccepted: Story = { args: { client: { ...adult, insurance_status: "Not accepted" } } };
+export const InsurancePrivatePay: Story = { args: { client: { ...adult, insurance_status: "Private pay" } } };
 
 // Дитина: контакт — опікун, власного email немає (AC-CARD-02).
 export const ChildWithGuardian: Story = {

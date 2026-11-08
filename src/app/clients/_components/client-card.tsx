@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 /** Колонки картки для select: сторінки списку й картки читають одне й те саме. */
 export const CLIENT_COLUMNS =
-  "id, client_type, full_name, email, birth_date, session_language, guardian_name, guardian_email";
+  "id, client_type, full_name, email, birth_date, session_language, guardian_name, guardian_email, insurance_status";
 
 export type ClientCardData = {
   id: string;
@@ -14,6 +14,7 @@ export type ClientCardData = {
   session_language: string | null;
   guardian_name: string | null;
   guardian_email: string | null;
+  insurance_status: string;
 };
 
 // Картки зрізу 1 (лише ім'я й email) мають порожні поля анкети: «Not provided» (припущення PM).
@@ -56,6 +57,10 @@ export function ClientCard({ client, linked = false }: { client: ClientCardData;
           <Field label="Date of birth" value={client.birth_date} />
           <Field label="Session language" value={client.session_language} />
         </dl>
+        {/* Рядок «Insurance: <статус>» одним текстом, не лише кольором (припущення PM, AC-INS-01…04). */}
+        <p className="mt-4 text-sm font-medium" data-testid="insurance-status">
+          {`Insurance: ${client.insurance_status}`}
+        </p>
       </CardContent>
     </Card>
   );

@@ -43,7 +43,7 @@ describe("noticeFor", () => {
   });
 
   it("успіх (клієнта створено, утримано, підтверджено) — tone success", () => {
-    for (const code of ["CLIENT_CREATED", "HELD", "CONFIRMED"] as const) {
+    for (const code of ["CLIENT_CREATED", "INSURANCE_SAVED", "HELD", "CONFIRMED"] as const) {
       expect(noticeFor(code)).toEqual({ text: MESSAGES[code], tone: "success" });
     }
   });

@@ -258,14 +258,17 @@ describe("Створення картки (планувальник, адмін�
     expect(await createCardAs(SCHEDULER, { name: "Client Legacy", email: "legacy@example.test", birth: "1990-01-01", language: "English" })).toBe("created");
   });
 
-  it("AC-HOLD-10: картки зрізу 1 лишаються дійсними — обмеження повноти й email створено not valid (діють лише на нові й змінені рядки)", async () => {
+  it("AC-HOLD-10: картки зрізу 1 лишаються дійсними — повноту перевіряє тригер лише на insert, а email-обмеження створено not valid", async () => {
     const rows = await t.asOwner<{ conname: string; convalidated: boolean }>(
       "select conname, convalidated from pg_constraint where conrelid = 'public.clients'::regclass and conname in ('clients_complete_check', 'clients_email_check') order by conname",
     );
-    expect(rows).toEqual([
-      { conname: "clients_complete_check", convalidated: false },
-      { conname: "clients_email_check", convalidated: false },
-    ]);
+    // Повнота — не обмеження таблиці (воно б перевіряло й update старого рядка), а тригер лише на insert (міграція insurance_status).
+    expect(rows).toEqual([{ conname: "clients_email_check", convalidated: false }]);
+    const triggers = await t.asOwner<{ tgname: string; insert_only: boolean }>(
+      `select tgname, (tgtype & 4) = 4 and (tgtype & 8) = 0 and (tgtype & 16) = 0 as insert_only from pg_trigger
+       where tgrelid = 'public.clients'::regclass and tgname = 'clients_require_complete'`,
+    );
+    expect(triggers).toEqual([{ tgname: "clients_require_complete", insert_only: true }]);
   });
 });
 
@@ -433,7 +436,7 @@ describe("Доступ до карток", () => {
   it("AC-CARD-05: therapist1 за посиланням на картку client9 не отримує жодного рядка, і картка не змінилася", async () => {
     const before = await t.asService("select * from public.clients where id = $1", [client9]);
     expect(await t.asUser(THERAPIST1, "select * from public.clients where id = $1", [client9])).toEqual([]);
-    // Прямий запис чужої картки через Data API: немає прав на update і delete.
+    // Прямий запис чужої картки через Data API: немає прав на update (крім статусу страхування, ADR 0005) і на delete.
     await expect(t.asUser(THERAPIST1, "update public.clients set full_name = 'X' where id = $1", [client9])).rejects.toThrow(/permission denied/);
     await expect(t.asUser(THERAPIST1, "delete from public.clients where id = $1", [client9])).rejects.toThrow(/permission denied/);
     expect(await t.asService("select * from public.clients where id = $1", [client9])).toEqual(before);
@@ -545,7 +548,7 @@ describe("Доступ до карток", () => {
     expect(await t.asUser(id, "select id from public.clients")).toEqual([]);
   });
 
-  it("права на колонки: автора картки не підробити, INSERT лише на колонки картки, UPDATE і DELETE немає", async () => {
+  it("права на колонки: автора картки не підробити, INSERT лише на колонки картки, UPDATE лише статус страхування (ADR 0005), DELETE немає", async () => {
     await expect(
       t.asUser(SCHEDULER, "insert into public.clients (full_name, email, created_by) values ('X', 'x@example.test', $1)", [ADMIN]),
     ).rejects.toThrow(/permission denied/);
@@ -553,8 +556,9 @@ describe("Доступ до карток", () => {
       `select privilege_type, column_name from information_schema.column_privileges
        where table_name = 'clients' and grantee = 'authenticated' and privilege_type in ('INSERT', 'UPDATE') order by 2, 1`,
     );
-    expect(grants.filter((g) => g.privilege_type === "UPDATE")).toEqual([]);
-    expect(grants.map((g) => g.column_name)).toEqual([
+    // Єдина колонка з update — статус страхування (міграція insurance_status); решту картки не редагують до WS11.
+    expect(grants.filter((g) => g.privilege_type === "UPDATE").map((g) => g.column_name)).toEqual(["insurance_status"]);
+    expect(grants.filter((g) => g.privilege_type === "INSERT").map((g) => g.column_name)).toEqual([
       "birth_date",
       "client_type",
       "email",

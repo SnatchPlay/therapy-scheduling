@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "clients": {
                   Row: {
-                    "birth_date": string | null,"client_type": string,"created_at": string,"created_by": string,"email": string | null,"full_name": string,"guardian_email": string | null,"guardian_name": string | null,"id": string,"session_language": string | null
+                    "birth_date": string | null,"client_type": string,"created_at": string,"created_by": string,"email": string | null,"full_name": string,"guardian_email": string | null,"guardian_name": string | null,"id": string,"insurance_status": string,"session_language": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "birth_date"?: string | null,"client_type"?: string,"created_at"?: string,"created_by"?: string,"email"?: string | null,"full_name": string,"guardian_email"?: string | null,"guardian_name"?: string | null,"id"?: string,"session_language"?: string | null
+                    "birth_date"?: string | null,"client_type"?: string,"created_at"?: string,"created_by"?: string,"email"?: string | null,"full_name": string,"guardian_email"?: string | null,"guardian_name"?: string | null,"id"?: string,"insurance_status"?: string,"session_language"?: string | null
                   }
                   Update: {
-                    "birth_date"?: string | null,"client_type"?: string,"created_at"?: string,"created_by"?: string,"email"?: string | null,"full_name"?: string,"guardian_email"?: string | null,"guardian_name"?: string | null,"id"?: string,"session_language"?: string | null
+                    "birth_date"?: string | null,"client_type"?: string,"created_at"?: string,"created_by"?: string,"email"?: string | null,"full_name"?: string,"guardian_email"?: string | null,"guardian_name"?: string | null,"id"?: string,"insurance_status"?: string,"session_language"?: string | null
                   }
                   Relationships: [
                     {

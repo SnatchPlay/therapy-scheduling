@@ -34,6 +34,7 @@ const adult: ClientCardData = {
   session_language: "English",
   guardian_name: null,
   guardian_email: null,
+  insurance_status: "Not set",
 };
 const child: ClientCardData = {
   id: "c7",
@@ -44,6 +45,7 @@ const child: ClientCardData = {
   session_language: "Spanish",
   guardian_name: "Guardian Seven",
   guardian_email: "guardian7@example.test",
+  insurance_status: "Verified",
 };
 const legacy: ClientCardData = { ...adult, id: "c1", full_name: "Client One", email: "client1@example.test", birth_date: null, session_language: null };
 
@@ -64,6 +66,17 @@ describe("/clients", () => {
     }
     expect(html.match(/data-testid="client-card"/g)).toHaveLength(2);
     expect(html).not.toContain("New client");
+  });
+
+  it("AC-INS-03: у списку кожна картка показує свій статус страхування текстом, і терапевту теж — без форми зміни", async () => {
+    rows = [adult, child];
+    for (const r of ["scheduler", "admin", "therapist"]) {
+      role = r;
+      const html = await render();
+      expect(html).toContain("Insurance: Not set");
+      expect(html).toContain("Insurance: Verified");
+      expect(html).not.toContain('name="insurance_status"');
+    }
   });
 
   it("AC-CARD-09: терапевт без клієнтів бачить повідомлення й жодної картки", async () => {
