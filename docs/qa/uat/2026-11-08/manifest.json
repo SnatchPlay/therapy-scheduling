@@ -1,0 +1,331 @@
+{
+  "kind": "uat",
+  "generatedAt": "2026-11-08T07:36:16.710Z",
+  "baseURL": "https://therapy-scheduling-weld.vercel.app",
+  "deployedSha": "34a9c7db50d84cef4214ee778a62f527396a896d",
+  "testsCommit": "34a9c7db50d84cef4214ee778a62f527396a896d",
+  "reviewer": {
+    "model": "claude-haiku-5-5",
+    "disputes": "claude-sonnet-5-5"
+  },
+  "note": "Відео й траси не в git і не в CI (лише test-results/ на машині прогону). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
+  "results": [
+    {
+      "id": "AC-CARD-05",
+      "proof": "AC-CARD-05",
+      "title": "AC-CARD-05: терапевт відкриває за прямим посиланням картку клієнта іншого терапевта — повідомлення «You don't have access to this client.», даних клієнта немає, картка не змінилась",
+      "screenshot": "docs/qa/uat/2026-11-08/frames/AC-CARD-05-then-1.png",
+      "video": "test-results/artifacts/client-card-AC-CARD-05-AC--c46a0-а-немає-картка-не-змінилась-chromium/video.webm",
+      "trace": "test-results/artifacts/client-card-AC-CARD-05-AC--c46a0-а-немає-картка-не-змінилась-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": false,
+        "readable": false,
+        "notes": "На кадрі є червоне повідомлення «You don't have access to this client.» і кнопка «Back to clients»; даних клієнта не видно. У шапці вказано therapist2@example.test, а не therapist1, тому відповідність сценарію потрібно перевірити людині."
+      },
+      "agentModel": "claude-sonnet-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "NEEDS-HUMAN",
+        "claude-sonnet-5-5": "NEEDS-HUMAN"
+      },
+      "escalated": true,
+      "quotesVerified": [
+        {
+          "quote": "You don't have access to this client.",
+          "onPage": true
+        }
+      ],
+      "verdict": "NEEDS-HUMAN",
+      "factoryGate": "NOT-EARNED",
+      "rule": "R3: перевірки пройшли, агент не погоджується — вирішує людина",
+      "playwrightMs": 8260,
+      "reviewCostUsd": 0.0367,
+      "reviewWallMs": 22365
+    },
+    {
+      "id": "AC-CARD-16",
+      "proof": "AC-CARD-16",
+      "title": "AC-CARD-16: картки, на яку веде посилання, не існує — scheduler бачить «This client card doesn't exist.», therapist — «You don't have access to this client.», даних клієнтів немає",
+      "screenshot": "docs/qa/uat/2026-11-08/frames/AC-CARD-16-then-1.png",
+      "video": "test-results/artifacts/client-card-AC-CARD-16-AC--81867-ient-»-даних-клієнтів-немає-chromium/video.webm",
+      "trace": "test-results/artifacts/client-card-AC-CARD-16-AC--81867-ient-»-даних-клієнтів-немає-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На frame-then-1.png (scheduler1, шапка «scheduler1@example.test · scheduler») червоним у рамці написано «This client card doesn't exist.». На frame-then-2.png (therapist1, шапка «therapist1@example.test · therapist») написано «You don't have access to this client.». Обидві частини підтверджено посимвольно; відсутність даних клієнтів на кадрах не оцінювалась, бо це «Не з кадрів»."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "This client card doesn't exist.",
+          "onPage": true
+        },
+        {
+          "quote": "You don't have access to this client.",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 5327,
+      "reviewCostUsd": 0.00229,
+      "reviewWallMs": 7698
+    },
+    {
+      "id": "AC-HOLD-44",
+      "proof": "AC-HOLD-44",
+      "title": "AC-HOLD-44: терапевт відкриває за прямим посиланням список утримань планувальника, а потім слоти іншого терапевта — повідомлення «Only schedulers and admins can view this page.», без утримань і даних клієнтів",
+      "screenshot": "docs/qa/uat/2026-11-08/frames/AC-HOLD-44-then-1.png",
+      "video": "test-results/artifacts/slots-holds-AC-HOLD-44-тер-61e7f-з-утримань-і-даних-клієнтів-chromium/video.webm",
+      "trace": "test-results/artifacts/slots-holds-AC-HOLD-44-тер-61e7f-з-утримань-і-даних-клієнтів-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На обох кадрах (/holds і /slots) видно червоний напис «Only schedulers and admins can view this page.», який збігається з критерієм посимвольно. Сторінки порожні: списку утримань, імен чи email клієнтів на кадрах немає. Частини про відсутність даних і незмінність утримань перевіряються автоматично, тож їх не оцінював."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Only schedulers and admins can view this page.",
+          "onPage": true
+        },
+        {
+          "quote": "Only schedulers and admins can view this page.",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 9228,
+      "reviewCostUsd": 0.00267,
+      "reviewWallMs": 9539
+    },
+    {
+      "id": "AC-INS-01",
+      "proof": "AC-INS-01",
+      "title": "AC-INS-01: картку створено, і статус перевірки страхування ще ніхто не позначав — scheduler1 відкриває картку, в картці показано «Insurance: Not set»",
+      "screenshot": "docs/qa/uat/2026-11-08/frames/AC-INS-01-then-1.png",
+      "video": "test-results/artifacts/insurance-status-scheduler-a02ec-оказано-«Insurance-Not-set»-chromium/video.webm",
+      "trace": "test-results/artifacts/insurance-status-scheduler-a02ec-оказано-«Insurance-Not-set»-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі видно сторінку клієнта «UAT Insurance mw7ion9z» з рядком «Insurance: Not set» під полем «Session language». Текст збігається з критерієм посимвольно. Кадр повний, без завантаження й обрізання."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Insurance: Not set",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 9232,
+      "reviewCostUsd": 0.00175,
+      "reviewWallMs": 5846
+    },
+    {
+      "id": "AC-INS-02",
+      "proof": "AC-INS-02",
+      "title": "AC-INS-02: картка показує «Insurance: Not set» — scheduler1 позначає статус «Verified», бачить «Insurance status saved.», картка показує «Insurance: Verified» і після повторного відкриття",
+      "screenshot": "docs/qa/uat/2026-11-08/frames/AC-INS-02-then-1.png",
+      "video": "test-results/artifacts/insurance-status-scheduler-b1d25--після-повторного-відкриття-chromium/video.webm",
+      "trace": "test-results/artifacts/insurance-status-scheduler-b1d25--після-повторного-відкриття-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На frame-then-1.png видно зелено-обведене повідомлення «Insurance status saved.» і рядок «Insurance: Verified» у картці клієнта. На frame-then-2.png після повторного відкриття картки той самий рядок «Insurance: Verified» присутній. Картка на кадрах має ім'я «UAT Insurance mw7ion9z», а не «client6» з формулювання «Дано»; це стосується передумови, яку я не оцінюю, тому на вердикт не впливає."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Insurance status saved.",
+          "onPage": true
+        },
+        {
+          "quote": "Insurance: Verified",
+          "onPage": true
+        },
+        {
+          "quote": "Insurance: Verified",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 5990,
+      "reviewCostUsd": 0.00239,
+      "reviewWallMs": 7095
+    },
+    {
+      "id": "AC-INS-03",
+      "proof": "AC-INS-03",
+      "title": "AC-INS-03: картка показує «Insurance: Verified» — admin1 змінює статус на «Private pay», а потім scheduler2 відкриває картку; і admin1, і scheduler2 бачать «Insurance: Private pay»",
+      "screenshot": "docs/qa/uat/2026-11-08/frames/AC-INS-03-then-1.png",
+      "video": "test-results/artifacts/insurance-status-AC-INS-03-c291a-ать-«Insurance-Private-pay»-chromium/video.webm",
+      "trace": "test-results/artifacts/insurance-status-AC-INS-03-c291a-ать-«Insurance-Private-pay»-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі frame-then-1.png сторінка клієнта «UAT Insurance mw7ion9z» з банером «Insurance status saved.» і рядком «Insurance: Private pay» у картці; у шапці видно «admin@example.test · admin», тобто сесія адміна. Частина для scheduler2 — поза кадрами, не оцінюється."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Insurance: Private pay",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 5810,
+      "reviewCostUsd": 0.00185,
+      "reviewWallMs": 6142
+    },
+    {
+      "id": "AC-INS-04",
+      "proof": "AC-INS-04",
+      "title": "AC-INS-04: client — свій клієнт therapist1, картка показує «Insurance: Not accepted» — therapist1 відкриває картку, бачить «Insurance: Not accepted», а змінити статус у картці йому не запропоновано",
+      "screenshot": "docs/qa/uat/2026-11-08/frames/AC-INS-04-then-1.png",
+      "video": "test-results/artifacts/insurance-status-therapist-33c33-артці-йому-не-запропоновано-chromium/video.webm",
+      "trace": "test-results/artifacts/insurance-status-therapist-33c33-артці-йому-не-запропоновано-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі видно картку клієнта «UAT Insurance mw7ion9z» зі сторінки /clients/…, під полем Session language є рядок «Insurance: Not accepted», текст читається повністю і точно збігається з критерієм. Частина «Не з кадрів» (відсутність вибору статусу і кнопки «Save») не оцінювалась."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Insurance: Not accepted",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 11761,
+      "reviewCostUsd": 0.00181,
+      "reviewWallMs": 6043
+    },
+    {
+      "id": "AC-INS-05",
+      "proof": "AC-INS-05",
+      "title": "AC-INS-05: therapist1 напряму, оминаючи сторінки застосунку, пробує змінити статус перевірки страхування свого клієнта на «Verified» — статус не змінився, scheduler1 у картці бачить «Insurance: Not accepted»",
+      "screenshot": "docs/qa/uat/2026-11-08/frames/AC-INS-05-then-1.png",
+      "video": "test-results/artifacts/insurance-status-therapist-70961-ть-«Insurance-Not-accepted»-chromium/video.webm",
+      "trace": "test-results/artifacts/insurance-status-therapist-70961-ть-«Insurance-Not-accepted»-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі видно сторінку «Client» картки UAT Insurance mw7ion9z; у шапці сесія scheduler1@example.test · scheduler. У картці чітко написано «Insurance: Not accepted», а поле «Insurance status» показує «Not accepted». Кадр повний, без завантаження й обрізання. Частина «прямий запит терапевта не змінив жодного рядка» не з кадрів, тож не оцінювалася."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Insurance: Not accepted",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 3213,
+      "reviewCostUsd": 0.00192,
+      "reviewWallMs": 6384
+    },
+    {
+      "id": "AC-INS-06",
+      "proof": "AC-INS-06",
+      "title": "AC-INS-06: користувач не увійшов, а картка показує статус — відкриває картку за прямим посиланням, бачить лише сторінку входу, статусу й даних клієнта не показано, а scheduler1 після цього бачить той самий статус",
+      "screenshot": "docs/qa/uat/2026-11-08/frames/AC-INS-06-then-1.png",
+      "video": "test-results/artifacts/insurance-status-без-входу-74531-ого-бачить-той-самий-статус-chromium/video.webm",
+      "trace": "test-results/artifacts/insurance-status-без-входу-74531-ого-бачить-той-самий-статус-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі frame-then-1.png видно сторінку входу з заголовком «Sign in», полями «Email» і «Password» та кнопкою «Sign in». Ім'я клієнта, email чи рядка «Insurance: …» на кадрі не видно, але це «Не з кадрів» і не оцінюється. Частина «сторінка входу» підтверджена."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Sign in",
+          "onPage": true
+        },
+        {
+          "quote": "Email",
+          "onPage": true
+        },
+        {
+          "quote": "Password",
+          "onPage": true
+        },
+        {
+          "quote": "Sign in",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 8389,
+      "reviewCostUsd": 0.00198,
+      "reviewWallMs": 7009
+    }
+  ],
+  "negativeControls": []
+}
