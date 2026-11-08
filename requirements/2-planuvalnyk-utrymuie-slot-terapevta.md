@@ -1,4 +1,4 @@
-> Джерело: https://github.com/Sofiia-pm/therapy-scheduling-spec/issues/2 · оновлено 2026-10-26T20:28:14Z
+> Джерело: https://github.com/HryhoriiHaponiukQuitCode/therapy-scheduling-spec/issues/2 · оновлено 2026-10-26T20:28:14Z
 
 # Вимога: Планувальник утримує слот терапевта за клієнтом до підтвердження
 
