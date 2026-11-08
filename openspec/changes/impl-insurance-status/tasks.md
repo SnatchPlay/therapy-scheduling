@@ -12,9 +12,9 @@ Done when: AC-INS-01, AC-INS-02, AC-INS-03, AC-INS-04, AC-INS-05 (на рівн�
 
 ## 19. Картка показує статус, форма для планувальника й адміністратора (PR `task/insurance-status-ui`)
 
-- [ ] 19.1 `CLIENT_COLUMNS`, `ClientCardData`, рядок `Insurance: <статус>` у `ClientCard`; історії Storybook картки, якщо вони є, — зі статусами
-- [ ] 19.2 Форма «Verified / Not accepted / Private pay» + «Save» на `/clients/[id]` лише для STAFF; server action `setInsuranceStatus` (`getViewer()` першим оператором); `INSURANCE_SAVED` у `MESSAGES` і `SUCCESS_CODES`; `?msg=` на сторінці картки
-- [ ] 19.3 Модульні тести сторінки й дії (форми немає в терапевта; нуль рядків — без «saved»; без входу — лише вхід), `messages.test.ts`; `npm run check:actions`, `check:design`
+- [x] 19.1 `CLIENT_COLUMNS`, `ClientCardData`, рядок `Insurance: <статус>` у `ClientCard`; історії Storybook картки, якщо вони є, — зі статусами
+- [x] 19.2 Форма «Verified / Not accepted / Private pay» + «Save» на `/clients/[id]` лише для STAFF; server action `setInsuranceStatus` (`getViewer()` першим оператором); `INSURANCE_SAVED` у `MESSAGES` і `SUCCESS_CODES`; `?msg=` на сторінці картки
+- [x] 19.3 Модульні тести сторінки й дії (форми немає в терапевта; нуль рядків — без «saved»; без входу — лише вхід), `messages.test.ts`; `npm run check:actions`, `check:design`
 - [ ] 19.4 Візуальна перевірка картки в обох темах і на вузькому екрані (скіл `visual-verify`)
 
 Done when: AC-INS-01…06 на рівні застосунку
