@@ -17,6 +17,9 @@ const CARD_DB = "tests/db/client-card-db.test.ts";
 const HOLD_DB = ["tests/db/holds-db.test.ts", "tests/db/hold-list-db.test.ts", "tests/db/schedule-db.test.ts"];
 const CLIENT_PAGE = "src/app/clients/[id]/page.tsx";
 const CLIENT_PAGE_TEST = "src/app/clients/[id]/page.test.tsx";
+const CLIENTS_ACTIONS = "src/app/clients/actions.ts";
+const CLIENTS_ACTIONS_TEST = "src/app/clients/actions.test.ts";
+const INSURANCE_FORM = "src/app/clients/_components/insurance-status-form.tsx";
 
 export const mutants = [
   // ── Перевірка гарнесу на profiles (не доводять AC): якщо ці два не KILLED, PGlite-гарнес нічого не доводить ──────
@@ -125,5 +128,61 @@ export const mutants = [
     what: "/holds: терапевт не отримує відмови й бачить утримання",
     find: 'if (!STAFF.includes(role)) return <AppShell role={role} email={email} title="Holds"',
     replace: 'if (false) return <AppShell role={role} email={email} title="Holds"',
+  },
+  // ── AC-INS-01…06: статус перевірки страхування (дія й сторінка; Stryker цю дію не мутує: його службовий виклик на
+  // початку тіла функції ламає правило check:actions у пісочниці, тож точкові мутанти — тут) ─────────────────────────
+  {
+    id: "T4", kind: "ts", ac: "AC-INS-05", file: CLIENTS_ACTIONS, tests: [CLIENTS_ACTIONS_TEST],
+    what: "дія: нуль зачеплених рядків (терапевт напряму) вважаємо збереженням і показуємо «Insurance status saved.»",
+    find: "if (data.length !== 1) redirect(",
+    replace: "if (false) redirect(",
+  },
+  {
+    id: "T5", kind: "ts", ac: "AC-INS-02", file: CLIENTS_ACTIONS, tests: [CLIENTS_ACTIONS_TEST],
+    what: "дія: update не обмежено карткою з форми (оновлюється чужий id)",
+    find: '.eq("id", clientId)',
+    replace: '.eq("id", "other")',
+  },
+  {
+    id: "T6", kind: "ts", ac: "AC-INS-02", file: CLIENTS_ACTIONS, tests: [CLIENTS_ACTIONS_TEST],
+    what: "дія: після збереження повідомлення не «Insurance status saved.»",
+    find: "redirect(`${page}?msg=INSURANCE_SAVED`)",
+    replace: "redirect(`${page}?msg=CLIENT_CREATED`)",
+  },
+  {
+    id: "T7", kind: "ts", ac: "AC-CARD-11", file: CLIENTS_ACTIONS, tests: [CLIENTS_ACTIONS_TEST],
+    what: "дія: користувач без ролі не повертається на головну, запит іде до бази",
+    find: 'if (!role) redirect("/");\n\n  const clientId',
+    replace: "const clientId",
+  },
+  {
+    id: "T8", kind: "ts", ac: "AC-INS-02", file: CLIENTS_ACTIONS, tests: [CLIENTS_ACTIONS_TEST],
+    what: "дія: id із форми потрапляє в адресу редиректу без кодування",
+    find: "const page = `/clients/${encodeURIComponent(clientId)}`;",
+    replace: "const page = `/clients/${clientId}`;",
+  },
+  {
+    id: "T9", kind: "ts", ac: "AC-INS-04", file: CLIENT_PAGE, tests: [CLIENT_PAGE_TEST],
+    what: "сторінка картки: форма зміни статусу є й у терапевта",
+    find: "{STAFF.includes(role) ? <InsuranceStatusForm",
+    replace: "{true ? <InsuranceStatusForm",
+  },
+  {
+    id: "T10", kind: "ts", ac: "AC-INS-02", file: INSURANCE_FORM, tests: [CLIENT_PAGE_TEST],
+    what: "форма: у списку для вибору є «Not set» (повернути початковий статус можна)",
+    find: 'const SETTABLE = ["Verified", "Not accepted", "Private pay"];',
+    replace: 'const SETTABLE = ["Not set", "Verified", "Not accepted", "Private pay"];',
+  },
+  {
+    id: "T11", kind: "ts", ac: "AC-INS-02", file: "src/lib/messages.ts", tests: ["src/lib/messages.test.ts"],
+    what: "«Insurance status saved.» показано як помилку, а не як успіх",
+    find: '["CLIENT_CREATED", "INSURANCE_SAVED", "HELD", "CONFIRMED"]',
+    replace: '["CLIENT_CREATED", "HELD", "CONFIRMED"]',
+  },
+  {
+    id: "T12", kind: "ts", ac: "AC-INS-01", file: "src/app/clients/_components/client-card.tsx", tests: [CLIENT_PAGE_TEST],
+    what: "картка не показує рядок «Insurance: <статус>»",
+    find: "{`Insurance: ${client.insurance_status}`}",
+    replace: "{``}",
   },
 ];
