@@ -63,3 +63,39 @@ test(
     });
   },
 );
+
+// NC-3 — той самий контроль, що NC-1, але на AC зрізу 3 (WS9): AC-INS-06 лише читає (картки з таким id немає, а без входу
+// застосунок веде на сторінку входу, не питаючи, чи вона існує), тож безпечно на проді. Навмисно хибне очікування в тесті:
+// кнопка входу названа інакше, ніж на сторінці → перевірка падає → FAIL (R1), хоч би що сказав агент.
+test.describe("NC-3", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test(
+    "NC-3 (AC-INS-06, навмисно хибне очікування в тесті: інша назва кнопки на сторінці входу)",
+    {
+      tag: ["@negative-control"],
+      annotation: [
+        { type: "ac", description: "AC-INS-06" },
+        { type: "case", description: "NC-3" },
+      ],
+    },
+    async ({ page }) => {
+      await given("користувач не увійшов у застосунок", async () => {
+        await page.goto("/login");
+      });
+      await when("він відкриває картку клієнта за прямим посиланням", async () => {
+        await page.goto(`/clients/${MISSING_ID}`);
+      });
+      await thenStep(
+        page,
+        {
+          clause: "він бачить лише сторінку входу, статусу страхування й інших даних клієнта не показано",
+          visible: ["сторінка входу (кнопка Sign in)"],
+        },
+        async () => {
+          await expect(page.getByRole("button", { name: "Log in" })).toBeVisible({ timeout: 5_000 });
+        },
+      );
+    },
+  );
+});
