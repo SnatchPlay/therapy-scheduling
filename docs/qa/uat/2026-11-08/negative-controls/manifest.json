@@ -1,0 +1,84 @@
+{
+  "kind": "uat",
+  "generatedAt": "2026-11-08T08:07:37.459Z",
+  "baseURL": "https://therapy-scheduling-weld.vercel.app",
+  "deployedSha": "7c6adb816106b44de6a78ed3dbfd7bda4f5c6d1f",
+  "testsCommit": "a2953b50608ea8b98767d53a3857244ff770a37e",
+  "reviewer": {
+    "model": "claude-haiku-5-5",
+    "disputes": "claude-sonnet-5-5"
+  },
+  "note": "Відео й траси не в git і не в CI (лише test-results/ на машині прогону). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
+  "results": [],
+  "negativeControls": [
+    {
+      "id": "NC-1",
+      "proof": "AC-CARD-16",
+      "title": "NC-1 (AC-CARD-16, навмисно хибне очікування в тесті: інший текст повідомлення)",
+      "screenshot": "test-results/uat-report-nc/frames/NC-1-then-1.png",
+      "video": null,
+      "trace": "test-results/artifacts/negative-controls-NC-1-AC--6ed84-і-інший-текст-повідомлення--negative-controls/trace.zip",
+      "asserted": false,
+      "vision": null,
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": null,
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [],
+      "verdict": "FAIL",
+      "factoryGate": "FAIL",
+      "rule": "R1: перевірка впала — FAIL завжди, агент не перекриває",
+      "playwrightMs": 67797,
+      "reviewCostUsd": 0,
+      "reviewWallMs": 2255
+    },
+    {
+      "id": "NC-2",
+      "proof": "AC-CARD-16",
+      "title": "NC-2 (AC-CARD-16, текст «Тоді» у вимозі уточнено, тест і застосунок — ні)",
+      "screenshot": "test-results/uat-report-nc/frames/NC-2-then-1.png",
+      "video": null,
+      "trace": "test-results/artifacts/negative-controls-NC-2-AC--0d758-ено-тест-і-застосунок-—-ні--negative-controls/trace.zip",
+      "asserted": false,
+      "vision": null,
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": null,
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [],
+      "verdict": "FAIL",
+      "factoryGate": "FAIL",
+      "rule": "R1: перевірка впала — FAIL завжди, агент не перекриває",
+      "playwrightMs": 63142,
+      "reviewCostUsd": 0,
+      "reviewWallMs": 2213
+    },
+    {
+      "id": "NC-3",
+      "proof": "AC-INS-06",
+      "title": "NC-3 (AC-INS-06, навмисно хибне очікування в тесті: інша назва кнопки на сторінці входу)",
+      "screenshot": "test-results/uat-report-nc/frames/NC-3-then-1.png",
+      "video": "test-results/artifacts/negative-controls-NC-3-NC--a35d6-а-кнопки-на-сторінці-входу--negative-controls/video.webm",
+      "trace": "test-results/artifacts/negative-controls-NC-3-NC--a35d6-а-кнопки-на-сторінці-входу--negative-controls/trace.zip",
+      "asserted": false,
+      "vision": null,
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": null,
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [],
+      "verdict": "FAIL",
+      "factoryGate": "FAIL",
+      "rule": "R1: перевірка впала — FAIL завжди, агент не перекриває",
+      "playwrightMs": 6941,
+      "reviewCostUsd": 0,
+      "reviewWallMs": 2250
+    }
+  ]
+}

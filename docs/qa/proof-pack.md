@@ -1,249 +1,113 @@
-# QA proof pack: зріз 2 (картка клієнта, ролі й доступ)
+# QA proof pack: зріз 3 (статус перевірки страхування клієнта)
 
-Шаблон: koldovsky/2026-quitcode-08-quality-hw/materials/templates/proof-pack.template.md. Заповнюється по кроках WS8
-(A → B → C → D); посилання — на коміти, PR і прогони, без паролів.
+Шаблон з koldovsky/2026-quitcode-09-software-factory-hw/materials/templates/proof-pack.template.md. Proof pack WS8 (зріз 2) — у [proof-pack-ws8.md](proof-pack-ws8.md).
+Посилання — на файли на коміті, PR і прогони, без паролів; акаунти — лише адреси `*@example.test`.
 
 - Прод-URL: https://therapy-scheduling-weld.vercel.app
-- Вимоги: https://github.com/Sofiia-pm/therapy-scheduling-spec · джерело: issues · знімок 2026-11-03
+- Зріз 3: планувальник (`scheduler`) чи адміністратор (`admin`) позначає в картці клієнта статус перевірки страхування («Verified», «Not accepted», «Private pay»; початковий — «Not set»); кожен, хто бачить картку, бачить статус; терапевт бачить його лише в картках своїх клієнтів і змінити не може; без входу — лише сторінка входу.
+- Вимоги: https://github.com/HryhoriiHaponiukQuitCode/therapy-scheduling-spec · джерело: issues · знімок 2026-11-08 (вимога #33; вимогу #34 PM переніс на пізніший зріз). Копія — [requirements/33-planuvalnyk-poznachaie-status-perevirky.md](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/requirements/33-planuvalnyk-poznachaie-status-perevirky.md)
+- Спека: https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/openspec/specs/insurance-status/spec.md
+- `/api/health` на момент UAT: sha `34a9c7d`, db ok, 08.11.2026 (так записано у [звіті UAT](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/docs/qa/uat/2026-11-08/report.md); звіт негативних контролів — sha `7c6adb8`).
+- `/api/health` на момент складання цього файлу (08.11.2026, 12:45 за Києвом, `curl`): sha `7c6adb816106b44de6a78ed3dbfd7bda4f5c6d1f`, `db: ok`. Це стан після PR #74, а не той код, на якому знято кадри AC-INS (`34a9c7d`): між ними змінилися лише звіт UAT, кадри, перенесення плану в archive і попередній proof pack (`git diff 34a9c7d 7c6adb8 --stat`), `src/`, `supabase/` і `tests/` не змінювалися.
 
-## 3 AC
+## Доказ на кожен AC зрізу 3
 
-| AC | Вид | «Тоді» (дослівно з вимоги PM) |
-|---|---|---|
-| AC-CARD-05 | відмова в браузері (чужі дані за прямим посиланням) | therapist1 бачить повідомлення «You don't have access to this client.», жодних даних client9 не показано, і картка client9 не змінилася. |
-| AC-CARD-16 | стан інтерфейсу (картки немає; різні тексти для двох ролей) | scheduler1 бачить повідомлення «This client card doesn't exist.», therapist1 — «You don't have access to this client.», і жоден із них не бачить жодних даних клієнтів. |
-| AC-HOLD-44 | відмова в браузері (сторінки планувальника) | в обох випадках therapist1 бачить повідомлення «Only schedulers and admins can view this page.», жодних утримань, імен чи email клієнтів не показано, і жодне утримання не змінилося. |
+Рівні: «база» — PGlite (Postgres у процесі Vitest), «дія» і «сторінка» — Vitest, «проксі» — Vitest, «e2e» — Playwright на проді. Посилання на тести — на коміт `7c6adb8` (код зрізу на `main`), крім сліпих тестів: їх написано на цій гілці, у `main` їх ще немає (див. примітку під таблицею). Вердикт UAT — остаточний зі звіту (правила R1–R6 у звіті). Скорочення: `B` = `https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8`.
 
-## A. Ворота
+| AC | Вид | Тест (рівень, посилання) | Здатен упасти | Специфікація UAT | Вердикт UAT і кадр | PR і SHA злиття |
+|---|---|---|---|---|---|---|
+| AC-INS-01 | основний сценарій (початковий «Not set») | база: [B/tests/db/insurance-status-db.test.ts#L72](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/tests/db/insurance-status-db.test.ts#L72), [#L85](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/tests/db/insurance-status-db.test.ts#L85)<br>сторінка: [B/src/app/clients/[id]/page.test.tsx#L92](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/src/app/clients/%5Bid%5D/page.test.tsx#L92)<br>сліпий (база): `tests/db/insurance-status-blind.test.ts#L60`, `#L69` | SQL-мутанти I6 (початковий «Verified»), I7 (`grant insert` статусу) — KILLED, [PR #69](https://github.com/SnatchPlay/therapy-scheduling/pull/69); TS-мутант T12 (картка без рядка «Insurance: …») — KILLED, [PR #70](https://github.com/SnatchPlay/therapy-scheduling/pull/70); I6 вбивають і сліпі тести самі | [B/tests/e2e/insurance-status.spec.ts#L86](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/tests/e2e/insurance-status.spec.ts#L86) | PASS (R6), [кадр](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/docs/qa/uat/2026-11-08/frames/AC-INS-01-then-1.png) | [#69](https://github.com/SnatchPlay/therapy-scheduling/pull/69), [#70](https://github.com/SnatchPlay/therapy-scheduling/pull/70), [#71](https://github.com/SnatchPlay/therapy-scheduling/pull/71): `2303cf9`; UAT — [#73](https://github.com/SnatchPlay/therapy-scheduling/pull/73) `34a9c7d`, [#74](https://github.com/SnatchPlay/therapy-scheduling/pull/74) `7c6adb8` |
+| AC-INS-02 | основний сценарій (планувальник позначає «Verified», повідомлення, збереження) | база: [B/tests/db/insurance-status-db.test.ts#L98](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/tests/db/insurance-status-db.test.ts#L98) (ще #L108, #L116, #L139, #L149, #L162, #L229)<br>дія: [B/src/app/clients/actions.test.ts#L193](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/src/app/clients/actions.test.ts#L193) (ще #L221, #L240, #L246)<br>сторінка: [B/src/app/clients/[id]/page.test.tsx#L108](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/src/app/clients/%5Bid%5D/page.test.tsx#L108)<br>сліпий (база): `tests/db/insurance-status-blind.test.ts#L77`, `#L85`, `#L93` | SQL-мутанти I2, I3, I4, I5, I8 — KILLED ([PR #69](https://github.com/SnatchPlay/therapy-scheduling/pull/69)); TS-мутанти T5, T6, T8, T10, T11 — KILLED ([PR #70](https://github.com/SnatchPlay/therapy-scheduling/pull/70)); Stryker `src/lib/messages.ts`: 5 з 5 вбито. Сліпі тести самі вбивають I2, I4 | [B/tests/e2e/insurance-status.spec.ts#L111](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/tests/e2e/insurance-status.spec.ts#L111) | PASS (R6), кадри [1: банер і «Verified»](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/docs/qa/uat/2026-11-08/frames/AC-INS-02-then-1.png), [2: після повторного відкриття](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/docs/qa/uat/2026-11-08/frames/AC-INS-02-then-2.png) | [#69](https://github.com/SnatchPlay/therapy-scheduling/pull/69), [#70](https://github.com/SnatchPlay/therapy-scheduling/pull/70), [#71](https://github.com/SnatchPlay/therapy-scheduling/pull/71): `2303cf9`; [#73](https://github.com/SnatchPlay/therapy-scheduling/pull/73) `34a9c7d` (кадр 1 знято окремим кроком до перезавантаження); [#74](https://github.com/SnatchPlay/therapy-scheduling/pull/74) `7c6adb8` |
+| AC-INS-03 | основний сценарій (адміністратор змінює, інші бачать) | база: [B/tests/db/insurance-status-db.test.ts#L129](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/tests/db/insurance-status-db.test.ts#L129)<br>дія: [B/src/app/clients/actions.test.ts#L203](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/src/app/clients/actions.test.ts#L203)<br>сторінки: [B/src/app/clients/[id]/page.test.tsx#L120](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/src/app/clients/%5Bid%5D/page.test.tsx#L120), [B/src/app/clients/page.test.tsx#L71](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/src/app/clients/page.test.tsx#L71)<br>сліпий (база): `tests/db/insurance-status-blind.test.ts#L104`, `#L113` | Мутанта саме на AC-INS-03 немає. Опосередковано: SQL-мутант I4 (немає `grant update`) валить тест AC-INS-03 ([PR #69](https://github.com/SnatchPlay/therapy-scheduling/pull/69), стовпець «Який тест упав») | [B/tests/e2e/insurance-status.spec.ts#L152](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/tests/e2e/insurance-status.spec.ts#L152) | PASS (R6), [кадр](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/docs/qa/uat/2026-11-08/frames/AC-INS-03-then-1.png) (сесія admin; частина про scheduler2 — перевірка Playwright, не кадр) | [#69](https://github.com/SnatchPlay/therapy-scheduling/pull/69), [#70](https://github.com/SnatchPlay/therapy-scheduling/pull/70), [#71](https://github.com/SnatchPlay/therapy-scheduling/pull/71): `2303cf9`; [#74](https://github.com/SnatchPlay/therapy-scheduling/pull/74) `7c6adb8` |
+| AC-INS-04 | відмова (терапевт: лише читання, змінити не запропоновано) | база: [B/tests/db/insurance-status-db.test.ts#L181](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/tests/db/insurance-status-db.test.ts#L181)<br>сторінка: [B/src/app/clients/[id]/page.test.tsx#L128](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/src/app/clients/%5Bid%5D/page.test.tsx#L128) (ще #L139)<br>сліпий (база): `tests/db/insurance-status-blind.test.ts#L122`, `#L127` | TS-мутант T9 (форма зміни статусу є й у терапевта) — KILLED, [PR #70](https://github.com/SnatchPlay/therapy-scheduling/pull/70). Мутанта на читання власних клієнтів (SQL) немає | [B/tests/e2e/insurance-status.spec.ts#L186](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/tests/e2e/insurance-status.spec.ts#L186) | PASS (R6), [кадр «Insurance: Not accepted», без форми й «Save»](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/docs/qa/uat/2026-11-08/frames/AC-INS-04-then-1.png) | [#69](https://github.com/SnatchPlay/therapy-scheduling/pull/69), [#70](https://github.com/SnatchPlay/therapy-scheduling/pull/70), [#71](https://github.com/SnatchPlay/therapy-scheduling/pull/71): `2303cf9`; [#73](https://github.com/SnatchPlay/therapy-scheduling/pull/73) `34a9c7d` (раніше кадр показував «Private pay» замість «Not accepted»); [#74](https://github.com/SnatchPlay/therapy-scheduling/pull/74) `7c6adb8` |
+| AC-INS-05 | відмова (терапевт змінює напряму, оминаючи сторінки) | база: [B/tests/db/insurance-status-db.test.ts#L190](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/tests/db/insurance-status-db.test.ts#L190) (ще #L201, #L244)<br>дія: [B/src/app/clients/actions.test.ts#L212](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/src/app/clients/actions.test.ts#L212)<br>сліпий (база): `tests/db/insurance-status-blind.test.ts#L135`, `#L151`, `#L170` | SQL-мутант I1 (політика без обмеження ролі) — KILLED ([PR #69](https://github.com/SnatchPlay/therapy-scheduling/pull/69)), його вбивають і сліпі тести самі; I3 валить тест «інші колонки»; TS-мутант T4 (нуль рядків вважаємо «saved») — KILLED ([PR #70](https://github.com/SnatchPlay/therapy-scheduling/pull/70)) | [B/tests/e2e/insurance-status.spec.ts#L215](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/tests/e2e/insurance-status.spec.ts#L215) (прямий запит терапевта до Data API) | PASS (R6), [кадр: scheduler1 бачить «Insurance: Not accepted»](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/docs/qa/uat/2026-11-08/frames/AC-INS-05-then-1.png) (сам прямий запит — перевірка Playwright, не кадр) | [#69](https://github.com/SnatchPlay/therapy-scheduling/pull/69), [#70](https://github.com/SnatchPlay/therapy-scheduling/pull/70), [#71](https://github.com/SnatchPlay/therapy-scheduling/pull/71): `2303cf9`; [#73](https://github.com/SnatchPlay/therapy-scheduling/pull/73) `34a9c7d` (раніше «Private pay» замість «Not accepted»); [#74](https://github.com/SnatchPlay/therapy-scheduling/pull/74) `7c6adb8` |
+| AC-INS-06 | відмова (не увійшов) | проксі: [B/src/lib/supabase/proxy.test.ts#L29](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/src/lib/supabase/proxy.test.ts#L29)<br>база: [B/tests/db/insurance-status-db.test.ts#L213](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/tests/db/insurance-status-db.test.ts#L213) (запит лише з публічним ключем)<br>сліпий (база): `tests/db/insurance-status-blind.test.ts#L183` | Мутанта немає: Stryker не мутує `proxy.ts` (виключено в `stryker.config.json`), SQL-мутанта на права `anon` немає. Що саме e2e-перевірка здатна впасти — показує негативний контроль NC-3 (FAIL, R1, див. розділ C), а не мутант проксі | [B/tests/e2e/insurance-status.spec.ts#L262](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/tests/e2e/insurance-status.spec.ts#L262) | PASS (R6), [кадр: сторінка входу «Sign in»](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/docs/qa/uat/2026-11-08/frames/AC-INS-06-then-1.png) (частина про scheduler1 — перевірка Playwright, не кадр) | [#70](https://github.com/SnatchPlay/therapy-scheduling/pull/70), [#71](https://github.com/SnatchPlay/therapy-scheduling/pull/71): `2303cf9`; [#73](https://github.com/SnatchPlay/therapy-scheduling/pull/73) `34a9c7d`; [#74](https://github.com/SnatchPlay/therapy-scheduling/pull/74) `7c6adb8` |
 
-- PR воріт: https://github.com/SnatchPlay/therapy-scheduling/pull/60
-- Зелений `quality` на `main`: https://github.com/SnatchPlay/therapy-scheduling/actions/runs/41696972047
-- Обов'язкові перевірки в `solo-main`: з 2026-11-03 до `spec`, `app`, `conformance`, `db-check` додано «Ворота: fallow audit» і «Покриття: доменна підлога» (після зелених прогонів `quality` на `main`: 12a33a7 і 9d176ca). «Порада: вразливі залежності» — ніколи; `E2E: Playwright` теж ні (залежить від живих даних прода, див. розділ C)
+Примітка про сліпі тести (maker ≠ checker). `tests/db/insurance-status-blind.test.ts` (13 тестів, рівень бази) написала окрема сесія агента лише з тексту AC `requirements/33-…`, не бачачи основних тестів, міграції й коду. Файл і оновлений `scripts/mutants.mjs` лежать у гілці `docs/ws9-proof-pack` (коміти `6439453`, `9f58901`), у `main` їх ще немає: посилання на нього — відносні, «з'являться після злиття». Самі по собі вони вбивають 4 з 8 SQL-мутантів (I1, I2, I4, I6 — усе, що випливає з тексту AC). I3, I5, I7, I8 — правила, яких у тексті AC немає (колонковий `grant`, запасний `check` таблиці, заборона виставляти статус при створенні, картки зрізу 1 без дати), їх вбиває основний `tests/db/insurance-status-db.test.ts`; разом усі 8 вбито. Розподіл перевірено прогоном 08.11.2026: у `scripts/mutants.mjs` масиви `tests:` мутантів I1–I8 тимчасово замінено на лише сліпий файл і виконано `node scripts/mutation-check.mjs --only I1,I2,I3,I4,I5,I6,I7,I8` — результат «4 з 8 вбито» (KILLED: I1, I2, I4, I6; SURVIVED: I3, I5, I7, I8); після прогону `scripts/mutants.mjs` відновлено. Обидва файли тестів бази разом пройшли локально: `npx vitest run tests/db/insurance-status-blind.test.ts tests/db/insurance-status-db.test.ts` — 28 тестів зелені (15 + 13).
 
-Розбір першого повного прогону `fallow` на `main` (353ab3f): 4 знахідки мертвого коду, 5 груп дублів, 19 функцій
-вище порогу складності. Після конфігу лишаються 0 / 0 / 9; інші групи пояснено нижче. Ворота валять лише нові
-знахідки відносно бази PR (`audit.gate: new-only`).
+## Не перевірено
 
-| Група знахідок | Скільки | Справжня / навмисна / хибна | Дія і причина |
+FAIL і NEEDS-HUMAN не ховаємо: вони й у таблиці вище, й тут.
+
+| AC чи частина | Чому не перевірено | Що зроблено замість | Ризик на проді |
 |---|---|---|---|
-| Невикористані файли `scripts/hooks/*.mjs` | 3 | хибна | `entry: ["scripts/hooks/*.mjs"]`: хуки Claude Code запускає `.claude/settings.json` командою `node …`, а не `import`, fallow цього не бачить |
-| Невикористаний експорт `AC_ID_GLOBAL` у `scripts/lib/spec-lib.mjs` | 1 | справжня, але в файлі шаблону курсу (є і в чистому шаблоні) | `ignoreExports` з причиною: правки шаблону переносимо cherry-pick, а не локально |
-| Дублі в `src/lib/supabase/database.types.ts` | 3 групи | хибна | `duplicates.ignore`: файл генерує `supabase gen types`, ручних змін немає |
-| Дублі між `scripts/check-design-tokens.mjs` і `scripts/check-server-boundary.mjs` | 2 групи (28 рядків) | справжня, але файли взято з матеріалів курсу | `duplicates.ignore` і запис у `.quality-trial/known-debt.md` (CodeRabbit уже відповідали на це в PR 30) |
-| Складність у скриптах шаблону й матеріалів курсу: `check-spec`, `create-demo-users`, `check-design-tokens`, `check-server-boundary` | 9 функцій | справжня, не наша | `health.ignore` з причиною; мертвий код і залежності в них fallow перевіряє й далі |
-| Складність `src/app/api/health/route.ts` (`GET`) | 1 | справжня, файл курсу без змін | `health.ignore`; гілки класифікації покриті `tests/health.test.ts` (`classifyDbProbe`) |
-| Складність `SlotsPage`, `CardFields`, `smoke/timeline.play`, `scripts/check-action-auth.mjs` (5 функцій), `scripts/hooks/payload.mjs` | 9 | справжня, наш код | лишено з поясненням: розбивати працюючі сторінки й перевірки в PR про ворота — окрема зміна з власним рев'ю; запис у `.quality-trial/known-debt.md`; ворота їх не валять (успадковані) |
-| Тестові правила лінтера: `vitest/expect-expect` у `src/app/slots/actions.test.ts` | 2 | справжня | виправлено: помічник `messageOnSlots` перейменовано в `expectMessageOnSlots` (правило впізнає `expect*`), поведінка тестів не змінилась |
+| Приймання PM (усі AC-INS-01…06) | PM ще не оцінював: у [звіті UAT](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/docs/qa/uat/2026-11-08/report.md) біля кожного AC порожній «Рішення PM» | UAT на проді з вердиктом PASS (Playwright і агент) — це доказ розробника, а не рішення PM | Тлумачення PM може відрізнятися; рішень немає — **очікується** |
+| Відео прогону UAT | Відео й траси лежать лише в `test-results/` на машині прогону; у git їх немає, до опису PR власник ще їх не прикріпив | Кадри «Тоді» в `docs/qa/uat/2026-11-08/frames/`, `manifest.json` | PM не може переглянути запис дій; кадр — лише кінцевий стан |
+| AC-CARD-05 (зріз 2, не зріз 3) — **NEEDS-HUMAN** | У тому ж прогоні Haiku і Sonnet не погодилися з кадром: у шапці `therapist2@example.test`, а критерій каже `therapist1`. Сценарій WS8 сам обирає, хто відкриває і чия картка, за даними прода (`tests/e2e/client-card.spec.ts`). Власник репо вважає, що суть доведена, а розбіжність лише в акаунті; рішення — за PM | Перевірки Playwright пройшли, відмова «You don't have access to this client.» на кадрі, даних клієнта немає | Стосується зрізу 2, не AC-INS; виправлення сценарію — окрема задача |
+| Перший прогін UAT на проді | Його звіт не збережено в репо; докази були слабкі: кадр AC-INS-02 знято після повторного відкриття, коли банера вже немає; AC-INS-04 і 05 мали «Private pay» замість дослівного «Not accepted». Агент дав PASS 5 і NEEDS-HUMAN 4 (AC-INS-02, 04, 05, AC-CARD-05) | Докази виправлено в [PR #73](https://github.com/SnatchPlay/therapy-scheduling/pull/73), другий прогін (у репо) — AC-INS-01…06 PASS. Перед тим три спроби UAT не стартували (пароль не потрапляв у процес) — нічого не записано | Історію «від слабких доказів до сильних» перевірити за репо не можна |
+| `src/app/clients/actions.ts` — мутації Stryker | Stryker не запускається для цього файлу: його службовий виклик на початку тіла функції ламає правило `check:actions` у пісочниці (початковий прогін червоний) | Точкові мутанти T4–T8 (9 з 9 TS-мутантів зрізу вбито, [PR #70](https://github.com/SnatchPlay/therapy-scheduling/pull/70)) | Мутанти пишуться вручну й покривають лише передбачені місця, не весь файл |
+| Мутації для `src/proxy.ts` і `src/lib/supabase/proxy.ts` (AC-INS-06) | Stryker їх виключає в `stryker.config.json`; ні SQL-, ні TS-мутанта на цей AC немає | Тест проксі, тест бази для `anon`, e2e з вердиктом PASS; негативний контроль NC-3 | Не показано, що тест проксі впаде, якщо прибрати перенаправлення на `/login` |
+| Негативний контроль NC-2 (AC-CARD-16) | Очікувався `NEEDS-HUMAN`, а вийшов FAIL (R1) через таймаут хука `afterEach` («Test timeout of 60000ms exceeded while running "afterEach" hook»); твердження самого тесту пройшло, прод відповідав повільно. Тобто це збій середовища, а не вердикт | Звіт [uat/2026-11-08/negative-controls/report.md](uat/2026-11-08/negative-controls/report.md) (з'явиться після злиття) | Сценарій «текст у вимозі змінили, тест і застосунок — ні» цим прогоном не доведено |
+| Агент-рецензент у закоміченому прогоні негативних контролів | У звіті NC вердикти агента відсутні («вердикту немає»): вичерпався ліміт моделі. Вердикт FAIL (R1) від агента не залежить | Код вивів FAIL за правилом R1 для NC-1 і NC-3 | Ступінь, у якому агент перекриває слабкий доказ, у цьому прогоні не виміряно. У попередньому, незбереженому прогоні (код із незакоміченими змінами) агент помилково дав PASS для NC-1 і NC-3, а код усе одно вивів FAIL — це довід, що остаточний вердикт мусить рахувати код, а не агент |
+| CodeRabbit | Не викликався: рішення власника репо. У кожному PR зрізу бот лише залишив службовий коментар «review skipped» (репо має менше 10 зірок); рев'ю й знахідок немає | Ворота CI (`quality`, `app`, `db-check`), вручну написані мутанти, сліпі тести окремої сесії | Незалежного рев'ю коду в PR не було |
+| «Тоді» поза кадром: scheduler2 бачить «Private pay» (AC-INS-03), прямий запит терапевта (AC-INS-05), scheduler1 після відмови без входу (AC-INS-06) | Кадр показує одну сторінку; рецензент такі частини не оцінював («не з кадрів») | Перевірки Playwright (`expect`) у тому самому тесті, тести бази й дії | Вердикт PASS за цими частинами спирається на твердження Playwright, а не на погляд рецензента |
+| Імена клієнтів у UAT | AC називає client6, client7; сценарій на проді сам створює картку «UAT Insurance …» і утримання, щоб не залежати від чужих даних | Той самий «Дано» відтворено через інтерфейс планувальника (передумови кроків «Дано» зелені) | Дані прода не змінювалися, окрім двох карток нижче |
 
-Підлога покриття (`vitest.coverage.config.mts`, `FLOORED`): `src/lib/{clients,health,messages,slots,time}.ts`, кожен
-файл окремо ≥ 90 % рядків, функцій і операторів, ≥ 85 % гілок. Перевірено, що підлога падає: з одним
-`src/lib/time.test.ts` кроки «Coverage for … does not meet threshold» дають код помилки.
-Файли сторінок і дій (`src/app/**`) і адаптери Supabase без підлоги: їх доводять тести бази (PGlite) та UAT.
+## A. Вимоги й спека
 
-## B. Якість тестів
+- `/requirements-sync` — PR «Оновлення вимог»: https://github.com/SnatchPlay/therapy-scheduling/pull/67 (злито 2026-11-08, `fb039f6`). Вимоги актуальні станом на знімок 2026-11-08 (рядок «Вимоги: …» у шапці `docs/conformance.md`).
+- Спека `add-insurance-status` і план — PR «Специфікація»: https://github.com/SnatchPlay/therapy-scheduling/pull/68 (злито 2026-11-08; на `main` зріз з'явився комітом `2303cf9`: PR #68–#71 було стеком, його злито разом).
+- Зміна `clarify-…` після уточнень: не було; PM AC не змінював (питань не було).
+- Питання PM: питань не було (специфікація без Open questions).
 
-PR: https://github.com/SnatchPlay/therapy-scheduling/pull/61. Усі посилання на тести — на коміті `ce833c1`.
+## B. Реалізація
 
-### Рівень для кожного AC
-
-| AC | Де живе правило | Рівень | Чому | Тест |
+| PR «Реалізація» | Задача з `tasks.md` | AC | Відповіді на знахідки CodeRabbit | `db-deploy` |
 |---|---|---|---|---|
-| AC-CARD-05 | SQL: політика `clients_select_therapist` і `private.own_client_ids()`; текст відмови — `src/app/clients/[id]/page.tsx`, `src/lib/messages.ts`; роль користувача — `src/lib/supabase/viewer.ts` | база (PGlite, `asUser`) + сторінка (Vitest) + `viewer` (unit) + UAT (екран) | правило двічі: SQL — остання межа, без якої сторінка показала б чужу картку; TS — повідомлення PM; мок чи TS-копія SQL-правила не довели б нічого | [client-card-db.test.ts:433](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/tests/db/client-card-db.test.ts#L433), [page.test.tsx:41](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/src/app/clients/%5Bid%5D/page.test.tsx#L41), [viewer.test.ts:53](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/src/lib/supabase/viewer.test.ts#L53) |
-| AC-CARD-16 | TS: `STAFF.includes(role)` у `src/app/clients/[id]/page.tsx` (для бази обидва випадки — нуль рядків) | сторінка (Vitest) + UAT (екран) | різницю текстів для двох ролей SQL не знає; точний текст бачить людина | [page.test.tsx:68](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/src/app/clients/%5Bid%5D/page.test.tsx#L68) |
-| AC-HOLD-44 | TS: перевірка ролі в `src/app/slots/page.tsx` і `src/app/holds/page.tsx`; SQL: політики `slots_select`, `holds_select` | сторінка (Vitest, «без запитів до бази») + база (PGlite) + UAT (екран) | правило двічі: сторінка не питає базу для терапевта, RLS — остання межа; пряме читання таблиці `holds` доведено окремим тестом після вижилого мутанта H2 | [slots/page.test.tsx:59](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/src/app/slots/page.test.tsx#L59), [holds/page.test.tsx:65](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/src/app/holds/page.test.tsx#L65), [schedule-db.test.ts:122](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/tests/db/schedule-db.test.ts#L122) |
+| [#69](https://github.com/SnatchPlay/therapy-scheduling/pull/69) | 18. Статус страхування в базі (міграція, тести бази, ADR 0005) | AC-INS-01…05 | не викликався: рішення власника репо | [CI на `main` (`2303cf9`)](https://github.com/SnatchPlay/therapy-scheduling/actions/runs/42457667567): job `db-deploy` success, крок «Apply migrations» success |
+| [#70](https://github.com/SnatchPlay/therapy-scheduling/pull/70) | 19. Картка показує статус, форма й дія для планувальника та адміністратора | AC-INS-01…06 (рівень застосунку) | не викликався: рішення власника репо | міграцій у PR немає |
+| [#71](https://github.com/SnatchPlay/therapy-scheduling/pull/71) | 20.1, 20.3. UAT-сценарій і proof pack | AC-INS-01…06 | не викликався: рішення власника репо | міграцій у PR немає |
+| [#73](https://github.com/SnatchPlay/therapy-scheduling/pull/73) | 20 (виправлення доказів UAT: «Тоді» дослівно за вимогою PM) | AC-INS-02, 04, 05, 06 | не викликався: рішення власника репо | міграцій у PR немає |
+| [#74](https://github.com/SnatchPlay/therapy-scheduling/pull/74) | 20.2, 20.4. Звіт UAT на проді, archive `impl-insurance-status` | AC-INS-01…06 | не викликався: рішення власника репо | міграцій у PR немає |
 
-### Покриття
-
-`npm run test:coverage` (v8) на цьому коміті.
-
-| Файл за AC | Рядки | Гілки | Чим доведено, якщо 0 % |
-|---|---|---|---|
-| `src/lib/supabase/viewer.ts` | 100 % | 100 % | — |
-| `src/lib/messages.ts` | 100 % | 100 % | — |
-| `src/app/clients/[id]/page.tsx` | 100 % | 100 % | — |
-| `src/app/slots/page.tsx` | 100 % | 79,48 % | — (гілки — рядки пошуку клієнта, поза нашими AC) |
-| `src/app/holds/page.tsx` | 100 % | 88,88 % | — |
-
-Сторінки мають 100 % рядків, бо їх рендерять тести Vitest із фейковим клієнтом Supabase. Це доводить поведінку сторінки, але не реальну сесію: тексти на екрані й вхід під ролями доводить UAT (частина C). Адаптери `src/lib/supabase/{server,proxy}.ts` (0 % і 60 %) тестами Vitest не доводяться, їх перевіряє UAT.
-
-### Доказ мутацією
-
-| Мутант (файл:рядок, що змінено) | AC під загрозою | До | Тест, посилений з тексту AC | Після |
-|---|---|---|---|---|
-| `src/lib/supabase/viewer.ts:23-25` `.from("profiles")`, `.select("email, full_name, role")`, `.eq("id", claims.sub)` → порожні рядки | AC-CARD-05 (роль терапевта визначається за профілем користувача з сесії) | вижили (3) | [viewer.test.ts:53](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/src/lib/supabase/viewer.test.ts#L53): таблиця, колонки й фільтр `id = sub` | убиті |
-| `src/lib/supabase/viewer.ts:33-34` `profile?.role` → `profile.role`, `profile?.email` → `profile.email`, `??` → `&&` | AC-CARD-11 (користувач без профілю — без ролі, не збій) | вижили (4) | [viewer.test.ts:59](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/src/lib/supabase/viewer.test.ts#L59) і тест email у шапці | убиті |
-| `supabase/migrations/20261019143036_slots_and_holds.sql` політика `holds_select`: `true or (…)` (мутант H2) | AC-HOLD-44 (жодних утримань чужих слотів) | вижив | [schedule-db.test.ts:122](https://github.com/SnatchPlay/therapy-scheduling/blob/ce833c15763167af43c68c3adf5190cc42aeb4ab/tests/db/schedule-db.test.ts#L122): `select id from public.holds` як therapist1 | убитий |
-
-- Stryker: `viewer.ts` 78,79 % → 100 % (26 → 33 убито), `messages.ts` 94,19 % (вижилі 5 лише в `clientErrorCode`, AC-CARD-12), весь `src/lib` 93,73 %. Вивід — в описі PR 61.
-- SQL-мутації (`npm run mutation:sql`) і точкові TS-мутанти (`npm run mutation:points`): 9 з 9 убито (P1, P2 — перевірка гарнесу; C1, C2 — AC-CARD-05; H1, H2 — AC-HOLD-44; T1 — AC-CARD-16; T2, T3 — AC-HOLD-44). Таблиця «що зламано → який тест упав» — в описі PR 61.
-- Еквівалентні мутанти: серед наших AC немає.
-- Прогін мутації в CI: червоні кроки `npm test` для відмов того ж класу — `docs/evidence/mutation-card.md`.
-
+- Ворота на `main` (`quality`): [запуск для `2303cf9`](https://github.com/SnatchPlay/therapy-scheduling/actions/runs/42457667744) (success: «Ворота: fallow audit», «Порада: вразливі залежності», «Покриття: доменна підлога»); [для `34a9c7d`](https://github.com/SnatchPlay/therapy-scheduling/actions/runs/42459314692); [для `7c6adb8`](https://github.com/SnatchPlay/therapy-scheduling/actions/runs/42460166648) — усі success.
+- CI на `main`: [`2303cf9`](https://github.com/SnatchPlay/therapy-scheduling/actions/runs/42457667567) — `spec`, `app`, `conformance`, `db-check`, `db-deploy` success; [`34a9c7d`](https://github.com/SnatchPlay/therapy-scheduling/actions/runs/42459314701) і [`7c6adb8`](https://github.com/SnatchPlay/therapy-scheduling/actions/runs/42460166618) — success.
+- Мутації:
+  - SQL (`node scripts/mutation-check.mjs --only I1,…,I8`): 8 з 8 вбито — таблиця в описі [PR #69](https://github.com/SnatchPlay/therapy-scheduling/pull/69); визначення — [scripts/mutants.mjs](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/scripts/mutants.mjs).
+  - TypeScript (`--only T4,…,T12`): 9 з 9 вбито — [PR #70](https://github.com/SnatchPlay/therapy-scheduling/pull/70).
+  - Stryker для `src/lib/messages.ts` (рядки зрізу): 5 з 5 вбито — [PR #70](https://github.com/SnatchPlay/therapy-scheduling/pull/70). Значень «до» немає: у PR зафіксовано лише результат. Для `actions.ts` Stryker не запускається (див. «Не перевірено»).
+  - Сліпі тести бази (гілка `docs/ws9-proof-pack`) входять у набір мутантів I1–I8 і потраплять у `main` разом із PR цієї гілки; самі по собі вбивають 4 з 8 (див. примітку під таблицею доказів).
+- CodeRabbit: не викликався: рішення власника репо. Відповідей на знахідки немає.
+- Перевірка проду запитом лише для читання (власник, SQL Editor Supabase, 08.11.2026): `select count(*) from public.clients where email is not null and email !~ '@.*\.'` → `0`. Карток, які не змогли б зберегти статус через `clients_email_check` (`not valid`, перевіряє й `update`), на проді немає; пункт 18.3 плану цим закрито.
 
 ## C. UAT на проді
 
-Звіт для PM: [docs/qa/uat/2026-11-03/report.md](uat/2026-11-03/report.md) (кадри «Тоді» — `frames/`, підсумок — `manifest.json`).
-Запуск: `npm run uat -- --url https://therapy-scheduling-weld.vercel.app`. Тести — `tests/e2e/*.spec.ts` (Playwright), по одному на AC.
-Задеплоєний код на момент прогону — коміт `12a33a7` (`/api/health`). Відео й траси лежать лише в `test-results/` на машині прогону: не в git і не в CI.
+- Звіт: https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/docs/qa/uat/2026-11-08/report.md (кадри — `frames/`, підсумок — `manifest.json`). Прод на коміті `34a9c7d`. Результат: AC 9 — PASS 8, FAIL 0, NEEDS-HUMAN 1. AC-INS-01…06 — PASS (R6); AC-CARD-16 і AC-HOLD-44 — PASS; AC-CARD-05 (зріз 2) — NEEDS-HUMAN (див. «Не перевірено»). Специфікація — [tests/e2e/insurance-status.spec.ts](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/tests/e2e/insurance-status.spec.ts).
+- Відео: не прикріплено. У git їх немає (лежать у `test-results/` на машині прогону); прикріплення до опису PR власник ще не зробив.
+- Рецензент: `claude-haiku-5-5`, суперечки — `claude-sonnet-5-5`; разом за розбір $0.0534 (ціни API; за підпискою — у межах ліміту плану). Sonnet підключався лише для AC-CARD-05.
+- Негативний контроль: `npm run uat:nc`, звіт — `docs/qa/uat/2026-11-08/negative-controls/report.md` (з'явиться після злиття гілки; код тестів `a2953b5`, прод `7c6adb8`).
 
-| AC | Перевірки Playwright | Агент-рецензент | Підсумок | Що показує екран |
-|---|---|---|---|---|
-| AC-CARD-05 | пройшли | Haiku: PASS | **PASS** | therapist1 бачить «You don't have access to this client.» на картці клієнта, що є лише в therapist2; даних клієнта немає, картка не змінилась |
-| AC-CARD-16 | пройшли | Haiku: PASS | **PASS** | scheduler1 бачить «This client card doesn't exist.», therapist1 — «You don't have access to this client.», даних клієнтів немає |
-| AC-HOLD-44 | пройшли | Haiku: PASS | **PASS** | therapist1 бачить «Only schedulers and admins can view this page.» на `/holds` і на `/slots` therapist2, без утримань, імен і email |
+  | Контроль | Що навмисно хибне | Результат |
+  |---|---|---|
+  | NC-1 (AC-CARD-16, WS8) | тест чекає «This client card does not exist.» замість «doesn't» | FAIL (R1) — як і мало бути |
+  | NC-2 (AC-CARD-16, WS8) | текст «Тоді» у вимозі уточнено, тест і застосунок — ні | FAIL (R1) через таймаут `afterEach`, а не NEEDS-HUMAN (див. «Не перевірено») |
+  | NC-3 (AC-INS-06, зріз 3) | тест чекає кнопку «Log in» замість «Sign in» на сторінці входу | FAIL (R1) — як і мало бути |
 
-Підсумок рахує код (`scripts/uat/combine.mjs`), а не агент: упала перевірка — завжди FAIL; PASS лише коли збіглися перевірки, вердикт агента і його цитати зі сторінки. Останній прогін: 22:25 за Києвом на чистому дереві (коміт тестів `ba3f604`), розбір агентом коштував $0.0068.
+  Вердикти агента в цьому прогоні відсутні («вердикту немає»: вичерпався ліміт моделі); FAIL за R1 від агента не залежить. NC-3 читає лише сторінку входу без сесії (картки з таким id немає), тож безпечний на проді.
+- Дані: `@writes`. Два прогони створили на проді по одній картці й одному утриманню «Held» у слоті therapist1 (діє 24 години, потім «Expired»): «UAT Insurance mw7iaemv» (`uat-ins-mw7iaemv@example.test`, 1-й прогін, поза репо) і «UAT Insurance mw7ion9z» (`uat-ins-mw7ion9z@example.test`, 2-й прогін, у звіті). Прибрати їх через застосунок не можна: права на `delete` немає. Рядка «Прибирання» у звіті немає. Негативні контролі — лише читання.
+- Акаунти UAT: `admin@example.test`, `scheduler1@example.test`, `scheduler2@example.test`, `therapist1@example.test`, `therapist2@example.test`.
 
-### Як ми дійшли до зеленого прогону
+### Приймання PM
 
-| Прогін | Результат | Причина і виправлення |
+Очікується: оцінок і публічних коментарів PM ще немає. Таблиця приймання PM — не в цьому документі.
+
+| AC | Рішення PM | Посилання |
 |---|---|---|
-| 1 | AC-HOLD-44 — FAIL; AC-CARD-05 — NEEDS-HUMAN | FAIL: помилка в нашому тесті. Локатор шукав `Therapist Two` за підрядком і на проді знаходив два пункти («Therapist Two» і «PM Therapist Two»); тепер точний збіг. NEEDS-HUMAN: на проді не було клієнта, що є «своїм» лише для therapist2, тож тест поміняв ролі місцями (відкривав therapist2), а агент слушно відзначив розбіжність із AC |
-| 2 | усі три — PASS | Створено тестові дані (див. нижче); сценарій AC-CARD-05 іде дослівно |
-| 3 | усі три — PASS | Після self-review: тест тепер перевіряє, що картку відкрив саме очікуваний терапевт (шапка `viewer`), що до порівняння є хоч одне утримання, і падає одразу з текстом при невірному паролі |
-| 4 | усі три — PASS | Після рев'ю CodeRabbit: PASS потребує, щоб вердикт був про той самий AC і щоб агент підтвердив усі видимі частини «Тоді» (правила R2 і R4); кожній очікуваній частині має відповідати окремий запис агента (дубль однієї частини не покриває іншу); звіт знято на чистому дереві, тож «Код тестів» — справжній коміт |
+| AC-INS-01 | очікується | — |
+| AC-INS-02 | очікується | — |
+| AC-INS-03 | очікується | — |
+| AC-INS-04 | очікується | — |
+| AC-INS-05 | очікується | — |
+| AC-INS-06 | очікується | — |
+| AC-CARD-05 (зріз 2) | NEEDS-HUMAN → рішення за PM | — |
 
-### Негативні контролі
+## D. Прод і ретро
 
-`npm run uat:nc` (лише читання, `tests/e2e/negative-controls.spec.ts`): два сценарії з навмисною вадою, щоб показати, що UAT уміє не пройти.
+- `/api/health` після злиття всіх задач: sha `7c6adb816106b44de6a78ed3dbfd7bda4f5c6d1f`, `db: ok` (запит `curl` 08.11.2026, 12:45 за Києвом, після PR #74).
+- Нові ролі й акаунти: немає; для UAT використано наявні `*@example.test` (список вище; паролі лише в `accounts.zip`, їх тут немає): [accounts.zip](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/accounts.zip).
+- `docs/conformance.md`: https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/docs/conformance.md (рядки AC-INS-01…06 — «реалізовано»).
+- ADR: [0005-insurance-status-column-update.md](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/docs/decisions/0005-insurance-status-column-update.md).
 
-| Контроль | Що навмисно хибне | Перевірки | Агент | Підсумок |
-|---|---|---|---|---|
-| NC-1 (AC-CARD-16) | у тесті інший очікуваний текст повідомлення | впали | Haiku: PASS (агент помилився) | **FAIL**, R1: впала перевірка, агент її не перекриває |
-| NC-2 (AC-CARD-16) | текст «Тоді» у вимозі уточнено, тест і застосунок — ні | пройшли | Haiku: NEEDS-HUMAN, Sonnet: FAIL | **NEEDS-HUMAN**, R3: розбіжність іде до людини |
+### Ретро: що б ми взяли з фабрики у свій звичайний процес
 
-Перший прогін негативних контролів (22:45) не рахується: тоді не пройшов вхід `therapist`, обидва сценарії не виконались. Другий прогін — у таблиці вище.
-
-### Що записано на прод
-
-UAT-тести лише читають. Один запис створено вручну (скриптом через звичайний інтерфейс від імені `scheduler1`), щоб виконалась передумова AC-CARD-05:
-
-- картка клієнта «UAT AC-CARD-05 Client», `uat-ac-card-05@example.test` (дорослий, англійська мова);
-- утримання слота `Therapist Two` на 2026-11-04 09:00–10:00, діє до 2026-11-04 11:41 (усі часи в застосунку — час практики, Лос-Анджелес).
-
-Картку видалити нема чим: у застосунку немає видалення клієнтів. Клієнт перестає бути «своїм» для therapist2 з початку слота, 2026-11-04 09:00 за часом практики (19:00 за Києвом): це раніше за 11:41. Після цього AC-CARD-05 без нових даних знову стане NEEDS-HUMAN (запасна гілка тесту з ролями навпаки).
-
-Щоб прод-UAT (`npm run uat`) не залежав від терміну, потрібні два ручні записи на проді, кожен — за окремим дозволом власника; **на час написання не зроблені**:
-
-1. У `/holds` від імені `scheduler1` натиснути `Confirm` на утриманні клієнта «UAT AC-CARD-05 Client» **до 2026-11-04 09:00 за часом практики (19:00 за Києвом)**: після початку слота підтвердження відмовляє (AC-HOLD-22). Підтверджений сеанс не спливає, тож клієнт лишається «своїм» для therapist2 назавжди (AC-CARD-14).
-2. Підтверджене утримання зникає зі списку `/holds` (AC-HOLD-38), а AC-HOLD-44 потребує там хоча б одного утримання. Тому створити ще одне утримання (`Hold`) в будь-якому слоті `Therapist Two` ближче до кінця грудня 2026 (наприклад, 2026-12-29) і не підтверджувати: за 24 години воно стане «Expired» і лишатиметься в списку, доки слот не почнеться, а слот знову вільний.
-
-Тестові записи: лише `*@example.test`. Видалення не передбачено. Після цих двох кроків прод-UAT тримається до 2026-12-29 (далі слотів у базі немає: початкові слоти закінчуються 2026-12-31).
-
-### E2E у CI
-
-[.github/workflows/e2e.yml](../../.github/workflows/e2e.yml): збирає код PR, піднімає **одноразову локальну базу Supabase в раннері** (`npx supabase start`, міграції цього PR), створює акаунти `*@example.test` з випадковим паролем прогону й виконує [tests/e2e/fixtures/e2e-data.sql](../../tests/e2e/fixtures/e2e-data.sql). Після цього ті самі три спеки йдуть на localhost. У прод job нічого не пише й не читає; секрет `DEMO_USER_PASSWORD` і змінні `NEXT_PUBLIC_SUPABASE_*` репозиторію йому більше не потрібні. Без перевірки агента: вона й звіт для PM — лише `npm run uat`. Завдяки цьому `ac:coverage` рахує `tests/e2e/**/*.spec.ts` як покриття AC.
-
-Фікстура створює клієнта «UAT AC-CARD-05 Client» й одне утримання «Held» у слоті Therapist Two на +2 доби від `now()`. Цього досить для двох передумов: клієнт «свій» лише для therapist2 (AC-CARD-05) і у списку `/holds` є рядок (AC-HOLD-44; підтверджені сеанси там не показують). Слот береться з міграційних або створюється, якщо на цей час його немає, тож фікстура не залежить від того, що слоти в міграціях закінчуються 2026-12-31. Утримання діє 24 години: файл — для бази, створеної під прогін; на тривалій локальній базі спершу `supabase db reset`.
-
-Що перевірено:
-
-- `tests/db/e2e-fixture-db.test.ts` (PGlite, входить у `npm test`, 3 тести): клієнт видимий therapist2 і невидимий therapist1; у `hold_list` одне «Held» утримання Therapist Two; повторний запуск нічого не дублює. Мутації фікстури: усі `therapist2` → `therapist1` — падають 2 тести з 3; без `insert into public.holds` — усі 3; без раннього `return` (захист від повтору) — 1.
-- Локально на свіжій базі (кроки workflow, база на інших портах, застосунок `next start` на порту 3100 через `UAT_BASE_URL`, бо порт 3000 був зайнятий): 6 тестів (3 входи й 3 AC) пройшли; фікстуру застосовано вдруге без змін у даних, повторний прогін — знову 6 з 6. `supabase db query --local -f` на SQL із помилкою повертає код 1, тож збій фікстури зупинить крок.
-- Не перевірено: сам job на GitHub ще не запускався (там `npx supabase start` на раннері й запуск сервера самим Playwright на порту 3000); код виходу `supabase db query`, коли SQL падає; чи вкладається прогін у 15 хвилин разом зі звантаженням образів.
-
-Прод-UAT від цього не залежить: `npm run uat` читає живі дані прода, і його передумови — два ручні записи вище. Job поки не додаємо в обов'язкові перевірки `solo-main`: фільтр `paths` у `e2e.yml` не запускає його на PR без цих шляхів (наприклад, лише `docs/**`), і обов'язкова перевірка висіла б «Expected — waiting». Щоб додати його, спершу треба прибрати `paths` або мати заглушку з тією самою назвою.
-
-### Не зроблено в цьому кроці
-
-- Негативні контролі (`npm run uat:nc`) не запускали.
-- Фільтр `ac:coverage` для e2e покритий тестами скрипта (`e2e-counted`, `e2e-not-run`); сам job `e2e` на GitHub — ще ні (див. «E2E у CI»).
-- Відкриті знахідки self-review (файли з матеріалів курсу, Low): список — у `.quality-trial/findings-log.md`, запис «WS8 C».
-
-## D. Eval рецензентів
-
-- PR з вадами (не злитий, закривається після eval): [#63](https://github.com/SnatchPlay/therapy-scheduling/pull/63), гілка `task/holds-header-cleanup`, нейтральні назви й опис, 3 вади + 1 приманка. CI на ній зелений, прод-базу вади не чіпають (міграція не застосовується до злиття, функція не викликається).
-- Ключ і таблиця з цитатами: [коментар у PR 63](https://github.com/SnatchPlay/therapy-scheduling/pull/63#issuecomment-6615866191). Ключ лежав поза репо, доки обидва рецензенти не відпрацювали.
-- Правило: [PR 64](https://github.com/SnatchPlay/therapy-scheduling/pull/64), коміт `c66a17c` — абзац «Рев'ю (серйозність)» в `AGENTS.md`.
-- Повторний прогін: [коментар у PR 63](https://github.com/SnatchPlay/therapy-scheduling/pull/63#issuecomment-6616033756).
-
-| Вада | CodeRabbit | `/code-review high` |
-|---|---|---|
-| роль з `user_metadata` (`viewer.ts:36`) | знайшов, але **Minor** і «база не віддасть дані» | знайшов, **HIGH** |
-| `security definer` без `search_path` (міграція) | знайшов частково, Minor (лише `search_path`) | знайшов, MEDIUM (+ без перевірки ролі, рахує Expired, функція не використана) |
-| тест AC-HOLD-44 послаблено | знайшов, Trivial | знайшов, MEDIUM |
-| приманка `isStaff` | не згадав (хибної тривоги немає) | Low: часткове перенесення (слушне, не про безпеку) |
-
-Рецензентів запущено так: CodeRabbit — `@coderabbitai review`, перший запит впав у ліміт безкоштовних рев'ю, повторний дав рев'ю за 10 хвилин; `/code-review high` — окремим агентом, який не бачив ні ключа, ні коментарів CodeRabbit.
-
-**Правило й повторний прогін.** Слабка ланка — CodeRabbit (вада №1 як Minor). Правило загострює її: роль не з `profiles.role` — «must fix / Critical», RLS її не пом'якшує. Повторний `@coderabbitai full review` о 23:34 відхилено лімітом («next included review will be available in 43 minutes», [коментар](https://github.com/SnatchPlay/therapy-scheduling/pull/63#issuecomment-6615979832)): **ефект правила на CodeRabbit не виміряно**. `/code-review` повторно знайшов усе, роль із `user_metadata` — HIGH і до правила, і після. Повторний прогін CodeRabbit буде зроблено після скидання ліміту окремим коментарем у PR 63.
-
-
----
-
-# QA proof pack: зріз 3 (WS9, статус перевірки страхування)
-
-- Вимоги: https://github.com/HryhoriiHaponiukQuitCode/therapy-scheduling-spec · джерело: issues · знімок 2026-11-08 (вимога HryhoriiHaponiukQuitCode/therapy-scheduling-spec#33; вимогу #34 PM переніс на пізніший зріз)
-- PR (стек): специфікація #68 → база #69 → застосунок #70 → UAT цей PR. ADR: `docs/decisions/0005-insurance-status-column-update.md`.
-- Статус доведення: **автоматичні рівні зелені; UAT на проді — `AC-INS-01…06` PASS** (перевірки Playwright й агент-рецензент збіглися), див. «UAT на проді». Єдиний `NEEDS-HUMAN` у тому ж прогоні — `AC-CARD-05` зі зрізу 2, не з цього зрізу.
-
-## 6 AC: де живе правило і чим доведено
-
-| AC | Де живе правило | Рівень | Тест |
-|---|---|---|---|
-| AC-INS-01 | SQL: `insurance_status … default 'Not set'`; текст — `ClientCard` | база (PGlite) + сторінка (Vitest) + e2e | `tests/db/insurance-status-db.test.ts`, `src/app/clients/[id]/page.test.tsx`, `tests/e2e/insurance-status.spec.ts` |
-| AC-INS-02 | SQL: `grant update (insurance_status)`, політика `clients_update_insurance_staff` (`with check`: «Not set» не повернути); дія `setInsuranceStatus`, повідомлення | база + дія + сторінка + e2e | ті самі + `src/app/clients/actions.test.ts` |
-| AC-INS-03 | та сама політика (`admin` і `scheduler`); картку бачать усі, кому RLS її віддає | база + сторінки + e2e | ті самі + `src/app/clients/page.test.tsx` |
-| AC-INS-04 | SQL: `own_client_ids()` для читання; форму рендеримо лише для `STAFF` | база + сторінка + e2e | ті самі |
-| AC-INS-05 | SQL: у терапевта немає політики `update` (нуль рядків); дія вважає збереженням один зачеплений рядок | база + дія + e2e (прямий запит до Data API з сесією терапевта) | ті самі |
-| AC-INS-06 | `src/proxy.ts` (без входу — `/login`) і права `anon` | проксі (Vitest) + база + e2e | `src/lib/supabase/proxy.test.ts`, `tests/db/insurance-status-db.test.ts`, e2e |
-
-## Доказ мутацією
-
-- SQL (`node scripts/mutation-check.mjs --only I1,…,I8`): **8 з 8 вбито** — політика без обмеження ролі (AC-INS-05), `with check (true)` (AC-INS-02), `grant update` на всю таблицю, немає `grant update (insurance_status)`, немає `check` на значення, початковий статус не «Not set» (AC-INS-01), `grant insert (insurance_status)`, повнота картки знову на update (AC-INS-02, стара картка).
-- TypeScript (`--only T4,…,T12`): **9 з 9 вбито** — нуль рядків як «saved», update без обмеження карткою, інше повідомлення, немає guard для користувача без ролі, redirect без кодування id, форма в терапевта, «Not set» у списку, успіх показано помилкою, немає рядка статусу в картці.
-- Stryker для `src/lib/messages.ts` (змінені рядки): 5 з 5 вбито. Для `src/app/clients/actions.ts` Stryker не запускається: його службовий виклик на початку тіла функції ламає правило `check:actions` у пісочниці (початковий прогін червоний), тому дію покривають точкові мутанти T4–T8.
-
-## Локальний прогін e2e на одноразовій базі (не прод)
-
-Одноразовий Supabase (`supabase start` на інших портах), збірка коду гілки, `next start`, Playwright (`UAT_BASE_URL=http://localhost:3100`): акаунти з `scripts/create-demo-users.mjs`, пароль випадковий, у репо його немає.
-
-- Увесь набір `npx playwright test --project=chromium`: **14 з 14** (5 входів, AC-CARD-05, AC-CARD-16, AC-INS-01…06, AC-HOLD-44).
-- Негативний контроль: політику `clients_update_insurance_staff` на живій базі послаблено до `using (true)` — `AC-INS-05` став червоним (прямий запит терапевта змінив рядок); після повернення політики — знову зелений.
-- Візуально (знімки в `docs/img/ws9-insurance-*.png`): картка з рядком «Insurance: …» і форма в планувальника, лише рядок у терапевта, повідомлення «Insurance status saved.»; світла й темна теми, 1280 і 375 px, довге ім'я клієнта переноситься, горизонтального переповнення немає (перевірено `scrollWidth`).
-
-Локальний прогін записав дані лише на одноразову базу, яку зупинено й видалено (`supabase stop --no-backup`).
-
-## UAT на проді
-
-Звіт для PM: [docs/qa/uat/2026-11-08/report.md](uat/2026-11-08/report.md) (кадри «Тоді» — `frames/`, підсумок — `manifest.json`).
-Запуск: `npm run uat -- --url https://therapy-scheduling-weld.vercel.app`. Задеплоєний код на момент прогону — коміт `34a9c7d` (`/api/health`), тести — той самий коміт. Відео й траси лежать лише в `test-results/` на машині прогону: не в git і не в CI.
-
-| AC | Перевірки Playwright | Агент-рецензент | Підсумок | Що показує екран |
-|---|---|---|---|---|
-| AC-INS-01 | пройшли | Haiku: PASS | **PASS** | scheduler1 бачить у щойно створеній картці «Insurance: Not set» |
-| AC-INS-02 | пройшли (два «Тоді») | Haiku: PASS | **PASS** | банер «Insurance status saved.» і «Insurance: Verified»; той самий статус після повторного відкриття |
-| AC-INS-03 | пройшли | Haiku: PASS | **PASS** | admin1 бачить «Insurance: Private pay»; у другій сесії те саме бачить scheduler2 (перевірка, не кадр) |
-| AC-INS-04 | пройшли | Haiku: PASS | **PASS** | therapist1 бачить «Insurance: Not accepted» у картці свого клієнта, без вибору статусу й кнопки «Save» |
-| AC-INS-05 | пройшли | Haiku: PASS | **PASS** | прямий запит терапевта до Data API не змінив рядок; scheduler1 бачить «Insurance: Not accepted» |
-| AC-INS-06 | пройшли | Haiku: PASS | **PASS** | без входу — лише сторінка входу, ні імені клієнта, ні рядка «Insurance: …» |
-
-Підсумок рахує код (`scripts/uat/combine.mjs`), а не агент. У тому ж прогоні `AC-CARD-16` і `AC-HOLD-44` — PASS, `AC-CARD-05` — **NEEDS-HUMAN** (див. нижче).
-
-### Як ми дійшли до цього прогону
-
-| Прогін | Результат | Причина й виправлення |
-|---|---|---|
-| 3 спроби | жоден тест не запускався, на прод нічого не записано | пароль акаунтів не потрапляв у процес: сесія розробки працює в git worktree, а `.env.local` лежав в основній теці; хибні звіти «FAIL ×9» видалено; власник скопіював файл |
-| 1-й прогін на проді | Playwright 14 з 14; агент PASS 5, `NEEDS-HUMAN` 4 (`AC-INS-02`, `04`, `05`, `AC-CARD-05`) | вади були в доказах, не в застосунку: кадр `AC-INS-02` знято після повторного відкриття, коли банер уже зник; `AC-INS-04`, `05` мали «Private pay» замість дослівного «Not accepted» з вимоги. Виправлено в PR #73; на одноразовій локальній базі агент прийняв 9 з 9 |
-| 2-й прогін на проді | Playwright 14 з 14; агент PASS 8 з 9, `NEEDS-HUMAN` 1 (`AC-CARD-05`) | усі шість `AC-INS` — PASS |
-
-Звіт першого прогону лежить поза репо: 4 з 9 вердиктів там — `NEEDS-HUMAN` через слабкі докази, тож як доказ для PM він не годиться.
-
-### AC-CARD-05: NEEDS-HUMAN (не цей зріз)
-
-Автоматичні перевірки пройшли, відмова «You don't have access to this client.» показана, даних клієнта немає. Агент не погоджується через шапку кадру: там `therapist2`, а критерій каже `therapist1`. Сценарій WS8 сам обирає, хто відкриває і чия картка, за даними прода (`tests/e2e/client-card.spec.ts`, `orientations`). Імовірна причина зміни орієнтації: тестові утримання зрізу 3 зробили `therapist1` власником «виняткових» клієнтів, а виняткового клієнта `therapist2` більше немає (утримання діють 24 години). Це припущення, не перевірене; рішення — за PM, виправлення сценарію — окрема задача.
-
-### Що записано на прод (синтетичні дані; видалити в застосунку не можна — права на `delete` немає)
-
-Кожен прогін `@writes` створив одну картку й одне утримання «Held» у слоті therapist1 (діє 24 години, потім «Expired»):
-
-| Прогін | Картка | Статуси |
-|---|---|---|
-| 1-й | «UAT Insurance mw7iaemv» (`uat-ins-mw7iaemv@example.test`) | Not set → Verified → Private pay |
-| 2-й | «UAT Insurance mw7ion9z» (`uat-ins-mw7ion9z@example.test`) | Not set → Verified → Private pay → Not accepted → Verified |
-
-## Не зроблено
-
-- Перевірка на проді запитом лише для читання, що немає карток з email без крапки після «@» (`clients_email_check` лишається `not valid`): читання проду в сесії розробки недоступне.
-- Рішення PM по `AC-CARD-05` і по рядках «Рішення PM» у звіті UAT.
+Див. [retro-ws9.md](retro-ws9.md).
