@@ -4,7 +4,9 @@ import { test, type Browser, type Cookie, type Page } from "@playwright/test";
 
 // Роль → адреса акаунта на проді (D0.5, *@example.test): вхід у auth.setup.ts, перевірка шапки в тестах.
 export const ROLES = {
+  admin: "admin@example.test",
   scheduler: "scheduler1@example.test",
+  scheduler2: "scheduler2@example.test",
   therapist: "therapist1@example.test",
   therapist2: "therapist2@example.test",
 } as const;
