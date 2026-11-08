@@ -26,6 +26,15 @@ const statusAs = (browser: Browser, role: Role) =>
     return (await status(other).textContent()) ?? "";
   });
 
+/** Планувальник виставляє статус у другій сесії: «Дано» з точним статусом, як у вимозі PM (кадр «Тоді» показує його дослівно). */
+const markAs = (browser: Browser, role: Role, value: string) =>
+  withRole(browser, role, async (other) => {
+    await other.goto(`/clients/${clientId}`);
+    await other.getByLabel("Insurance status").selectOption(value);
+    await other.getByRole("button", { name: "Save" }).click();
+    await expect(other.locator("main").getByRole("alert")).toHaveText("Insurance status saved.");
+  });
+
 /** Планувальник створює картку дорослого клієнта через форму (початковий стан: статус ще ніхто не позначав). */
 async function createClient(page: Page) {
   await page.goto("/clients/new");
@@ -110,18 +119,28 @@ test.describe("scheduler", () => {
         await page.getByLabel("Insurance status").selectOption("Verified");
         await page.getByRole("button", { name: "Save" }).click();
       });
+      // Кадр знімається в кінці кроку «Тоді»: повідомлення зникає після повторного відкриття картки, тож «Тоді» — два кроки.
       await thenStep(
         page,
         {
-          clause:
-            "scheduler1 бачить повідомлення «Insurance status saved.», а картка показує «Insurance: Verified» і після того, як scheduler1 відкриє її знову",
+          clause: "scheduler1 бачить повідомлення «Insurance status saved.», а картка показує «Insurance: Verified»",
           visible: ["повідомлення «Insurance status saved.»", "рядок «Insurance: Verified» у картці"],
-          hidden: ["після повторного відкриття картки рядок так само «Insurance: Verified»"],
         },
         async () => {
           await expect(page.locator("main").getByRole("alert")).toHaveText("Insurance status saved.");
           await expect(status(page)).toHaveText("Insurance: Verified");
-          await page.goto(`/clients/${clientId}`);
+        },
+      );
+      await when("scheduler1 відкриває картку знову", async () => {
+        await page.goto(`/clients/${clientId}`);
+      });
+      await thenStep(
+        page,
+        {
+          clause: "картка показує «Insurance: Verified» і після того, як scheduler1 відкриє її знову",
+          visible: ["рядок «Insurance: Verified» у повторно відкритій картці"],
+        },
+        async () => {
           await expect(status(page)).toHaveText("Insurance: Verified");
         },
       );
@@ -164,12 +183,13 @@ test.describe("therapist", () => {
   test.use({ storageState: authFile("therapist") });
 
   test(
-    "AC-INS-04: client — свій клієнт therapist1, картка показує статус — therapist1 відкриває картку, бачить статус, а змінити його в картці йому не запропоновано",
+    "AC-INS-04: client — свій клієнт therapist1, картка показує «Insurance: Not accepted» — therapist1 відкриває картку, бачить «Insurance: Not accepted», а змінити статус у картці йому не запропоновано",
     { tag: ["@uat", "@writes"], annotation: { type: "ac", description: "AC-INS-04" } },
     async ({ page, browser }) => {
-      await given("клієнт — свій клієнт therapist1 (утримання «Held» у його слоті), і картка показує «Insurance: Private pay»", async () => {
+      await given("клієнт — свій клієнт therapist1 (утримання «Held» у його слоті), і картка показує «Insurance: Not accepted»", async () => {
         await withRole(browser, "scheduler", holdSlotOfTherapist1);
-        expect(await statusAs(browser, "scheduler")).toBe("Insurance: Private pay");
+        await markAs(browser, "scheduler", "Not accepted");
+        expect(await statusAs(browser, "scheduler")).toBe("Insurance: Not accepted");
       });
       await when("therapist1 відкриває картку клієнта", async () => {
         await page.goto(`/clients/${clientId}`);
@@ -177,13 +197,13 @@ test.describe("therapist", () => {
       await thenStep(
         page,
         {
-          clause: "він бачить «Insurance: Private pay», а змінити статус перевірки страхування в картці йому не запропоновано",
-          visible: ["рядок «Insurance: Private pay» у картці"],
+          clause: "він бачить «Insurance: Not accepted», а змінити статус перевірки страхування в картці йому не запропоновано",
+          visible: ["рядок «Insurance: Not accepted» у картці"],
           hidden: ["у картці немає ні вибору статусу, ні кнопки «Save»"],
         },
         async () => {
           await expect(page.getByTestId("viewer")).toContainText("therapist1@example.test");
-          await expect(status(page)).toHaveText("Insurance: Private pay");
+          await expect(status(page)).toHaveText("Insurance: Not accepted");
           await expect(page.getByLabel("Insurance status")).toHaveCount(0);
           await expect(page.getByRole("button", { name: "Save" })).toHaveCount(0);
         },
@@ -192,16 +212,16 @@ test.describe("therapist", () => {
   );
 
   test(
-    "AC-INS-05: therapist1 напряму, оминаючи сторінки застосунку, пробує змінити статус перевірки страхування свого клієнта на «Verified» — статус не змінився, scheduler1 у картці бачить «Insurance: Private pay»",
+    "AC-INS-05: therapist1 напряму, оминаючи сторінки застосунку, пробує змінити статус перевірки страхування свого клієнта на «Verified» — статус не змінився, scheduler1 у картці бачить «Insurance: Not accepted»",
     { tag: ["@uat", "@writes"], annotation: { type: "ac", description: "AC-INS-05" } },
     async ({ page, request }) => {
       const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
       expect(base && key, "NEXT_PUBLIC_SUPABASE_URL і NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (публічні) для прямого запиту до Data API").toBeTruthy();
 
-      await given("client — свій клієнт therapist1, і картка показує «Insurance: Private pay»", async () => {
+      await given("client — свій клієнт therapist1, і картка показує «Insurance: Not accepted»", async () => {
         await page.goto(`/clients/${clientId}`);
-        await expect(status(page)).toHaveText("Insurance: Private pay");
+        await expect(status(page)).toHaveText("Insurance: Not accepted");
       });
       await when("therapist1 напряму, оминаючи сторінки застосунку, пробує змінити статус на «Verified»", async () => {
         // Запит до Data API з сесією терапевта: політика на update є лише в планувальника й адміністратора.
@@ -220,15 +240,15 @@ test.describe("therapist", () => {
       await thenStep(
         page,
         {
-          clause: "статус не змінився: scheduler1 у картці client6 бачить «Insurance: Private pay»",
-          visible: ["рядок «Insurance: Private pay» у картці (scheduler1)"],
+          clause: "статус не змінився: scheduler1 у картці client6 бачить «Insurance: Not accepted»",
+          visible: ["рядок «Insurance: Not accepted» у картці (scheduler1)"],
           hidden: ["прямий запит терапевта не змінив жодного рядка"],
         },
         async () => {
           await switchRole(page, "scheduler");
           await page.goto(`/clients/${clientId}`);
           await expect(page.getByTestId("viewer")).toContainText("scheduler1@example.test");
-          await expect(status(page)).toHaveText("Insurance: Private pay");
+          await expect(status(page)).toHaveText("Insurance: Not accepted");
         },
       );
     },
@@ -242,8 +262,9 @@ test.describe("без входу", () => {
     "AC-INS-06: користувач не увійшов, а картка показує статус — відкриває картку за прямим посиланням, бачить лише сторінку входу, статусу й даних клієнта не показано, а scheduler1 після цього бачить той самий статус",
     { tag: ["@uat", "@writes"], annotation: { type: "ac", description: "AC-INS-06" } },
     async ({ page, browser }) => {
-      await given("користувач не увійшов у застосунок, а картка показує «Insurance: Private pay»", async () => {
-        expect(await statusAs(browser, "scheduler")).toBe("Insurance: Private pay");
+      await given("користувач не увійшов у застосунок, а картка показує «Insurance: Verified»", async () => {
+        await markAs(browser, "scheduler", "Verified");
+        expect(await statusAs(browser, "scheduler")).toBe("Insurance: Verified");
       });
       await when("він відкриває картку клієнта за прямим посиланням", async () => {
         await page.goto(`/clients/${clientId}`);
@@ -252,16 +273,16 @@ test.describe("без входу", () => {
         page,
         {
           clause:
-            "він бачить лише сторінку входу, статусу страхування й інших даних клієнта не показано, а scheduler1 після цього бачить у картці «Insurance: Private pay»",
+            "він бачить лише сторінку входу, статусу страхування й інших даних клієнта не показано, а scheduler1 після цього бачить у картці «Insurance: Verified»",
           visible: ["сторінка входу (поле Email, поле Password, кнопка Sign in)"],
-          hidden: ["на сторінці немає ні імені клієнта, ні email, ні рядка «Insurance: …»", "scheduler1 після цього бачить «Insurance: Private pay»"],
+          hidden: ["на сторінці немає ні імені клієнта, ні email, ні рядка «Insurance: …»", "scheduler1 після цього бачить «Insurance: Verified»"],
         },
         async () => {
           await expect(page).toHaveURL(/\/login/);
           await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
           const text = await page.locator("body").innerText();
           for (const secret of [NAME, EMAIL, "Insurance"]) expect(text).not.toContain(secret);
-          expect(await statusAs(browser, "scheduler")).toBe("Insurance: Private pay");
+          expect(await statusAs(browser, "scheduler")).toBe("Insurance: Verified");
         },
       );
     },
