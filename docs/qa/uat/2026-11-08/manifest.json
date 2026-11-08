@@ -1,9 +1,9 @@
 {
   "kind": "uat",
-  "generatedAt": "2026-11-08T07:36:16.710Z",
+  "generatedAt": "2026-11-08T10:56:17.124Z",
   "baseURL": "https://therapy-scheduling-weld.vercel.app",
-  "deployedSha": "34a9c7db50d84cef4214ee778a62f527396a896d",
-  "testsCommit": "34a9c7db50d84cef4214ee778a62f527396a896d",
+  "deployedSha": "7c6adb816106b44de6a78ed3dbfd7bda4f5c6d1f",
+  "testsCommit": "2850bbf6731a43d9233c3c91baf837d6a7a739a2",
   "reviewer": {
     "model": "claude-haiku-5-5",
     "disputes": "claude-sonnet-5-5"
@@ -21,7 +21,7 @@
       "vision": {
         "met": false,
         "readable": false,
-        "notes": "На кадрі є червоне повідомлення «You don't have access to this client.» і кнопка «Back to clients»; даних клієнта не видно. У шапці вказано therapist2@example.test, а не therapist1, тому відповідність сценарію потрібно перевірити людині."
+        "notes": "На кадрі червоне повідомлення «You don't have access to this client.», заголовок «Client» і кнопка «Back to clients». Текст збігається з критерієм, але сесія — therapist2@example.test, а не therapist1, тому актора з критерію кадр не підтверджує. Потрібна перевірка людиною."
       },
       "agentModel": "claude-sonnet-5-5",
       "agentVerdicts": {
@@ -38,9 +38,9 @@
       "verdict": "NEEDS-HUMAN",
       "factoryGate": "NOT-EARNED",
       "rule": "R3: перевірки пройшли, агент не погоджується — вирішує людина",
-      "playwrightMs": 8260,
-      "reviewCostUsd": 0.0367,
-      "reviewWallMs": 22365
+      "playwrightMs": 9121,
+      "reviewCostUsd": 0.04471,
+      "reviewWallMs": 19497
     },
     {
       "id": "AC-CARD-16",
@@ -53,7 +53,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На frame-then-1.png (scheduler1, шапка «scheduler1@example.test · scheduler») червоним у рамці написано «This client card doesn't exist.». На frame-then-2.png (therapist1, шапка «therapist1@example.test · therapist») написано «You don't have access to this client.». Обидві частини підтверджено посимвольно; відсутність даних клієнтів на кадрах не оцінювалась, бо це «Не з кадрів»."
+        "notes": "На frame-then-1.png (scheduler1@example.test) видно червоне повідомлення «This client card doesn't exist.» на сторінці «Client». На frame-then-2.png (therapist1@example.test) видно «You don't have access to this client.» на тій самій сторінці. Жодних карток чи email на кадрах немає; відсутність даних — не з кадрів, тому не оцінювалась."
       },
       "agentModel": "claude-haiku-5-5",
       "agentVerdicts": {
@@ -74,9 +74,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 5327,
-      "reviewCostUsd": 0.00229,
-      "reviewWallMs": 7698
+      "playwrightMs": 6586,
+      "reviewCostUsd": 0.00306,
+      "reviewWallMs": 10175
     },
     {
       "id": "AC-HOLD-44",
@@ -89,7 +89,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На обох кадрах (/holds і /slots) видно червоний напис «Only schedulers and admins can view this page.», який збігається з критерієм посимвольно. Сторінки порожні: списку утримань, імен чи email клієнтів на кадрах немає. Частини про відсутність даних і незмінність утримань перевіряються автоматично, тож їх не оцінював."
+        "notes": "На обох кадрах (сторінка «Holds» і сторінка «Slots») під заголовком видно червоний блок із текстом «Only schedulers and admins can view this page.», вхід під therapist1@example.test · therapist. Списку утримань, таблиць чи email клієнтів на кадрах немає. Частини «Не з кадрів» не оцінювались."
       },
       "agentModel": "claude-haiku-5-5",
       "agentVerdicts": {
@@ -110,9 +110,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 9228,
-      "reviewCostUsd": 0.00267,
-      "reviewWallMs": 9539
+      "playwrightMs": 7693,
+      "reviewCostUsd": 0.00259,
+      "reviewWallMs": 6330
     },
     {
       "id": "AC-INS-01",
@@ -125,7 +125,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі видно сторінку клієнта «UAT Insurance mw7ion9z» з рядком «Insurance: Not set» під полем «Session language». Текст збігається з критерієм посимвольно. Кадр повний, без завантаження й обрізання."
+        "notes": "На кадрі видно картку клієнта «UAT Insurance mw7pty47» із рядком «Insurance: Not set», текст збігається з критерієм посимвольно. Сторінка відкрита під користувачем scheduler1@example.test, тобто умова «Коли» відповідає кадру."
       },
       "agentModel": "claude-haiku-5-5",
       "agentVerdicts": {
@@ -142,9 +142,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 9232,
-      "reviewCostUsd": 0.00175,
-      "reviewWallMs": 5846
+      "playwrightMs": 8619,
+      "reviewCostUsd": 0.00174,
+      "reviewWallMs": 5550
     },
     {
       "id": "AC-INS-02",
@@ -157,7 +157,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На frame-then-1.png видно зелено-обведене повідомлення «Insurance status saved.» і рядок «Insurance: Verified» у картці клієнта. На frame-then-2.png після повторного відкриття картки той самий рядок «Insurance: Verified» присутній. Картка на кадрах має ім'я «UAT Insurance mw7ion9z», а не «client6» з формулювання «Дано»; це стосується передумови, яку я не оцінюю, тому на вердикт не впливає."
+        "notes": "На frame-then-1.png видно зелено-обрамлене повідомлення «Insurance status saved.» над карткою клієнта «UAT Insurance mw7pty47», а в картці рядок «Insurance: Verified». На frame-then-2.png після повторного відкриття картки той самий рядок «Insurance: Verified» присутній, кадр чіткий і не обрізаний."
       },
       "agentModel": "claude-haiku-5-5",
       "agentVerdicts": {
@@ -182,9 +182,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 5990,
-      "reviewCostUsd": 0.00239,
-      "reviewWallMs": 7095
+      "playwrightMs": 6048,
+      "reviewCostUsd": 0.00231,
+      "reviewWallMs": 7437
     },
     {
       "id": "AC-INS-03",
@@ -197,7 +197,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі frame-then-1.png сторінка клієнта «UAT Insurance mw7ion9z» з банером «Insurance status saved.» і рядком «Insurance: Private pay» у картці; у шапці видно «admin@example.test · admin», тобто сесія адміна. Частина для scheduler2 — поза кадрами, не оцінюється."
+        "notes": "На кадрі видно сторінку клієнта «UAT Insurance mw7pty47» з рядком «Insurance: Private pay» і банером «Insurance status saved.». Сесія показана як admin@example.test (роль admin); прив'язку цього облікового запису до admin1 на кадрі не видно, тому частина «від імені admin1» підтверджена лише за контекстом. Частина для scheduler2 не з кадрів і не оцінювалась."
       },
       "agentModel": "claude-haiku-5-5",
       "agentVerdicts": {
@@ -214,9 +214,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 5810,
-      "reviewCostUsd": 0.00185,
-      "reviewWallMs": 6142
+      "playwrightMs": 6400,
+      "reviewCostUsd": 0.00205,
+      "reviewWallMs": 8205
     },
     {
       "id": "AC-INS-04",
@@ -229,7 +229,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі видно картку клієнта «UAT Insurance mw7ion9z» зі сторінки /clients/…, під полем Session language є рядок «Insurance: Not accepted», текст читається повністю і точно збігається з критерієм. Частина «Не з кадрів» (відсутність вибору статусу і кнопки «Save») не оцінювалась."
+        "notes": "На кадрі сторінка «Client» з карткою «UAT Insurance mw7pty47» і рядком «Insurance: Not accepted» під полем «Session language». Текст збігається з критерієм посимвольно. Вибору статусу страхування чи кнопки «Save» на кадрі не видно, але це «Не з кадрів» і я це не оцінюю."
       },
       "agentModel": "claude-haiku-5-5",
       "agentVerdicts": {
@@ -246,9 +246,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 11761,
-      "reviewCostUsd": 0.00181,
-      "reviewWallMs": 6043
+      "playwrightMs": 12266,
+      "reviewCostUsd": 0.00172,
+      "reviewWallMs": 5307
     },
     {
       "id": "AC-INS-05",
@@ -261,7 +261,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі видно сторінку «Client» картки UAT Insurance mw7ion9z; у шапці сесія scheduler1@example.test · scheduler. У картці чітко написано «Insurance: Not accepted», а поле «Insurance status» показує «Not accepted». Кадр повний, без завантаження й обрізання. Частина «прямий запит терапевта не змінив жодного рядка» не з кадрів, тож не оцінювалася."
+        "notes": "На кадрі видно сторінку клієнта «UAT Insurance mw7pty47», у правому верхньому куті залогінений scheduler1@example.test. У картці клієнта рядок «Insurance: Not accepted» — статус не змінився. Частина «прямий запит терапевта не змінив жодного рядка» не з кадрів, тому не оцінювалась."
       },
       "agentModel": "claude-haiku-5-5",
       "agentVerdicts": {
@@ -278,9 +278,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 3213,
-      "reviewCostUsd": 0.00192,
-      "reviewWallMs": 6384
+      "playwrightMs": 3223,
+      "reviewCostUsd": 0.00185,
+      "reviewWallMs": 6361
     },
     {
       "id": "AC-INS-06",
@@ -293,7 +293,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі frame-then-1.png видно сторінку входу з заголовком «Sign in», полями «Email» і «Password» та кнопкою «Sign in». Ім'я клієнта, email чи рядка «Insurance: …» на кадрі не видно, але це «Не з кадрів» і не оцінюється. Частина «сторінка входу» підтверджена."
+        "notes": "На кадрі frame-then-1.png видно сторінку входу з заголовком «Sign in», полями «Email» і «Password» та кнопкою «Sign in». Ні імені клієнта, ні email, ні рядка «Insurance: …» на кадрі не видно. Частина «Не з кадрів» (включно з виглядом scheduler1) не оцінювалась."
       },
       "agentModel": "claude-haiku-5-5",
       "agentVerdicts": {
@@ -322,9 +322,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 8389,
-      "reviewCostUsd": 0.00198,
-      "reviewWallMs": 7009
+      "playwrightMs": 8085,
+      "reviewCostUsd": 0.00186,
+      "reviewWallMs": 6180
     }
   ],
   "negativeControls": []
