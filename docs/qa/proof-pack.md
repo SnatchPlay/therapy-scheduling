@@ -168,3 +168,46 @@ UAT-тести лише читають. Один запис створено в�
 
 **Правило й повторний прогін.** Слабка ланка — CodeRabbit (вада №1 як Minor). Правило загострює її: роль не з `profiles.role` — «must fix / Critical», RLS її не пом'якшує. Повторний `@coderabbitai full review` о 23:34 відхилено лімітом («next included review will be available in 43 minutes», [коментар](https://github.com/SnatchPlay/therapy-scheduling/pull/63#issuecomment-6615979832)): **ефект правила на CodeRabbit не виміряно**. `/code-review` повторно знайшов усе, роль із `user_metadata` — HIGH і до правила, і після. Повторний прогін CodeRabbit буде зроблено після скидання ліміту окремим коментарем у PR 63.
 
+
+---
+
+# QA proof pack: зріз 3 (WS9, статус перевірки страхування)
+
+- Вимоги: https://github.com/HryhoriiHaponiukQuitCode/therapy-scheduling-spec · джерело: issues · знімок 2026-11-08 (вимога HryhoriiHaponiukQuitCode/therapy-scheduling-spec#33; вимогу #34 PM переніс на пізніший зріз)
+- PR (стек): специфікація #68 → база #69 → застосунок #70 → UAT цей PR. ADR: `docs/decisions/0005-insurance-status-column-update.md`.
+- Статус доведення на момент запису: **автоматичні рівні зелені, прод-UAT ще не виконано** (див. «Не зроблено»).
+
+## 6 AC: де живе правило і чим доведено
+
+| AC | Де живе правило | Рівень | Тест |
+|---|---|---|---|
+| AC-INS-01 | SQL: `insurance_status … default 'Not set'`; текст — `ClientCard` | база (PGlite) + сторінка (Vitest) + e2e | `tests/db/insurance-status-db.test.ts`, `src/app/clients/[id]/page.test.tsx`, `tests/e2e/insurance-status.spec.ts` |
+| AC-INS-02 | SQL: `grant update (insurance_status)`, політика `clients_update_insurance_staff` (`with check`: «Not set» не повернути); дія `setInsuranceStatus`, повідомлення | база + дія + сторінка + e2e | ті самі + `src/app/clients/actions.test.ts` |
+| AC-INS-03 | та сама політика (`admin` і `scheduler`); картку бачать усі, кому RLS її віддає | база + сторінки + e2e | ті самі + `src/app/clients/page.test.tsx` |
+| AC-INS-04 | SQL: `own_client_ids()` для читання; форму рендеримо лише для `STAFF` | база + сторінка + e2e | ті самі |
+| AC-INS-05 | SQL: у терапевта немає політики `update` (нуль рядків); дія вважає збереженням один зачеплений рядок | база + дія + e2e (прямий запит до Data API з сесією терапевта) | ті самі |
+| AC-INS-06 | `src/proxy.ts` (без входу — `/login`) і права `anon` | проксі (Vitest) + база + e2e | `src/lib/supabase/proxy.test.ts`, `tests/db/insurance-status-db.test.ts`, e2e |
+
+## Доказ мутацією
+
+- SQL (`node scripts/mutation-check.mjs --only I1,…,I8`): **8 з 8 вбито** — політика без обмеження ролі (AC-INS-05), `with check (true)` (AC-INS-02), `grant update` на всю таблицю, немає `grant update (insurance_status)`, немає `check` на значення, початковий статус не «Not set» (AC-INS-01), `grant insert (insurance_status)`, повнота картки знову на update (AC-INS-02, стара картка).
+- TypeScript (`--only T4,…,T12`): **9 з 9 вбито** — нуль рядків як «saved», update без обмеження карткою, інше повідомлення, немає guard для користувача без ролі, redirect без кодування id, форма в терапевта, «Not set» у списку, успіх показано помилкою, немає рядка статусу в картці.
+- Stryker для `src/lib/messages.ts` (змінені рядки): 5 з 5 вбито. Для `src/app/clients/actions.ts` Stryker не запускається: його службовий виклик на початку тіла функції ламає правило `check:actions` у пісочниці (початковий прогін червоний), тому дію покривають точкові мутанти T4–T8.
+
+## Локальний прогін e2e на одноразовій базі (не прод)
+
+Одноразовий Supabase (`supabase start` на інших портах), збірка коду гілки, `next start`, Playwright (`UAT_BASE_URL=http://localhost:3100`): акаунти з `scripts/create-demo-users.mjs`, пароль випадковий, у репо його немає.
+
+- Увесь набір `npx playwright test --project=chromium`: **14 з 14** (5 входів, AC-CARD-05, AC-CARD-16, AC-INS-01…06, AC-HOLD-44).
+- Негативний контроль: політику `clients_update_insurance_staff` на живій базі послаблено до `using (true)` — `AC-INS-05` став червоним (прямий запит терапевта змінив рядок); після повернення політики — знову зелений.
+- Візуально (знімки в `docs/img/ws9-insurance-*.png`): картка з рядком «Insurance: …» і форма в планувальника, лише рядок у терапевта, повідомлення «Insurance status saved.»; світла й темна теми, 1280 і 375 px, довге ім'я клієнта переноситься, горизонтального переповнення немає (перевірено `scrollWidth`).
+
+## Що записано на базу цим прогоном
+
+Лише на одноразовій локальній базі, яку зупинено й видалено (`supabase stop --no-backup`). На прод нічого не записано.
+
+## Не зроблено
+
+- **UAT на проді з вердиктом агента-рецензента** (`npm run uat -- --url <прод>`, `uat:review`): прод оновиться лише після злиття PR #68–#70, а сесія розробки не має входу в прод. Сценарій пише дані (`@writes`): кожен прогін лишає на проді одну синтетичну картку `UAT Insurance <запуск>` (*@example.test) і утримання слоту therapist1 — їх слід назвати у звіті UAT. Акаунти `admin` і `scheduler2` мають бути в `accounts.zip`.
+- Перевірка на проді запитом лише для читання, що немає карток з email без крапки після «@» (`clients_email_check` лишається `not valid`).
+- `db-check` і `db-deploy` на GitHub.

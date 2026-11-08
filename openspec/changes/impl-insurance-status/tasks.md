@@ -15,14 +15,15 @@ Done when: AC-INS-01, AC-INS-02, AC-INS-03, AC-INS-04, AC-INS-05 (на рівн�
 - [x] 19.1 `CLIENT_COLUMNS`, `ClientCardData`, рядок `Insurance: <статус>` у `ClientCard`; історії Storybook картки, якщо вони є, — зі статусами
 - [x] 19.2 Форма «Verified / Not accepted / Private pay» + «Save» на `/clients/[id]` лише для STAFF; server action `setInsuranceStatus` (`getViewer()` першим оператором); `INSURANCE_SAVED` у `MESSAGES` і `SUCCESS_CODES`; `?msg=` на сторінці картки
 - [x] 19.3 Модульні тести сторінки й дії (форми немає в терапевта; нуль рядків — без «saved»; без входу — лише вхід), `messages.test.ts`; `npm run check:actions`, `check:design`
-- [ ] 19.4 Візуальна перевірка картки в обох темах і на вузькому екрані (скіл `visual-verify`)
+- [x] 19.4 Візуальна перевірка картки в обох темах і на вузькому екрані (скіл `visual-verify`): планувальник і терапевт, світла й темна тема, 1280 і 375 px, довге ім'я, повідомлення про збереження — знімки `docs/img/ws9-insurance-*.png`, локальна одноразова база (зроблено в PR задачі 20; станів «Not set» і помилки окремими знімками не знято, їх доводять тести)
 
 Done when: AC-INS-01…06 на рівні застосунку
 
 ## 20. UAT на проді й proof pack (PR `task/insurance-status-uat`)
 
-- [ ] 20.1 Сценарій `tests/e2e/insurance-status.spec.ts` (за зразком `client-card.spec.ts`) і дані `tests/e2e/fixtures/e2e-data.sql`, якщо потрібні картки client6, client7
-- [ ] 20.2 UAT на проді на кожен AC: запис, кадри, `manifest.json`, вердикт агента (`npm run uat`, `uat:review`) у `docs/qa/uat/<дата>`; дані лише синтетичні, зміни статусу — з прибиранням після себе
-- [ ] 20.3 Розділ зрізу 3 у `docs/qa/proof-pack.md`; рядки `docs/conformance.md` AC-INS → «реалізовано»; archive `impl-insurance-status`
+- [x] 20.1 Сценарій `tests/e2e/insurance-status.spec.ts` (за зразком `client-card.spec.ts`); окремих даних у `e2e-data.sql` не потрібно: сценарій сам створює картку й утримання через інтерфейс планувальника. Локально на одноразовій базі: весь набір 14 з 14, негативний контроль (послаблена політика) червонить AC-INS-05
+- [ ] 20.2 UAT на проді на кожен AC: запис, кадри, `manifest.json`, вердикт агента (`npm run uat`, `uat:review`) у `docs/qa/uat/<дата>`; дані лише синтетичні (кожен прогін лишає одну картку `UAT Insurance <запуск>` і одне утримання — назвати у звіті). НЕ виконано: прод оновиться після злиття PR, а сесія розробки не має входу в прод
+- [x] 20.3 Розділ зрізу 3 у `docs/qa/proof-pack.md`; рядки `docs/conformance.md` AC-INS → «реалізовано» (зроблено в задачі 19, коли з'явилися код і тести)
+- [ ] 20.4 archive `impl-insurance-status` — після 20.2 (зріз закінчений, коли AC доведено на проді)
 
 Done when: AC-INS-01…06 доведено на проді (UAT-запис і вердикт агента)
