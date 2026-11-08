@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Server action без Next і бази: getViewer дає фейковий клієнт Supabase, redirect кидає ціль (як у Next).
 const insert = vi.fn();
-const from = vi.fn<(table: string) => { insert: typeof insert }>(() => ({ insert }));
+// update(...).eq("id", …).select("id"): ланцюжок supabase-js; select віддає зачеплені рядки (нуль — RLS не бачить картку).
+const select = vi.fn();
+const eq = vi.fn(() => ({ select }));
+const update = vi.fn(() => ({ eq }));
+const from = vi.fn<(table: string) => { insert: typeof insert; update: typeof update }>(() => ({ insert, update }));
 // client_card_errors: усі помилки картки одним запитом (правила — у базі, tests/db/client-card-db.test.ts).
 const rpc = vi.fn();
 const revalidatePath = vi.fn();
@@ -24,7 +28,7 @@ class Redirect extends Error {
   }
 }
 
-const { createClientCard } = await import("./actions");
+const { createClientCard, setInsuranceStatus } = await import("./actions");
 
 function form(fields: Record<string, string | File>) {
   const data = new FormData();
@@ -60,6 +64,7 @@ async function redirectOf(action: Promise<unknown>) {
 beforeEach(() => {
   vi.clearAllMocks();
   insert.mockReset();
+  select.mockReset();
   rpc.mockReset();
   rpc.mockResolvedValue({ data: [], error: null });
   role = "scheduler";
@@ -178,5 +183,70 @@ describe("createClientCard", () => {
     const thrown = await createClientCard(null, adult()).then(() => null, (e: unknown) => e as Error);
     expect(thrown?.message).toBe("insert into clients: 42501 permission denied for table clients");
     expect(thrown?.message).not.toContain("client6@example.test");
+  });
+});
+
+describe("setInsuranceStatus", () => {
+  const status = (fields: Record<string, string | File> = {}) =>
+    form({ client_id: "c6", insurance_status: "Verified", ...fields });
+
+  it("AC-INS-02: планувальник позначає «Verified» — update саме цієї картки, одна зачеплена картка → «Insurance status saved.»", async () => {
+    select.mockResolvedValue({ data: [{ id: "c6" }], error: null });
+    expect(await redirectOf(setInsuranceStatus(status()))).toBe("/clients/c6?msg=INSURANCE_SAVED");
+    expect(from).toHaveBeenCalledWith("clients");
+    expect(update).toHaveBeenCalledWith({ insurance_status: "Verified" });
+    expect(eq).toHaveBeenCalledWith("id", "c6");
+    expect(revalidatePath).toHaveBeenCalledWith("/clients");
+    expect(revalidatePath).toHaveBeenCalledWith("/clients/c6");
+  });
+
+  it("AC-INS-03: адміністратор змінює статус так само, на «Private pay»", async () => {
+    role = "admin";
+    select.mockResolvedValue({ data: [{ id: "c7" }], error: null });
+    expect(await redirectOf(setInsuranceStatus(status({ client_id: "c7", insurance_status: "Private pay" })))).toBe(
+      "/clients/c7?msg=INSURANCE_SAVED",
+    );
+    expect(update).toHaveBeenCalledWith({ insurance_status: "Private pay" });
+  });
+
+  it("AC-INS-05: терапевт напряму — база (RLS) не зачепила жодної картки: «Something went wrong. Try again.», а не «saved»", async () => {
+    role = "therapist";
+    select.mockResolvedValue({ data: [], error: null });
+    const url = await redirectOf(setInsuranceStatus(status()));
+    expect(url).toBe("/clients/c6?msg=UNEXPECTED");
+    expect(url).not.toContain("INSURANCE_SAVED");
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("AC-INS-02: недозволене значення (відмова політики) — збій у лог сервера, а не «saved»; details бази з даними картки не логуємо", async () => {
+    const failure = {
+      code: "42501",
+      message: 'new row violates row-level security policy for table "clients"',
+      details: "Failing row contains (Client Six, client6@example.test)",
+    };
+    select.mockResolvedValue({ data: null, error: failure });
+    const thrown = await setInsuranceStatus(status({ insurance_status: "Not set" })).then(() => null, (e: unknown) => e as Error);
+    expect(thrown?.message).toBe(`update clients.insurance_status: 42501 ${failure.message}`);
+    expect(thrown?.message).not.toContain("client6@example.test");
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("AC-CARD-11: користувач без ролі повертається на головну, до бази не доходить", async () => {
+    role = null;
+    expect(await redirectOf(setInsuranceStatus(status()))).toBe("/");
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("AC-INS-02: файл замість тексту чи відсутнє поле — збій без запиту до бази", async () => {
+    expect(await redirectOf(setInsuranceStatus(status({ insurance_status: new File(["x"], "s.txt") })))).toBe("/clients?msg=UNEXPECTED");
+    expect(await redirectOf(setInsuranceStatus(form({ insurance_status: "Verified" })))).toBe("/clients?msg=UNEXPECTED");
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("AC-INS-02: id із символами адреси не виводить редирект за межі сторінки картки", async () => {
+    select.mockResolvedValue({ data: [{ id: "x" }], error: null });
+    expect(await redirectOf(setInsuranceStatus(status({ client_id: "c6?msg=x#/../login" })))).toBe(
+      `/clients/${encodeURIComponent("c6?msg=x#/../login")}?msg=INSURANCE_SAVED`,
+    );
   });
 });

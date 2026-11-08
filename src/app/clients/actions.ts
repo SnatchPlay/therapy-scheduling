@@ -65,3 +65,33 @@ export async function createClientCard(_previous: CardFormState, formData: FormD
   revalidatePath("/clients");
   redirect("/clients?msg=CLIENT_CREATED");
 }
+
+/**
+ * AC-INS-02, 03, 05: статус перевірки страхування. Хто змінює (планувальник, адміністратор) і які значення дозволені
+ * («Not set» повернути не можна) — лише в базі: політика clients_update_insurance_staff і check таблиці (ADR 0005). Тут —
+ * лише тип полів і переклад результату: збереженням вважаємо рівно один зачеплений рядок. Терапевт, чужа чи неіснуюча
+ * картка дають нуль рядків, а «Insurance status saved.» без збереження було б неправдою (AC-INS-05).
+ */
+export async function setInsuranceStatus(formData: FormData) {
+  const { supabase, role } = await getViewer();
+  if (!role) redirect("/");
+
+  const clientId = formData.get("client_id");
+  const status = formData.get("insurance_status");
+  if (typeof clientId !== "string" || typeof status !== "string") redirect("/clients?msg=UNEXPECTED");
+
+  const { data, error } = await supabase
+    .from("clients")
+    .update({ insurance_status: status })
+    .eq("id", clientId)
+    .select("id");
+  // Збій бази й відмова політики для недозволеного значення — у лог сервера й на сторінку помилки (error.tsx).
+  if (error) throw unexpected("update clients.insurance_status", error);
+
+  const page = `/clients/${encodeURIComponent(clientId)}`;
+  if (data.length !== 1) redirect(`${page}?msg=UNEXPECTED`);
+
+  revalidatePath("/clients");
+  revalidatePath(page);
+  redirect(`${page}?msg=INSURANCE_SAVED`);
+}

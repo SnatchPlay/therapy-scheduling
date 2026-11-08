@@ -17,6 +17,7 @@ export const MESSAGES = {
   PAGE_FORBIDDEN: "Only schedulers and admins can view this page.", // AC-HOLD-44
   NO_ACCESS: "Your account has no access yet. Contact an administrator.", // AC-CARD-11
   CLIENT_CREATED: "Client created.",
+  INSURANCE_SAVED: "Insurance status saved.", // AC-INS-02
   SLOT_UNAVAILABLE: "This slot is no longer available.", // AC-HOLD-03, AC-HOLD-04, AC-HOLD-17
   SLOT_STARTED: "This slot has already started and cannot be held.", // AC-HOLD-07
   CLIENT_OVERLAP: "This client already has a hold or session at this time.", // AC-HOLD-25
@@ -42,7 +43,7 @@ export function toMessageCode(value: unknown): MessageCode {
   return isMessageCode(value) ? value : "UNEXPECTED";
 }
 
-const SUCCESS_CODES: readonly MessageCode[] = ["CLIENT_CREATED", "HELD", "CONFIRMED"];
+const SUCCESS_CODES: readonly MessageCode[] = ["CLIENT_CREATED", "INSURANCE_SAVED", "HELD", "CONFIRMED"];
 
 export type Notice = { text: string; tone: "success" | "error" };
 
