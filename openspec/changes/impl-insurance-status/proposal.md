@@ -39,4 +39,4 @@ HryhoriiHaponiukQuitCode/therapy-scheduling-spec#33 (знімок вимог 202
 
 ## Open questions
 
-Немає: питань до PM немає, відкрите лише рішення власника про ADR 0005 (див. `design.md`, Р23).
+Немає: питань до PM немає; ADR 0005 власник погодив (див. `design.md`, Р23).
