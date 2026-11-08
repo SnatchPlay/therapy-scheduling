@@ -12,6 +12,7 @@ const CLIENT_CARD = "supabase/migrations/20261026100000_client_card.sql";
 const OWN_CLIENT = "supabase/migrations/20261103100000_own_client_until_start.sql";
 const INSURANCE = "supabase/migrations/20261108062344_insurance_status.sql";
 const INSURANCE_DB = "tests/db/insurance-status-db.test.ts";
+const INSURANCE_BLIND = "tests/db/insurance-status-blind.test.ts";
 const PROFILES_DB = "tests/db/profiles-db.test.ts";
 const CARD_DB = "tests/db/client-card-db.test.ts";
 const HOLD_DB = ["tests/db/holds-db.test.ts", "tests/db/hold-list-db.test.ts", "tests/db/schedule-db.test.ts"];
@@ -63,49 +64,49 @@ export const mutants = [
   },
   // ── AC-INS-01…05: статус перевірки страхування (міграція insurance_status, ADR 0005) ───────────────────────────
   {
-    id: "I1", kind: "sql", ac: "AC-INS-05", file: INSURANCE, tests: [INSURANCE_DB],
+    id: "I1", kind: "sql", ac: "AC-INS-05", file: INSURANCE, tests: [INSURANCE_DB, INSURANCE_BLIND],
     what: "політика clients_update_insurance_staff: статус змінює будь-хто, зокрема терапевт",
     find: "using ((select private.is_scheduler_or_admin()))",
     replace: "using (true)",
   },
   {
-    id: "I2", kind: "sql", ac: "AC-INS-02", file: INSURANCE, tests: [INSURANCE_DB],
+    id: "I2", kind: "sql", ac: "AC-INS-02", file: INSURANCE, tests: [INSURANCE_DB, INSURANCE_BLIND],
     what: "with check політики: «Not set» (і будь-яке значення) можна виставити знову",
     find: "with check (insurance_status in ('Verified', 'Not accepted', 'Private pay'))",
     replace: "with check (true)",
   },
   {
-    id: "I3", kind: "sql", ac: "AC-INS-02", file: INSURANCE, tests: [INSURANCE_DB, CARD_DB],
+    id: "I3", kind: "sql", ac: "AC-INS-02", file: INSURANCE, tests: [INSURANCE_DB, INSURANCE_BLIND, CARD_DB],
     what: "grant update на всю таблицю замість колонки insurance_status: планувальник редагує будь-яку колонку картки",
     find: "grant update (insurance_status) on table public.clients to authenticated;",
     replace: "grant update on table public.clients to authenticated;",
   },
   {
-    id: "I4", kind: "sql", ac: "AC-INS-02", file: INSURANCE, tests: [INSURANCE_DB],
+    id: "I4", kind: "sql", ac: "AC-INS-02", file: INSURANCE, tests: [INSURANCE_DB, INSURANCE_BLIND],
     what: "немає grant update (insurance_status): планувальник не може позначити статус",
     find: "grant update (insurance_status) on table public.clients to authenticated;",
     replace: "select 1;",
   },
   {
-    id: "I5", kind: "sql", ac: "AC-INS-02", file: INSURANCE, tests: [INSURANCE_DB],
+    id: "I5", kind: "sql", ac: "AC-INS-02", file: INSURANCE, tests: [INSURANCE_DB, INSURANCE_BLIND],
     what: "немає check таблиці на значення статусу: service_role (в обхід політики) записує довільний текст",
     find: ",\n  add constraint clients_insurance_status_check\n    check (insurance_status in ('Not set', 'Verified', 'Not accepted', 'Private pay'));",
     replace: ";",
   },
   {
-    id: "I6", kind: "sql", ac: "AC-INS-01", file: INSURANCE, tests: [INSURANCE_DB],
+    id: "I6", kind: "sql", ac: "AC-INS-01", file: INSURANCE, tests: [INSURANCE_DB, INSURANCE_BLIND],
     what: "початковий статус не «Not set»: нові й старі картки починають із «Verified»",
     find: "add column insurance_status text not null default 'Not set'",
     replace: "add column insurance_status text not null default 'Verified'",
   },
   {
-    id: "I7", kind: "sql", ac: "AC-INS-01", file: INSURANCE, tests: [INSURANCE_DB],
+    id: "I7", kind: "sql", ac: "AC-INS-01", file: INSURANCE, tests: [INSURANCE_DB, INSURANCE_BLIND],
     what: "grant insert (insurance_status): планувальник створює картку одразу з виставленим статусом",
     find: "grant update (insurance_status) on table public.clients to authenticated;",
     replace: "grant insert (insurance_status), update (insurance_status) on table public.clients to authenticated;",
   },
   {
-    id: "I8", kind: "sql", ac: "AC-INS-02", file: INSURANCE, tests: [INSURANCE_DB],
+    id: "I8", kind: "sql", ac: "AC-INS-02", file: INSURANCE, tests: [INSURANCE_DB, INSURANCE_BLIND],
     what: "повноту картки знову перевіряє й update: старій картці без дати й мови не можна позначити статус",
     find: "  after insert on public.clients",
     replace: "  after insert or update on public.clients",
