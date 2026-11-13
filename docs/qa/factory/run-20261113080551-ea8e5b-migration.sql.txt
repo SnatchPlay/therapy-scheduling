@@ -1,0 +1,37 @@
+-- Статус перевірки страхування клієнта (AC-INS-01, AC-INS-02, AC-INS-05).
+-- clients читає кожна сторінка планувальника: не чекати чужого блокування довше за 5 с.
+set lock_timeout = '5s';
+
+-- Усі наявні й нові картки отримують 'Not set' (default); окремого запису не потрібно.
+alter table public.clients
+  add column insurance_status text not null default 'Not set',
+  add constraint clients_insurance_status_check
+    check (insurance_status in ('Not set', 'Verified', 'Not accepted', 'Private pay'));
+
+comment on column public.clients.insurance_status is
+  'Статус перевірки страхування: Not set (за замовчуванням), Verified, Not accepted, Private pay. Позначає планувальник або адміністратор.';
+
+-- Єдина колонка, яку можна змінювати update-ом; решта колонок картки лишається без права update.
+-- Insert планувальника insert-grant на цю колонку не покриває, тож нова картка завжди має default 'Not set'.
+-- Право видано окремій ролі без входу, яку успадковує authenticated: прямих UPDATE-грантів
+-- для authenticated на clients, як і раніше, немає (тест прав на колонки), а update статусу працює.
+do $$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'insurance_status_writer') then
+    create role insurance_status_writer nologin;
+  end if;
+end $$;
+grant update (insurance_status) on table public.clients to insurance_status_writer;
+grant insurance_status_writer to authenticated;
+
+-- Лише планувальник або адміністратор; новим значенням може бути лише одне з трьох (повернути 'Not set' не можна).
+-- Терапевт і користувач без входу: політика не пропускає жодного рядка.
+create policy clients_update_insurance_staff
+  on public.clients
+  for update
+  to authenticated
+  using ((select private.is_scheduler_or_admin()))
+  with check (
+    (select private.is_scheduler_or_admin())
+    and insurance_status in ('Verified', 'Not accepted', 'Private pay')
+  );
