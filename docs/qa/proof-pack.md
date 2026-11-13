@@ -4,6 +4,7 @@
 Посилання — на файли на коміті, PR і прогони, без паролів; акаунти — лише адреси `*@example.test`.
 
 - Прод-URL: https://therapy-scheduling-weld.vercel.app
+- Бонус (фабрика): [factory-comparison.md](factory-comparison.md) — частковий прогін, без поставки; докази — [factory/](factory/).
 - Зріз 3: планувальник (`scheduler`) чи адміністратор (`admin`) позначає в картці клієнта статус перевірки страхування («Verified», «Not accepted», «Private pay»; початковий — «Not set»); кожен, хто бачить картку, бачить статус; терапевт бачить його лише в картках своїх клієнтів і змінити не може; без входу — лише сторінка входу.
 - Вимоги: https://github.com/HryhoriiHaponiukQuitCode/therapy-scheduling-spec · джерело: issues · знімок 2026-11-08 (вимога #33; вимогу #34 PM переніс на пізніший зріз). Копія — [requirements/33-planuvalnyk-poznachaie-status-perevirky.md](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/requirements/33-planuvalnyk-poznachaie-status-perevirky.md)
 - Спека: https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/openspec/specs/insurance-status/spec.md

@@ -1,0 +1,38 @@
+-- Статус перевірки страхування клієнта (AC-INS-01, AC-INS-02, AC-INS-05).
+set lock_timeout = '5s';
+
+-- Усі наявні й нові картки отримують 'Not set'.
+alter table public.clients
+  add column insurance_status text not null default 'Not set',
+  add constraint clients_insurance_status_check
+    check (insurance_status in ('Not set', 'Verified', 'Not accepted', 'Private pay'));
+
+-- Позначити можна лише одне з трьох значень; повернути 'Not set' або записати інше — не можна.
+create or replace function private.guard_insurance_status()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.insurance_status is null or new.insurance_status not in ('Verified', 'Not accepted', 'Private pay') then
+    raise exception 'INVALID_INSURANCE_STATUS' using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;
+
+revoke execute on function private.guard_insurance_status() from public, anon, authenticated;
+
+create trigger clients_guard_insurance_status
+  before update of insurance_status on public.clients
+  for each row execute function private.guard_insurance_status();
+
+-- Єдина колонка, яку можна змінювати update-ом; решта колонок картки лишається недоступною.
+grant update (insurance_status) on table public.clients to authenticated;
+
+create policy clients_update_insurance_staff
+  on public.clients
+  for update
+  to authenticated
+  using ((select private.is_scheduler_or_admin()))
+  with check ((select private.is_scheduler_or_admin()));
