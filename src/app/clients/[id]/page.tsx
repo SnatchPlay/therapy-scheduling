@@ -25,6 +25,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
       <AppShell
         role={role}
         email={email}
+        current="/clients"
         title="Client"
         notice={noticeFor(STAFF.includes(role) ? "CLIENT_NOT_FOUND" : "CLIENT_ACCESS_DENIED")}
       >
@@ -38,7 +39,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
   }
 
   return (
-    <AppShell role={role} email={email} title="Client" notice={noticeFor(msg)}>
+    <AppShell role={role} email={email} current="/clients" title="Client" notice={noticeFor(msg)}>
       <ClientCard client={data} />
       {/* Статус змінюють лише планувальник і адміністратор (AC-INS-02…04); право перевіряє й база (ADR 0005). */}
       {STAFF.includes(role) ? <InsuranceStatusForm clientId={data.id} current={data.insurance_status} /> : null}

@@ -1,3 +1,4 @@
+import { CalendarHeart } from "lucide-react";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,16 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const message = typeof error === "string" ? ERRORS[error] : undefined;
 
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-6 py-16">
+    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-6 py-16">
+      <div className="flex items-center gap-3">
+        <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
+          <CalendarHeart className="size-5" />
+        </span>
+        <div className="flex flex-col leading-tight">
+          <span className="font-semibold">Therapy scheduling</span>
+          <span className="text-sm text-muted-foreground">Sign in to your practice</span>
+        </div>
+      </div>
       {/* Картка, а не голе тло: позаду хрест з диму, а текст форми має лишатися контрастним. */}
       <Card className="gap-6 p-6">
         <h1 className="text-2xl font-semibold">Sign in</h1>

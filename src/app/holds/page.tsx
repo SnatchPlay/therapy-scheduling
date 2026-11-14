@@ -15,7 +15,7 @@ export default async function HoldsPage({ searchParams }: PageProps<"/holds">) {
   const { supabase, role, email } = await requireRole(...ALL_ROLES);
   const { msg } = await searchParams;
   // AC-HOLD-44: терапевту за прямим посиланням — відмова без даних; запитів до бази немає.
-  if (!STAFF.includes(role)) return <AppShell role={role} email={email} title="Holds" notice={noticeFor("PAGE_FORBIDDEN")} />;
+  if (!STAFF.includes(role)) return <AppShell role={role} email={email} current="/holds" title="Holds" notice={noticeFor("PAGE_FORBIDDEN")} />;
 
   const { data: holds, error } = await supabase
     .from("hold_list")
@@ -26,7 +26,7 @@ export default async function HoldsPage({ searchParams }: PageProps<"/holds">) {
   if (error) throw error;
 
   return (
-    <AppShell role={role} email={email} title="Holds" notice={noticeFor(msg)}>
+    <AppShell role={role} email={email} current="/holds" title="Holds" description="Held slots waiting for confirmation." notice={noticeFor(msg)}>
       {holds.length === 0 ? (
         <EmptyState title="No holds yet.">Held slots appear here until they are confirmed or run out.</EmptyState>
       ) : (
