@@ -18,9 +18,10 @@ Done when: AC-INTAKE-05 (unit); AC-INTAKE-08 (unit)
 
 ## 23. Дія й панель у формі нової картки (PR `task/intake-draft-ui`)
 
-- [ ] 23.1 Server Action `requestIntakeDraft` (`getViewer()` першим, роль перед моделлю, без запису в базу) (Р30, Р31)
-- [ ] 23.2 Компонент `Textarea` (`npx shadcn@4.22.1 add textarea` + історія Storybook); панель «Draft from request» над `ClientCardForm`, `Alert`, перемонтування форми лише для чернетки (Р28)
-- [ ] 23.3 Тести дії й сторінки (терапевт без панелі й форми, відмова не міняє форму, чернетка не пише в базу); `check:actions`, `check:design`; візуальна перевірка в обох темах і на вузькому екрані
+- [x] 23.1 Server Action `requestIntakeDraft` (`getViewer()` першим, роль перед моделлю, без запису в базу) (Р30, Р31)
+- [x] 23.2 Компонент `Textarea` (написано за зразком `Input` + історія Storybook; `shadcn add` дав би інші класи, які довелося б переписувати); панель «Draft from request» над `ClientCardForm`, `Alert`, перемонтування форми лише для чернетки (Р28)
+- [x] 23.3 Тести дії, форми й сторінки (терапевт без панелі й форми, відмова не міняє форму, чернетка не пише в базу); `check:actions`, `check:design`
+- [ ] 23.4 Візуальна перевірка форми з панеллю в обох темах і на вузькому екрані (скіл `visual-verify`) — не виконано в цьому PR; кадри форми з панеллю дасть UAT на проді (задача 25)
 
 Done when: AC-INTAKE-03, AC-INTAKE-08, AC-INTAKE-09 на рівні застосунку
 

@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { clientErrorCode, toMessageCode, type ClientType, type MessageCode } from "@/lib/messages";
-import { getViewer } from "@/lib/supabase/viewer";
+import { askModel } from "@/lib/ai/draft";
+import { buildOutcome, todayInPractice, type IntakeValues } from "@/lib/ai/intake";
+import { clientErrorCode, INTAKE_MESSAGES, MESSAGES, toMessageCode, type ClientType, type MessageCode } from "@/lib/messages";
+import { getViewer, STAFF } from "@/lib/supabase/viewer";
 
 /** Результат дії для форми: коди повідомлень (усі одразу) і введені значення (у форму їх повертає дія, а не адреса: персональні дані не в URL). */
 export type CardFormState = { codes: MessageCode[]; values: Record<string, string> } | null;
@@ -94,4 +96,45 @@ export async function setInsuranceStatus(formData: FormData) {
   revalidatePath("/clients");
   revalidatePath(page);
   redirect(`${page}?msg=INSURANCE_SAVED`);
+}
+
+/** Результат запиту чернетки для панелі над формою: повідомлення, введений текст і (для чернетки) значення полів форми. */
+export type IntakeDraftState =
+  | { kind: "draft"; message: string; text: string; values: IntakeValues }
+  | { kind: "refused" | "unavailable"; message: string; text: string }
+  | null;
+
+/** Довжина тексту звернення: вимога PM, «Припущення» (поле більшого не приймає). */
+const MAX_REQUEST_LENGTH = 2000;
+
+/**
+ * AC-INTAKE-01…09: чернетка картки з тексту звернення (design.md, Р30–Р33). Дія лише ПОВЕРТАЄ чернетку у форму: вона не
+ * торкається бази (картку створює людина через createClientCard з правилами й RLS), не має інструментів запису й не
+ * виконує вказівок з тексту. Роль перевіряємо до виклику моделі: інакше терапевт чи будь-хто, хто пройшов вхід, витрачав би
+ * денний ліміт безкоштовних запитів. Порожній текст і текст довший за ліміт до моделі не йдуть (припущення розробника, Р33).
+ */
+export async function requestIntakeDraft(_previous: IntakeDraftState, formData: FormData): Promise<IntakeDraftState> {
+  const { role } = await getViewer();
+  if (!role) redirect("/");
+
+  const value = formData.get("text");
+  const text = typeof value === "string" ? value : "";
+  if (!STAFF.includes(role)) return { kind: "refused", message: MESSAGES.CARD_FORBIDDEN, text };
+  if (!text.trim() || text.length > MAX_REQUEST_LENGTH) return { kind: "refused", message: INTAKE_MESSAGES.DRAFT_REFUSED, text };
+
+  const today = todayInPractice();
+  // Модуль із ключем (`server-only`) вантажимо лише тут: сторінки й тести, що імпортують цей файл, його не тягнуть.
+  const { productModel } = await import("@/lib/ai/openrouter");
+  const model = productModel();
+  const result = model ? await askModel(text, today, model) : undefined;
+  if (!result?.ok) {
+    // Причина збою — у лог сервера (текст звернення туди не потрапляє); користувач бачить лише «недоступний» (AC-INTAKE-08).
+    console.error(`intake draft unavailable: ${result ? result.reason : "no model key"}`);
+    return { kind: "unavailable", message: INTAKE_MESSAGES.ASSISTANT_UNAVAILABLE, text };
+  }
+
+  const outcome = buildOutcome(result.draft, today);
+  return outcome.kind === "draft"
+    ? { kind: "draft", message: outcome.message, text, values: outcome.values }
+    : { kind: "refused", message: outcome.message, text };
 }

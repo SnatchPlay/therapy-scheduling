@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { MESSAGES, type MessageCode } from "@/lib/messages";
-import { type CardFormState, createClientCard } from "../actions";
+import type { IntakeValues } from "@/lib/ai/intake";
+import { type CardFormState, createClientCard, type IntakeDraftState, requestIntakeDraft } from "../actions";
+import { IntakeDraftPanel } from "./intake-draft-panel";
 
 // Повідомлення, що стосуються полів: текст показуємо під першим полем групи, а всім полям групи ставимо aria-invalid і
 // aria-describedby на цей текст (AC-CARD-12: усі помилки одразу, кожна біля свого поля). Інші коди (відмова за правами,
@@ -71,26 +73,51 @@ function Field({
   );
 }
 
+/** Чернетка, застосована до форми; `forState` — результат createClientCard на мить застосування (див. ClientCardForm). */
+type DraftSeed = { values: IntakeValues; forState: CardFormState; n: number };
+
 export function ClientCardForm() {
   const [state, action, pending] = useActionState(createClientCard, null);
+  const [draft, draftAction, drafting] = useActionState(requestIntakeDraft, null);
+  // Чернетка (AC-INTAKE-01, 02) заповнює всю форму: застосовуємо її, коли з'явився новий результат із полями. Це «стан із
+  // props» за документацією React: порівняння під час рендеру, без ефекту. Відмова чи «недоступний» (AC-INTAKE-06…08) нічого
+  // не застосовують, і поля лишаються як були.
+  const [seenDraft, setSeenDraft] = useState<IntakeDraftState>(null);
+  const [seed, setSeed] = useState<DraftSeed | null>(null);
+  if (draft !== seenDraft) {
+    setSeenDraft(draft);
+    if (draft?.kind === "draft") setSeed({ values: draft.values, forState: state, n: (seed?.n ?? 0) + 1 });
+  }
+  // Новіше з двох: чернетка, якщо після неї створення картки не повертало результату; інакше — результат createClientCard
+  // (там уже поля, які планувальник виправив, і помилки).
+  const seeded = seed && seed.forState === state ? seed : null;
+  const values: Record<string, string> = seeded?.values ?? state?.values ?? {};
+  const codes = seeded ? [] : (state?.codes ?? []);
   // React 19 скидає форму після кожної дії й губить значення керованих і вже змонтованих полів (select). Тому поля
   // монтуємо наново з результатом дії: ключ міняється, коли міняються повернені значення чи коди, і defaultValue
   // (а з ним тип клієнта й мова) береться з них заново. Без цього після відмови «Child» ставав «Adult» (AC-CARD-03).
-  const key = state ? `${state.codes.join(",")}:${JSON.stringify(state.values)}` : "initial";
-  return <CardFields key={key} state={state} action={action} pending={pending} />;
+  const key = seeded ? `draft:${seeded.n}` : state ? `${state.codes.join(",")}:${JSON.stringify(state.values)}` : "initial";
+  return (
+    <div className="flex max-w-xl flex-col gap-6">
+      <IntakeDraftPanel key={draft ? `${draft.kind}:${draft.message}:${draft.text}` : "initial"} state={draft} action={draftAction} pending={drafting} />
+      <CardFields key={key} state={state} values={values} codes={codes} action={action} pending={pending} />
+    </div>
+  );
 }
 
 function CardFields({
   state,
+  values,
+  codes,
   action,
   pending,
 }: {
   state: CardFormState;
+  values: Record<string, string>;
+  codes: MessageCode[];
   action: (formData: FormData) => void;
   pending: boolean;
 }) {
-  const values = state?.values ?? {};
-  const codes = state?.codes ?? [];
   const initialType = values.client_type === "Child" || values.client_type === "Adult" ? values.client_type : "";
   // Тип лише підказує, які поля показати; значення select — defaultValue, як у мови: React 19 після кожної дії скидає
   // форму до defaultValue, а керований value повторне надсилання тих самих даних перетворювало б на «Adult».
@@ -103,7 +130,7 @@ function CardFields({
   }, [state]);
 
   return (
-    <form ref={form} action={action} className="flex max-w-xl flex-col gap-4">
+    <form ref={form} action={action} className="flex flex-col gap-4">
       {codes.filter((c) => !isFieldCode(c)).map((c) => (
         <Alert key={c} variant="destructive" id={errorId(c)}>
           <AlertTitle>{MESSAGES[c]}</AlertTitle>

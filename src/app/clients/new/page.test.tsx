@@ -27,6 +27,14 @@ describe("/clients/new", () => {
     expect(requireRole).toHaveBeenCalledWith("admin", "scheduler", "therapist");
   });
 
+  it("AC-INTAKE-09: терапевт не бачить ні форми, ні панелі чернетки (вона всередині форми), лише відмову", async () => {
+    const html = renderToStaticMarkup(await NewClientPage());
+    expect(html).toContain("Only schedulers and admins can create client cards.");
+    expect(html).not.toContain('data-testid="card-form"');
+    expect(html).not.toContain("Client request");
+    expect(html).not.toContain("Draft from request");
+  });
+
   it.each(["scheduler", "admin"])("AC-CARD-01: %s бачить форму під заголовком «New client», без відмови", async (r) => {
     role = r;
     const html = renderToStaticMarkup(await NewClientPage());
