@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Server action чернетки без Next і бази: справжній код дії, моделі й обгортки OpenRouter; підміняємо лише межі введення-виведення —
-// мережу (fetch) і `server-only` (пакет-заборона імпорту з клієнта). База — об'єкт, що фіксує будь-яке звернення: дія чернетки
-// не має торкатися бази, картку створює лише людина (AC-INTAKE-03).
+// Server action чернетки без Next і бази: справжній код дії, моделі й обгортки Claude; підміняємо лише межі введення-виведення —
+// мережу (fetch) і `server-only` (пакет-заборона імпорту з клієнта). База — об'єкт, що фіксує будь-яке звернення, крім rpc ліміту:
+// дія чернетки не торкається клієнтів і слотів, картку створює лише людина (AC-INTAKE-03).
 const touched = vi.fn();
-const supabase = new Proxy({}, { get: (_target, name) => touched(String(name)) });
+// Дія звертається до бази лише за лімітом запитів до моделі (rpc take_intake_draft_slot); будь-який інший доступ фіксує `touched`.
+let quota: { data: boolean | null; error: { message: string } | null } = { data: true, error: null };
+const rpc = vi.fn<(name: string) => Promise<typeof quota>>(async () => quota);
+const supabase = new Proxy({ rpc }, { get: (target, name) => (name === "rpc" ? target.rpc : touched(String(name))) });
 let role: string | null = "scheduler";
 const getViewer = vi.fn(async () => ({ supabase, role }));
 vi.mock("@/lib/supabase/viewer", async (importActual) => ({
@@ -26,15 +29,17 @@ class Redirect extends Error {
 
 const { requestIntakeDraft } = await import("./actions");
 
-// Відповідь OpenRouter (формат chat completions) із JSON моделі в `content`.
+// Відповідь Claude API (формат Messages) із JSON моделі в текстовому блоці.
 const completion = (json: object) =>
   Response.json({
-    id: "gen-1",
-    object: "chat.completion",
-    created: 1,
-    model: "google/gemma-4-31b-it:free",
-    choices: [{ index: 0, message: { role: "assistant", content: JSON.stringify(json) }, finish_reason: "stop" }],
-    usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 },
+    id: "msg_1",
+    type: "message",
+    role: "assistant",
+    model: "claude-haiku-5-5",
+    content: [{ type: "text", text: JSON.stringify(json) }],
+    stop_reason: "end_turn",
+    stop_sequence: null,
+    usage: { input_tokens: 10, output_tokens: 20 },
   });
 const fetchMock = vi.fn<(...args: unknown[]) => Promise<Response>>();
 
@@ -60,7 +65,8 @@ const form = (text: string) => {
 beforeEach(() => {
   vi.clearAllMocks();
   role = "scheduler";
-  vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+  quota = { data: true, error: null };
+  vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
   vi.stubGlobal("fetch", fetchMock);
   fetchMock.mockReset();
   fetchMock.mockImplementation(async () => completion(ADULT));
@@ -77,9 +83,10 @@ describe("requestIntakeDraft", () => {
     });
   });
 
-  it("AC-INTAKE-03: чернетка не пише в базу й не торкається клієнта Supabase після перевірки входу", async () => {
+  it("AC-INTAKE-03: чернетка нічого не пише: з бази лише rpc ліміту, до клієнтів, слотів і таблиць дія не торкається", async () => {
     await requestIntakeDraft(null, form("Hi, my name is Client Ten."));
     expect(touched).not.toHaveBeenCalled();
+    expect(rpc.mock.calls).toEqual([["take_intake_draft_slot"]]);
   });
 
   it("AC-INTAKE-09: адміністратор теж складає чернетки; терапевт — ні, і до моделі запит не йде", async () => {
@@ -125,7 +132,7 @@ describe("requestIntakeDraft", () => {
   });
 
   it("AC-INTAKE-08: немає ключа — «помічник недоступний», до моделі запит не йде, база не чіпається", async () => {
-    vi.stubEnv("OPENROUTER_API_KEY", "");
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
     const state = await requestIntakeDraft(null, form("Hi, my name is Client Ten."));
     expect(state).toEqual({
       kind: "unavailable",
@@ -137,7 +144,7 @@ describe("requestIntakeDraft", () => {
   });
 
   it("AC-INTAKE-08: 429 від постачальника — «помічник недоступний»; причина в логу сервера без тексту звернення", async () => {
-    fetchMock.mockImplementation(async () => Response.json({ error: { message: "rate limit", code: 429 } }, { status: 429 }));
+    fetchMock.mockImplementation(async () => Response.json({ type: "error", error: { type: "rate_limit_error", message: "rate limit" } }, { status: 429 }));
     expect(await requestIntakeDraft(null, form("Hi, my name is Client Ten."))).toMatchObject({ kind: "unavailable" });
     expect(console.error).toHaveBeenCalledWith("intake draft unavailable: rate_limited");
     expect(vi.mocked(console.error).mock.calls.flat().join(" ")).not.toContain("Client Ten");
@@ -146,5 +153,32 @@ describe("requestIntakeDraft", () => {
   it("AC-INTAKE-08: відповідь не за схемою — «помічник недоступний»", async () => {
     fetchMock.mockImplementation(async () => completion({ status: "ok", clientType: 42 }));
     expect(await requestIntakeDraft(null, form("Hi."))).toMatchObject({ kind: "unavailable" });
+  });
+
+  it("AC-INTAKE-08: ліміт запитів вичерпано — «помічник недоступний», до моделі запит не йде", async () => {
+    quota = { data: false, error: null };
+    expect(await requestIntakeDraft(null, form("Hi, my name is Client Ten."))).toMatchObject({
+      kind: "unavailable",
+      message: "The assistant is unavailable right now. Fill in the form manually.",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith("intake draft unavailable: quota exhausted");
+  });
+
+  it("AC-INTAKE-08: помилка перевірки ліміту закриває дорогу до платної моделі", async () => {
+    quota = { data: null, error: { message: "boom" } };
+    expect(await requestIntakeDraft(null, form("Hi, my name is Client Ten."))).toMatchObject({ kind: "unavailable" });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith("intake draft unavailable: quota check failed");
+  });
+
+  it("відмови до моделі (терапевт, порожній текст, немає ключа) ліміт не витрачають", async () => {
+    role = "therapist";
+    await requestIntakeDraft(null, form("Hi, my name is Client Ten."));
+    role = "scheduler";
+    await requestIntakeDraft(null, form("   "));
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    await requestIntakeDraft(null, form("Hi, my name is Client Ten."));
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

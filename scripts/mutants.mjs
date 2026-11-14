@@ -13,6 +13,8 @@ const OWN_CLIENT = "supabase/migrations/20261103100000_own_client_until_start.sq
 const ROLES_AND_CLIENTS = "supabase/migrations/20261019142745_roles_and_clients.sql";
 const INSURANCE = "supabase/migrations/20261108062344_insurance_status.sql";
 const INSURANCE_FIX = "supabase/migrations/20261114153320_insurance_not_set_trigger_validate_email.sql";
+const INTAKE_QUOTA = "supabase/migrations/20261114155638_intake_draft_quota.sql";
+const INTAKE_QUOTA_DB = "tests/db/intake-draft-quota-db.test.ts";
 const INSURANCE_DB = "tests/db/insurance-status-db.test.ts";
 const INSURANCE_BLIND = "tests/db/insurance-status-blind.test.ts";
 const PROFILES_DB = "tests/db/profiles-db.test.ts";
@@ -136,6 +138,45 @@ export const mutants = [
     what: "clients_email_check лишається not valid: Postgres перевіряє його на кожному update рядка, і статус старої картки не зберегти",
     find: "alter table public.clients validate constraint clients_email_check;",
     replace: "select 1;",
+  },
+  {
+    id: "I12", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_QUOTA, tests: [INTAKE_QUOTA_DB],
+    what: "ліміт чернеток не спрацьовує: одинадцятий запит за годину теж дозволено",
+    find: "if v_used >= 10 then",
+    replace: "if v_used >= 1000000 then",
+  },
+  {
+    id: "I13", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_QUOTA, tests: [INTAKE_QUOTA_DB],
+    what: "authenticated отримує право delete на таблицю запитів: користувач скидає собі ліміт через Data API",
+    find: "revoke all on table public.intake_draft_requests from anon, authenticated;",
+    replace:
+      "revoke all on table public.intake_draft_requests from anon, authenticated;\n" +
+      "grant select, insert, delete on table public.intake_draft_requests to authenticated;\n" +
+      "create policy intake_draft_requests_own on public.intake_draft_requests to authenticated using (user_id = (select auth.uid()));",
+  },
+  {
+    id: "I14", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_QUOTA, tests: [INTAKE_QUOTA_DB],
+    what: "обгортка take_intake_draft_slot лишається доступною PUBLIC і anon (revoke прибрано)",
+    find: "revoke execute on function public.take_intake_draft_slot() from public, anon;",
+    replace: "-- revoke прибрано",
+  },
+  {
+    id: "I15", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_QUOTA, tests: [INTAKE_QUOTA_DB],
+    what: "приватна функція ліміту лишається доступною PUBLIC і anon (revoke прибрано)",
+    find: "revoke execute on function private.take_intake_draft_slot() from public, anon;",
+    replace: "-- revoke прибрано",
+  },
+  {
+    id: "I16", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_QUOTA, tests: [INTAKE_QUOTA_DB],
+    what: "security definer без set search_path = '': підміна об'єктів через search_path викликача",
+    find: "security definer\nset search_path = ''\nas $$\ndeclare",
+    replace: "security definer\nas $$\ndeclare",
+  },
+  {
+    id: "I17", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_QUOTA, tests: [INTAKE_QUOTA_DB],
+    what: "сесія без користувача (auth.uid() порожній) отримує дозвіл: перевірку на null прибрано",
+    find: "if v_user is null then\n    return false;\n  end if;",
+    replace: "",
   },
   // ── Сторінки (TS): відмова з текстом PM ────────────────────────────────────────────────────────────────────
   {

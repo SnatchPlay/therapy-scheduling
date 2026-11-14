@@ -2,7 +2,7 @@ import { APICallError, NoObjectGeneratedError, Output, RetryError, generateText,
 import { draftInstructions, wrapDocument } from "./prompts/draft";
 import { DraftSchema, type ModelDraft } from "./schema";
 
-// Чиста функція: модель передають параметром. Застосунок передає модель OpenRouter (src/lib/ai/openrouter.ts),
+// Чиста функція: модель передають параметром. Застосунок передає модель Claude (src/lib/ai/anthropic.ts),
 // тести — MockLanguageModelV4 із записаною відповіддю. Тут немає `import "server-only"` і немає process.env,
 // тому Vitest може імпортувати цей файл. Взято з набору курсу (materials/ai-feature).
 
@@ -20,8 +20,8 @@ export async function askModel(text: string, today: string, model: LanguageModel
       instructions: draftInstructions(today), // `system` в AI SDK 7 застаріле
       messages: [{ role: "user", content: [{ type: "text", text: wrapDocument(text) }] }],
       output: Output.object({ name: "draft", schema: DraftSchema }), // generateObject застарілий
-      temperature: 0,
-      // На безкоштовному тарифі повтор витрачає той самий денний ліміт: 0–1, не типові 2.
+      // Без `temperature`: Claude Haiku 5.5 її не приймає (провайдер її ігнорує з попередженням). Стабільність — схема й правила коду.
+      // Повтор — ще один платний виклик і ще один запит у ліміт хвилини: 0–1, не типові 2.
       maxRetries: opts.maxRetries ?? 1,
       timeout: opts.timeoutMs ?? 45_000,
     });
@@ -38,12 +38,8 @@ export function classifyError(error: unknown): Extract<ModelResult, { ok: false 
   if (NoObjectGeneratedError.isInstance(cause)) {
     return { ok: false, reason: "invalid_output", message: "model output did not match the schema" };
   }
-  if (APICallError.isInstance(cause)) {
-    // OpenRouter може відповісти HTTP 200 з тілом `error`; провайдер тоді кидає statusCode 200 + data.
-    const code = cause.statusCode === 200 ? (cause.data as { code?: unknown } | undefined)?.code : cause.statusCode;
-    if (code === 429 || code === "429") {
-      return { ok: false, reason: "rate_limited", message: "free-model limit reached, try later" };
-    }
+  if (APICallError.isInstance(cause) && cause.statusCode === 429) {
+    return { ok: false, reason: "rate_limited", message: "rate limit reached, try later" };
   }
   if (cause instanceof Error && (cause.name === "TimeoutError" || cause.name === "AbortError")) {
     return { ok: false, reason: "timeout", message: "model did not answer in time" };

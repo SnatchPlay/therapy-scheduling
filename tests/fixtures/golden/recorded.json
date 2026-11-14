@@ -1,0 +1,62 @@
+{
+  "GC-01": {
+    "modelId": "claude-haiku-5-5",
+    "recordedAt": "2026-11-14T14:37:28.204Z",
+    "promptVersion": "intake-v1",
+    "text": "{\"status\":\"ok\",\"clientType\":\"Adult\",\"fullName\":\"Nora Vale\",\"birthDate\":\"1987-10-24\",\"sessionLanguage\":\"Spanish\",\"email\":\"nora.vale@example.test\",\"guardianName\":null,\"guardianEmail\":null}"
+  },
+  "GC-02": {
+    "modelId": "claude-haiku-5-5",
+    "recordedAt": "2026-11-14T14:37:31.063Z",
+    "promptVersion": "intake-v1",
+    "text": "{\"status\":\"ok\",\"clientType\":\"Child\",\"fullName\":\"Leo Marsh\",\"birthDate\":\"2017-05-06\",\"sessionLanguage\":\"English\",\"email\":null,\"guardianName\":\"Owen Marsh\",\"guardianEmail\":\"owen.marsh@example.test\"}"
+  },
+  "GC-03": {
+    "modelId": "claude-haiku-5-5",
+    "recordedAt": "2026-11-14T14:37:34.147Z",
+    "promptVersion": "intake-v1",
+    "text": "{\"status\":\"ok\",\"clientType\":\"Adult\",\"fullName\":\"Ellis Reed\",\"birthDate\":\"2008-11-01\",\"sessionLanguage\":\"English\",\"email\":\"ellis.reed@example.test\",\"guardianName\":null,\"guardianEmail\":null}"
+  },
+  "GC-04": {
+    "modelId": "claude-haiku-5-5",
+    "recordedAt": "2026-11-14T14:37:36.695Z",
+    "promptVersion": "intake-v1",
+    "text": "{\"status\":\"ok\",\"clientType\":\"Child\",\"fullName\":\"Iris Kent\",\"birthDate\":\"2015-08-19\",\"sessionLanguage\":\"Spanish\",\"email\":null,\"guardianName\":\"Maya Kent\",\"guardianEmail\":\"maya.kent@example.test\"}"
+  },
+  "GC-05": {
+    "modelId": "claude-haiku-5-5",
+    "recordedAt": "2026-11-14T14:37:39.975Z",
+    "promptVersion": "intake-v1",
+    "text": "{\"status\":\"ok\",\"clientType\":\"Child\",\"fullName\":\"Rowan Lake\",\"birthDate\":\"2008-12-20\",\"sessionLanguage\":\"English\",\"email\":null,\"guardianName\":null,\"guardianEmail\":null}"
+  },
+  "GC-06": {
+    "modelId": "claude-haiku-5-5",
+    "recordedAt": "2026-11-14T14:37:42.404Z",
+    "promptVersion": "intake-v1",
+    "text": "{\"status\":\"ok\",\"clientType\":\"Adult\",\"fullName\":\"Morgan Bell\",\"birthDate\":null,\"sessionLanguage\":\"Spanish\",\"email\":null,\"guardianName\":null,\"guardianEmail\":null}"
+  },
+  "GC-07": {
+    "modelId": "claude-haiku-5-5",
+    "recordedAt": "2026-11-14T14:37:44.682Z",
+    "promptVersion": "intake-v1",
+    "text": "{\"status\":\"ok\",\"clientType\":\"Adult\",\"fullName\":\"Alma Ríos\",\"birthDate\":\"1993-07-04\",\"sessionLanguage\":null,\"email\":\"alma.rios@example.test\",\"guardianName\":null,\"guardianEmail\":null}"
+  },
+  "GC-08": {
+    "modelId": "claude-haiku-5-5",
+    "recordedAt": "2026-11-14T14:37:50.525Z",
+    "promptVersion": "intake-v1",
+    "text": "{\"status\":\"ok\",\"clientType\":\"Child\",\"fullName\":\"Nina Field\",\"birthDate\":\"2026-12-20\",\"sessionLanguage\":\"English\",\"email\":null,\"guardianName\":\"Tessa Field\",\"guardianEmail\":\"tessa.field@example.test\"}"
+  },
+  "GC-09": {
+    "modelId": "claude-haiku-5-5",
+    "recordedAt": "2026-11-14T14:37:52.873Z",
+    "promptVersion": "intake-v1",
+    "text": "{\"status\":\"refused\",\"clientType\":null,\"fullName\":null,\"birthDate\":null,\"sessionLanguage\":null,\"email\":null,\"guardianName\":null,\"guardianEmail\":null}"
+  },
+  "GC-10": {
+    "modelId": "claude-haiku-5-5",
+    "recordedAt": "2026-11-14T14:37:55.230Z",
+    "promptVersion": "intake-v1",
+    "text": "{\"status\":\"refused\",\"clientType\":null,\"fullName\":null,\"birthDate\":null,\"sessionLanguage\":null,\"email\":null,\"guardianName\":null,\"guardianEmail\":null}"
+  }
+}

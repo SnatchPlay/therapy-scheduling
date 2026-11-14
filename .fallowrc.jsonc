@@ -6,7 +6,8 @@
   // Скрипти з package.json fallow бачить сам. Сюди — лише те, що запускає не npm і не import.
   // Хуки Claude Code запускає .claude/settings.json (команда `node …/scripts/hooks/*.mjs`), а не import.
   // Конфіг Vitest для Stryker читає stryker.config.json, а не import.
-  "entry": ["scripts/hooks/*.mjs", "vitest.stryker.config.mts"],
+  // Живий eval (`npm run eval`) Vitest знаходить за include у vitest.eval.config.mts, а не через import.
+  "entry": ["scripts/hooks/*.mjs", "vitest.stryker.config.mts", "evals/*.eval.ts"],
   // Дані для тестів скриптів шаблону — навмисно «зламані» файли.
   "ignorePatterns": ["tests/fixtures/**"],
   "ignoreDependencies": [
@@ -63,9 +64,6 @@
       "scripts/smoke.mjs",
       "scripts/mutation-check.mjs",
       "scripts/uat/**",
-      // Скрипти набору курсу materials/ai-feature (WS10): npm run ai:models, ai:quota; правки набору — з репо курсу.
-      "scripts/free-models.mjs",
-      "scripts/quota.mjs",
       "src/app/api/health/route.ts"
     ],
     "thresholdOverrides": [
