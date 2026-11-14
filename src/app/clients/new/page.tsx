@@ -8,10 +8,10 @@ import { ClientCardForm } from "../_components/client-card-form";
 export default async function NewClientPage() {
   const { role, email } = await requireRole(...ALL_ROLES);
   if (!STAFF.includes(role)) {
-    return <AppShell role={role} email={email} title="New client" notice={noticeFor("CARD_FORBIDDEN")} />;
+    return <AppShell role={role} email={email} current="/clients" title="New client" notice={noticeFor("CARD_FORBIDDEN")} />;
   }
   return (
-    <AppShell role={role} email={email} title="New client">
+    <AppShell role={role} email={email} current="/clients" title="New client">
       <ClientCardForm />
     </AppShell>
   );

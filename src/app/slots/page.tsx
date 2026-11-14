@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/app/_components/app-shell";
 import { StatusBadge } from "@/components/status-badge";
@@ -9,14 +10,14 @@ import { clientOptionLabel, filterClients } from "@/lib/clients";
 import { MESSAGES, noticeFor } from "@/lib/messages";
 import { hasHoldableSlot, withSlotTimes } from "@/lib/slots";
 import { ALL_ROLES, requireRole, STAFF } from "@/lib/supabase/viewer";
-import { formatPracticeDateTime, formatPracticeTime, isIsoDate, practiceDate } from "@/lib/time";
+import { addDays, formatPracticeDateTime, formatPracticeTime, isIsoDate, practiceDate, weekdayName } from "@/lib/time";
 import { holdSlot } from "./actions";
 
 export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
   const { supabase, role, email } = await requireRole(...ALL_ROLES);
   const params = await searchParams;
   // AC-HOLD-44: терапевту за прямим посиланням (зокрема на слоти іншого терапевта) — відмова без даних; запитів до бази немає.
-  if (!STAFF.includes(role)) return <AppShell role={role} email={email} title="Slots" notice={noticeFor("PAGE_FORBIDDEN")} />;
+  if (!STAFF.includes(role)) return <AppShell role={role} email={email} current="/slots" title="Slots" notice={noticeFor("PAGE_FORBIDDEN")} />;
 
   const [therapistsResult, clientsResult] = await Promise.all([
     supabase.from("therapists").select("id, full_name").order("full_name"),
@@ -40,9 +41,17 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
   if (error) throw error;
   const rows = withSlotTimes(slots);
 
+  // Рядок-підсумок дня з наявних статусів слотів: «3 free · 1 held».
+  const counts = Map.groupBy(rows, (r) => r.status);
+  const summary = (["Free", "Held", "Confirmed"] as const)
+    .filter((st) => counts.has(st))
+    .map((st) => `${counts.get(st)?.length} ${st.toLowerCase()}`)
+    .join(" · ");
+  const dayHref = (d: string) => `/slots?${new URLSearchParams({ ...(therapistId ? { therapist: therapistId } : {}), day: d, ...(find ? { client: find } : {}) })}`;
+
   return (
-    <AppShell role={role} email={email} title="Slots" notice={noticeFor(params.msg)}>
-      <form className="flex flex-wrap items-end gap-3" method="get">
+    <AppShell role={role} email={email} current="/slots" title="Slots" description="Choose a therapist and a day, then hold a slot for a client." notice={noticeFor(params.msg)}>
+      <form className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4" method="get">
         <div className="flex flex-col gap-2">
           <Label htmlFor="therapist">Therapist</Label>
           <NativeSelect id="therapist" name="therapist" defaultValue={therapistId}>
@@ -66,6 +75,26 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
         </Button>
       </form>
 
+      <div className="flex flex-wrap items-center gap-3">
+        <h2 className="text-lg font-semibold">
+          {weekdayName(day)} {day}
+        </h2>
+        <span className="text-sm text-muted-foreground">{summary || "No slots"}</span>
+        <nav aria-label="Days" className="ml-auto flex items-center gap-2">
+          <Link href={dayHref(addDays(day, -1))} className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <ChevronLeft aria-hidden />
+            Previous day
+          </Link>
+          <Link href={dayHref(practiceDate())} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+            Today
+          </Link>
+          <Link href={dayHref(addDays(day, 1))} className={buttonVariants({ variant: "outline", size: "sm" })}>
+            Next day
+            <ChevronRight aria-hidden />
+          </Link>
+        </nav>
+      </div>
+
       {/* AC-HOLD-18, AC-HOLD-24, AC-HOLD-33: повідомлення, коли немає слоту, який ще можна утримати; слоти дня лишаються
           в списку. Слот, що вже почався й не утриманий, — «Past» (AC-HOLD-32): не вільний, його не утримати (AC-HOLD-07). */}
       {hasHoldableSlot(rows) ? null : (
@@ -80,9 +109,9 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
         </p>
       ) : null}
 
-      <ul className="flex flex-col divide-y divide-border text-sm">
+      <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border bg-card text-sm">
         {rows.map((s) => (
-          <li key={s.slot_id} className="flex flex-wrap items-center gap-4 py-3" data-testid="slot">
+          <li key={s.slot_id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3" data-testid="slot">
             <span className="w-28 font-mono font-medium">
               {formatPracticeTime(s.starts_at)}–{formatPracticeTime(s.ends_at)}
             </span>
@@ -104,7 +133,7 @@ export default async function SlotsPage({ searchParams }: PageProps<"/slots">) {
                 <input type="hidden" name="therapist" value={therapistId ?? ""} />
                 <input type="hidden" name="day" value={day} />
                 {/* Порожній перший пункт: інакше required нічого не вимагає, і слот утримали б за першим клієнтом списку. */}
-                <NativeSelect name="client_id" required defaultValue="" aria-label={`Client for ${formatPracticeTime(s.starts_at)}`}>
+                <NativeSelect name="client_id" required defaultValue="" className="w-48 sm:w-64" aria-label={`Client for ${formatPracticeTime(s.starts_at)}`}>
                   <NativeSelectOption value="" disabled>
                     Choose a client
                   </NativeSelectOption>

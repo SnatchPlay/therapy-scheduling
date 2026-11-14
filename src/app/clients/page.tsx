@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/app/_components/app-shell";
 import { buttonVariants } from "@/components/ui/button";
@@ -18,18 +19,27 @@ export default async function ClientsPage({ searchParams }: PageProps<"/clients"
   const isStaff = STAFF.includes(role);
 
   return (
-    <AppShell role={role} email={email} title="Clients" notice={noticeFor(msg)}>
-      {isStaff ? (
-        <div>
+    <AppShell
+      role={role}
+      email={email}
+      current="/clients"
+      width="wide"
+      title="Clients"
+      description={isStaff ? "All client cards." : "Your clients."}
+      notice={noticeFor(msg)}
+      actions={
+        isStaff ? (
           <Link href="/clients/new" className={buttonVariants()}>
+            <Plus aria-hidden />
             New client
           </Link>
-        </div>
-      ) : null}
+        ) : undefined
+      }
+    >
       {clients.length === 0 ? (
         <EmptyState title={isStaff ? MESSAGES.NO_CLIENTS_STAFF : MESSAGES.NO_CLIENTS} />
       ) : (
-        <ul className="flex flex-col gap-4">
+        <ul className="grid gap-4 md:grid-cols-2">
           {clients.map((c) => (
             <li key={c.id}>
               <ClientCard client={c} linked />

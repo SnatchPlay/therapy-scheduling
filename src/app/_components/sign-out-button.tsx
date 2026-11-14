@@ -1,5 +1,6 @@
 "use client";
 
+import { LogOut } from "lucide-react";
 import type { ComponentProps } from "react";
 import { useFormStatus } from "react-dom";
 import { signOut } from "@/app/login/actions";
@@ -18,7 +19,7 @@ type Size = ComponentProps<typeof Button>["size"];
 //    інакше «Назад» показав би попередню сторінку з даними з пам'яті вкладки.
 // Помилка кроку 1 — у межу помилок (error.tsx): cookie могли лишитись (не вдалося оновити токен) або бути видалені лише
 // в браузері (сервер Auth недоступний); що саме — сторінка помилки не знає, тож на /login не переводимо.
-export function SignOutButton({ size }: { size?: Size }) {
+export function SignOutButton({ size, className }: { size?: Size; className?: string }) {
   const { cue, leave } = useSmoke();
 
   async function signOutWithCover() {
@@ -30,16 +31,17 @@ export function SignOutButton({ size }: { size?: Size }) {
 
   return (
     <form action={signOutWithCover}>
-      <SubmitButton size={size} />
+      <SubmitButton size={size} className={className} />
     </form>
   );
 }
 
 // useFormStatus бачить стан лише всередині форми.
-function SubmitButton({ size }: { size?: Size }) {
+function SubmitButton({ size, className }: { size?: Size; className?: string }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant="outline" size={size} disabled={pending}>
+    <Button type="submit" variant="outline" size={size} className={className} disabled={pending}>
+      <LogOut aria-hidden />
       Sign out
     </Button>
   );
