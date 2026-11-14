@@ -2,7 +2,7 @@
 
 ## 21. Набір, ADR і golden cases (PR `task/intake-draft-logic`, разом із задачею 22)
 
-- [x] 21.1 ADR 0006 «AI-функція: AI SDK + OpenRouter, безкоштовні моделі» (провайдер замінено ADR 0007: Claude API) і залежності `ai`, `zod`, `server-only` (точні версії, Р-контекст)
+- [x] 21.1 ADR 0006 «AI-функція: AI SDK + OpenRouter, безкоштовні моделі» (провайдер замінено ADR 0008: Claude API) і залежності `ai`, `zod`, `server-only` (точні версії, Р-контекст)
 - [x] 21.2 `src/lib/ai/` (`schema.ts`, `prompts/draft.ts`, `draft.ts`, `models.ts`, `anthropic.ts` (раніше `openrouter.ts`) з `server-only`), `.env.example` (Р32, Р34); `vitest.eval.config.mts` і скрипт `eval` — у 24.2 разом із живим прогоном
 - [x] 21.3 Golden cases PM → `tests/fixtures/golden/cases.json` (GC-01…10, `expected` — точні поля й повідомлення з таблиці PM), `tests/ai-key.test.ts`
 
@@ -27,7 +27,7 @@ Done when: AC-INTAKE-03, AC-INTAKE-08, AC-INTAKE-09 на рівні застос
 
 ## 24. Живий eval і записи (PR `task/intake-draft-eval`)
 
-- [x] 24.1 ADR 0007 і перехід на Claude API: `@ai-sdk/anthropic@4.0.96`, `src/lib/ai/anthropic.ts`, `ANTHROPIC_API_KEY` у `.env.local`; у Vercel (Production, Preview) — робить власник
+- [x] 24.1 ADR 0008 і перехід на Claude API: `@ai-sdk/anthropic@4.0.96`, `src/lib/ai/anthropic.ts`, `ANTHROPIC_API_KEY` у `.env.local`; у Vercel (Production, Preview) — робить власник
 - [x] 24.2 `vitest.eval.config.mts`, `evals/golden.live.eval.ts`, скрипт `eval`, `tests/golden.test.ts`; `RECORD=1 npm run eval`: справжні записи в `tests/fixtures/golden/recorded.json`; звіт `evals/reports/<дата й час>.md`; кожен FAIL пояснено
 - [x] 24.3 Заповнені `docs/conformance.md` для AC-INTAKE-01, 02, 04, 05, 06, 07 (реплей) після зеленого `npm test`
 

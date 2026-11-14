@@ -8,7 +8,7 @@ import { DRAFT_PROMPT_VERSION } from "@/lib/ai/prompts/draft";
 import { passRate, scoreOutcome, type GoldenCase } from "@/lib/ai/score";
 import casesJson from "../tests/fixtures/golden/cases.json";
 
-// `npm run eval` — ЖИВИЙ прогін golden cases PM на Claude (ADR 0007). Ніколи не в `npm test` і не в CI.
+// `npm run eval` — ЖИВИЙ прогін golden cases PM на Claude (ADR 0008). Ніколи не в `npm test` і не в CI.
 // Основа — набір курсу materials/ai-feature, без LLM-судді: очікуване PM — точні поля й дослівні повідомлення.
 // Потрібен ваш ключ у .env.local (ANTHROPIC_API_KEY); кожен виклик платний (~10 викликів Haiku на прогін). Без ключа всі кейси пропускаються — це не помилка.
 // Перший 429 зупиняє прогін: цей і решта кейсів — NOT RUN з причиною у звіті, у частку успіху не входять.

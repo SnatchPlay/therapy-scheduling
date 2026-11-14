@@ -1,6 +1,6 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 
-// Модель чернетки картки — Claude Haiku 5.5: найдешевша модель сімейства, для витягування полів з коротких текстів досить (ADR 0007).
+// Модель чернетки картки — Claude Haiku 5.5: найдешевша модель сімейства, для витягування полів з коротких текстів досить (ADR 0008).
 // Одна модель, без ланцюжка fallback: Anthropic API не має «зникаючих» безкоштовних моделей і денного ліміту, як OpenRouter :free.
 export const PRODUCT_MODEL = "claude-haiku-5-5";
 

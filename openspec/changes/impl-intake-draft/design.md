@@ -7,9 +7,9 @@
 Чернетка лише заповнює поля цієї форми; створює картку ніхто, окрім людини, яка натискає «Create client».
 База не змінюється: міграцій немає, нових таблиць немає, `database.types.ts` не чіпаємо.
 
-Нові залежності (ADR 0006, 0007): `ai@7.0.162`, `@ai-sdk/anthropic@4.0.96`, `zod@4.6.7`, `server-only@0.0.1`, точні
+Нові залежності (ADR 0006, 0008): `ai@7.0.162`, `@ai-sdk/anthropic@4.0.96`, `zod@4.6.7`, `server-only@0.0.1`, точні
 версії; джерело файлів — набір курсу `materials/ai-feature`, адаптований під цей домен («взято з
-koldovsky/2026-quitcode-10-ai-features-hw»). Модель — Claude Haiku 5.5 через Claude API (ADR 0007, замінює OpenRouter `:free` з ADR 0006).
+koldovsky/2026-quitcode-10-ai-features-hw»). Модель — Claude Haiku 5.5 через Claude API (ADR 0008, замінює OpenRouter `:free` з ADR 0006).
 
 ## UI і дії
 
