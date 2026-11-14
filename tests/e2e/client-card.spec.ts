@@ -34,8 +34,9 @@ test.describe("AC-CARD-05", () => {
     "AC-CARD-05: терапевт відкриває за прямим посиланням картку клієнта іншого терапевта — повідомлення «You don't have access to this client.», даних клієнта немає, картка не змінилась",
     { tag: ["@uat"], annotation: { type: "ac", description: "AC-CARD-05" } },
     async ({ page, browser }) => {
-      let opener: Role = "therapist";
-      let owner: Role = "therapist2";
+      // AC-CARD-05: відкриває therapist1, клієнт — свій лише для therapist2; ролі не міняємо місцями.
+      const opener: Role = "therapist";
+      const owner: Role = "therapist2";
       let clientId = "";
       let secrets: string[] = [];
       let cardBefore = "";
@@ -46,16 +47,14 @@ test.describe("AC-CARD-05", () => {
           therapist: await withRole(browser, "therapist", listedClients),
           therapist2: await withRole(browser, "therapist2", listedClients),
         };
-        // Як у вимозі (відкриває therapist1, клієнт — therapist2); якщо на проді виняткових клієнтів лише у therapist1 — навпаки.
-        const orientations: [Role, Role][] = [["therapist", "therapist2"], ["therapist2", "therapist"]];
-        const found = orientations
-          .map(([o, w]) => ({ o, w, client: lists[w as "therapist" | "therapist2"].find((c) => !lists[o as "therapist" | "therapist2"].some((x) => x.id === c.id)) }))
-          .find((x) => x.client);
-        expect(found, "є клієнт, який належить лише одному з двох терапевтів (передумова AC)").toBeDefined();
-        ({ o: opener, w: owner } = found!);
-        clientId = found!.client!.id;
+        const client = lists.therapist2.find((c) => !lists.therapist.some((x) => x.id === c.id));
+        expect(
+          client,
+          "передумова AC-CARD-05 не виконана: на проді немає клієнта, що є лише в списку therapist2 (і немає в therapist1). Створіть утримання «Held» у слоті therapist2 для клієнта без утримань у therapist1; роль-opener міняти місцями не можна, бо AC каже: відкриває therapist1",
+        ).toBeDefined();
+        clientId = client!.id;
         cardBefore = await withRole(browser, owner, cardOf);
-        secrets = secretsOf(found!.client!.name, cardBefore);
+        secrets = secretsOf(client!.name, cardBefore);
       });
 
       await when("інший терапевт відкриває картку цього клієнта за прямим посиланням", async () => {
@@ -75,7 +74,7 @@ test.describe("AC-CARD-05", () => {
           ],
         },
         async () => {
-          // Сценарій виконано від імені саме opener: ролі можуть помінятися місцями (див. given).
+          // Сценарій виконано від імені саме therapist1, як у AC.
           await expect(page.getByTestId("viewer")).toContainText(ROLES[opener]);
           await expect(page.locator("main").getByRole("alert")).toHaveText(NO_ACCESS);
           await expect(page.getByTestId("client-card")).toHaveCount(0);
