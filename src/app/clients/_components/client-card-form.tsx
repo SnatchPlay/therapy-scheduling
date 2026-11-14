@@ -76,27 +76,33 @@ function Field({
 /** Чернетка, застосована до форми; `forState` — результат createClientCard на мить застосування (див. ClientCardForm). */
 type DraftSeed = { values: IntakeValues; forState: CardFormState; n: number };
 
-export function ClientCardForm() {
-  const [state, action, pending] = useActionState(createClientCard, null);
-  const [draft, draftAction, drafting] = useActionState(requestIntakeDraft, null);
-  // Чернетка (AC-INTAKE-01, 02) заповнює всю форму: застосовуємо її, коли з'явився новий результат із полями. Це «стан із
-  // props» за документацією React: порівняння під час рендеру, без ефекту. Відмова чи «недоступний» (AC-INTAKE-06…08) нічого
-  // не застосовують, і поля лишаються як були.
+/**
+ * Звідки форма бере значення й помилки: з чернетки (AC-INTAKE-01, 02) чи з результату createClientCard. Чернетка заповнює всю
+ * форму; застосовуємо її, коли з'явився новий результат із полями. Це «стан із props» за документацією React: порівняння під час
+ * рендеру, без ефекту. Відмова чи «недоступний» (AC-INTAKE-06…08) нічого не застосовують, і поля лишаються як були.
+ * Новіше з двох: чернетка, якщо після неї створення картки не повертало результату; інакше — результат createClientCard
+ * (там уже поля, які планувальник виправив, і помилки).
+ */
+function useFormSource(state: CardFormState, draft: IntakeDraftState) {
   const [seenDraft, setSeenDraft] = useState<IntakeDraftState>(null);
   const [seed, setSeed] = useState<DraftSeed | null>(null);
   if (draft !== seenDraft) {
     setSeenDraft(draft);
     if (draft?.kind === "draft") setSeed({ values: draft.values, forState: state, n: (seed?.n ?? 0) + 1 });
   }
-  // Новіше з двох: чернетка, якщо після неї створення картки не повертало результату; інакше — результат createClientCard
-  // (там уже поля, які планувальник виправив, і помилки).
   const seeded = seed && seed.forState === state ? seed : null;
-  const values: Record<string, string> = seeded?.values ?? state?.values ?? {};
-  const codes = seeded ? [] : (state?.codes ?? []);
+  if (seeded) return { values: seeded.values as Record<string, string>, codes: [] as MessageCode[], key: `draft:${seeded.n}` };
+  if (!state) return { values: {} as Record<string, string>, codes: [] as MessageCode[], key: "initial" };
   // React 19 скидає форму після кожної дії й губить значення керованих і вже змонтованих полів (select). Тому поля
   // монтуємо наново з результатом дії: ключ міняється, коли міняються повернені значення чи коди, і defaultValue
   // (а з ним тип клієнта й мова) береться з них заново. Без цього після відмови «Child» ставав «Adult» (AC-CARD-03).
-  const key = seeded ? `draft:${seeded.n}` : state ? `${state.codes.join(",")}:${JSON.stringify(state.values)}` : "initial";
+  return { values: state.values, codes: state.codes, key: `${state.codes.join(",")}:${JSON.stringify(state.values)}` };
+}
+
+export function ClientCardForm() {
+  const [state, action, pending] = useActionState(createClientCard, null);
+  const [draft, draftAction, drafting] = useActionState(requestIntakeDraft, null);
+  const { values, codes, key } = useFormSource(state, draft);
   return (
     <div className="flex max-w-xl flex-col gap-6">
       <IntakeDraftPanel key={draft ? `${draft.kind}:${draft.message}:${draft.text}` : "initial"} state={draft} action={draftAction} pending={drafting} />

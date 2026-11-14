@@ -12,7 +12,8 @@ function walk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const p = path.join(dir, e.name);
     if (e.isDirectory()) return e.name === "node_modules" ? [] : walk(p);
-    return /\.(ts|tsx|js|jsx|mjs)$/.test(e.name) ? [p] : [];
+    // Тести (*.test.*) ключ не читають, а лише підставляють його в оточення (vi.stubEnv): їх не рахуємо серед читачів.
+    return /\.(ts|tsx|js|jsx|mjs)$/.test(e.name) && !/\.test\./.test(e.name) ? [p] : [];
   });
 }
 
