@@ -99,3 +99,12 @@
 | AC-INS-04 | терапевт бачить статус у картці свого клієнта лише для читання | `supabase/migrations/20261108062344_insurance_status.sql` (insurance_status), `supabase/migrations/20261103100000_own_client_until_start.sql` (own_client_ids), `src/app/clients/[id]/page.tsx` | `tests/db/insurance-status-db.test.ts`, `src/app/clients/[id]/page.test.tsx`, `src/app/clients/page.test.tsx` | реалізовано |
 | AC-INS-05 | терапевт не змінює статус в обхід сторінок: статус лишається | `supabase/migrations/20261108062344_insurance_status.sql` (clients_update_insurance_staff), `src/app/clients/actions.ts` (setInsuranceStatus) | `tests/db/insurance-status-db.test.ts`, `src/app/clients/actions.test.ts` | реалізовано |
 | AC-INS-06 | без входу — лише сторінка входу, статусу й даних клієнта не показано | `src/proxy.ts`, `src/lib/supabase/proxy.ts` (updateSession), `supabase/migrations/20261108062344_insurance_status.sql` (права anon) | `src/lib/supabase/proxy.test.ts`, `tests/db/insurance-status-db.test.ts` | реалізовано |
+| AC-INTAKE-01 | чернетка дорослого клієнта з повними даними: форма заповнена, «Draft ready. Check the fields and create the card.» | — | — | відкладено (чекає реалізації) |
+| AC-INTAKE-02 | чернетка дитини з даними опікуна: Child, Guardian name і Guardian email, «Draft ready…» | — | — | відкладено (чекає реалізації) |
+| AC-INTAKE-03 | чернетка нічого не зберігає: картки немає в списку, доки планувальник не збереже форму | — | — | відкладено (чекає реалізації) |
+| AC-INTAKE-04 | неповна чернетка: порожні поля й «Draft is incomplete. Missing: Date of birth, Session language. Fill them in manually.» | — | — | відкладено (чекає реалізації) |
+| AC-INTAKE-05 | дата народження пізніша за сьогодні: поле порожнє, «Missing: Date of birth» | — | — | відкладено (чекає реалізації) |
+| AC-INTAKE-06 | текст не про нового клієнта: форма не змінена, «This text can't be used to draft a client card…» | — | — | відкладено (чекає реалізації) |
+| AC-INTAKE-07 | вказівки в тексті звернення не виконуються: форма порожня, відмова, кількість карток N не змінилась | — | — | відкладено (чекає реалізації) |
+| AC-INTAKE-08 | помічник недоступний (немає відповіді чи ліміт): «The assistant is unavailable right now. Fill in the form manually.», форма працює вручну | — | — | відкладено (чекає реалізації) |
+| AC-INTAKE-09 | терапевт за прямим посиланням: ні форми, ні чернетки, «Only schedulers and admins can create client cards.» | — | — | відкладено (чекає реалізації) |
