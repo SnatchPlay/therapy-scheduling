@@ -10,12 +10,16 @@ const PROFILES = "supabase/migrations/20261012000000_profiles_and_roles.sql";
 const SLOTS_AND_HOLDS = "supabase/migrations/20261019143036_slots_and_holds.sql";
 const CLIENT_CARD = "supabase/migrations/20261026100000_client_card.sql";
 const OWN_CLIENT = "supabase/migrations/20261103100000_own_client_until_start.sql";
+const ROLES_AND_CLIENTS = "supabase/migrations/20261019142745_roles_and_clients.sql";
 const INSURANCE = "supabase/migrations/20261108062344_insurance_status.sql";
+const INSURANCE_FIX = "supabase/migrations/20261114153320_insurance_not_set_trigger_validate_email.sql";
 const INSURANCE_DB = "tests/db/insurance-status-db.test.ts";
 const INSURANCE_BLIND = "tests/db/insurance-status-blind.test.ts";
 const PROFILES_DB = "tests/db/profiles-db.test.ts";
 const CARD_DB = "tests/db/client-card-db.test.ts";
 const HOLD_DB = ["tests/db/holds-db.test.ts", "tests/db/hold-list-db.test.ts", "tests/db/schedule-db.test.ts"];
+const PROXY = "src/lib/supabase/proxy.ts";
+const PROXY_TEST = "src/lib/supabase/proxy.test.ts";
 const CLIENT_PAGE = "src/app/clients/[id]/page.tsx";
 const CLIENT_PAGE_TEST = "src/app/clients/[id]/page.test.tsx";
 const CLIENTS_ACTIONS = "src/app/clients/actions.ts";
@@ -70,10 +74,10 @@ export const mutants = [
     replace: "using (true)",
   },
   {
-    id: "I2", kind: "sql", ac: "AC-INS-02", file: INSURANCE, tests: [INSURANCE_DB, INSURANCE_BLIND],
-    what: "with check політики: «Not set» (і будь-яке значення) можна виставити знову",
-    find: "with check (insurance_status in ('Verified', 'Not accepted', 'Private pay'))",
-    replace: "with check (true)",
+    id: "I2", kind: "sql", ac: "AC-INS-02", file: INSURANCE_FIX, tests: [INSURANCE_DB, INSURANCE_BLIND],
+    what: "тригер clients_insurance_not_set не відмовляє: «Not set» можна виставити знову (правило живе в тригері, не в політиці)",
+    find: "if new.insurance_status = 'Not set' then",
+    replace: "if false then",
   },
   {
     id: "I3", kind: "sql", ac: "AC-INS-02", file: INSURANCE, tests: [INSURANCE_DB, INSURANCE_BLIND, CARD_DB],
@@ -110,6 +114,28 @@ export const mutants = [
     what: "повноту картки знову перевіряє й update: старій картці без дати й мови не можна позначити статус",
     find: "  after insert on public.clients",
     replace: "  after insert or update on public.clients",
+  },
+  {
+    id: "I9", kind: "sql", ac: "AC-INS-06", file: ROLES_AND_CLIENTS, tests: [INSURANCE_DB, INSURANCE_BLIND],
+    what: "anon отримує select на clients: запит лише з публічним ключем (без входу) читає картки й статус",
+    find: "revoke all on table public.clients from anon, authenticated;",
+    replace: "revoke all on table public.clients from authenticated;\ngrant select on table public.clients to anon;",
+  },
+  {
+    id: "I10", kind: "sql", ac: "AC-INS-02", file: INSURANCE, tests: [INSURANCE_DB, CARD_DB],
+    what: "право update на всю таблицю через роль-посередника, виданого authenticated «with inherit true» (прямого grant authenticated немає)",
+    find: "grant update (insurance_status) on table public.clients to authenticated;",
+    replace:
+      "grant update (insurance_status) on table public.clients to authenticated;\n" +
+      "create role clients_writer nologin;\n" +
+      "grant update on table public.clients to clients_writer;\n" +
+      "grant clients_writer to authenticated with inherit true;",
+  },
+  {
+    id: "I11", kind: "sql", ac: "AC-INS-02", file: INSURANCE_FIX, tests: [CARD_DB],
+    what: "clients_email_check лишається not valid: Postgres перевіряє його на кожному update рядка, і статус старої картки не зберегти",
+    find: "alter table public.clients validate constraint clients_email_check;",
+    replace: "select 1;",
   },
   // ── Сторінки (TS): відмова з текстом PM ────────────────────────────────────────────────────────────────────
   {
@@ -185,5 +211,12 @@ export const mutants = [
     what: "картка не показує рядок «Insurance: <статус>»",
     find: "{`Insurance: ${client.insurance_status}`}",
     replace: "{``}",
+  },
+  // ── AC-INS-06: без входу — лише сторінка входу (proxy) ──────────────────────────────────────────────────────
+  {
+    id: "T13", kind: "ts", ac: "AC-INS-06", file: PROXY, tests: [PROXY_TEST],
+    what: "proxy: без входу немає редиректу на /login, картка клієнта за прямим посиланням віддається",
+    find: "if (!claims && !isPublic) {",
+    replace: "if (false) {",
   },
 ];

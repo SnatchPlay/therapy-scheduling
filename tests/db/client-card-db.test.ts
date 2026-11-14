@@ -3,7 +3,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { clientErrorCode, MESSAGES, type ClientType } from "@/lib/messages";
 import { addDays, practiceDate } from "@/lib/time";
-import { ageHold, createSlot, holdAs, startSlotAt } from "./fixtures";
+import { ageHold, clientColumnsWithPrivilege, createSlot, holdAs, startSlotAt } from "./fixtures";
 import { createTestDb, type TestDb } from "./supabase-pglite";
 
 let t: TestDb;
@@ -258,12 +258,13 @@ describe("Створення картки (планувальник, адмін�
     expect(await createCardAs(SCHEDULER, { name: "Client Legacy", email: "legacy@example.test", birth: "1990-01-01", language: "English" })).toBe("created");
   });
 
-  it("AC-HOLD-10: картки зрізу 1 лишаються дійсними — повноту перевіряє тригер лише на insert, а email-обмеження створено not valid", async () => {
+  it("AC-HOLD-10: картки зрізу 1 лишаються дійсними — повноту перевіряє тригер лише на insert, а email-обмеження перевірено (validated)", async () => {
     const rows = await t.asOwner<{ conname: string; convalidated: boolean }>(
       "select conname, convalidated from pg_constraint where conrelid = 'public.clients'::regclass and conname in ('clients_complete_check', 'clients_email_check') order by conname",
     );
     // Повнота — не обмеження таблиці (воно б перевіряло й update старого рядка), а тригер лише на insert (міграція insurance_status).
-    expect(rows).toEqual([{ conname: "clients_email_check", convalidated: false }]);
+    // Email-обмеження було not valid (перевіряло б кожен update); міграція insurance_not_set_trigger_validate_email його validate-ила.
+    expect(rows).toEqual([{ conname: "clients_email_check", convalidated: true }]);
     const triggers = await t.asOwner<{ tgname: string; insert_only: boolean }>(
       `select tgname, (tgtype & 4) = 4 and (tgtype & 8) = 0 and (tgtype & 16) = 0 as insert_only from pg_trigger
        where tgrelid = 'public.clients'::regclass and tgname = 'clients_require_complete'`,
@@ -552,13 +553,10 @@ describe("Доступ до карток", () => {
     await expect(
       t.asUser(SCHEDULER, "insert into public.clients (full_name, email, created_by) values ('X', 'x@example.test', $1)", [ADMIN]),
     ).rejects.toThrow(/permission denied/);
-    const grants = await t.asOwner<{ privilege_type: string; column_name: string }>(
-      `select privilege_type, column_name from information_schema.column_privileges
-       where table_name = 'clients' and grantee = 'authenticated' and privilege_type in ('INSERT', 'UPDATE') order by 2, 1`,
-    );
+    // Фактичні права (has_column_privilege), а не рядки information_schema за іменем grantee: так видно й право через роль-посередника.
     // Єдина колонка з update — статус страхування (міграція insurance_status); решту картки не редагують до WS11.
-    expect(grants.filter((g) => g.privilege_type === "UPDATE").map((g) => g.column_name)).toEqual(["insurance_status"]);
-    expect(grants.filter((g) => g.privilege_type === "INSERT").map((g) => g.column_name)).toEqual([
+    expect(await clientColumnsWithPrivilege(t, "authenticated", "UPDATE")).toEqual(["insurance_status"]);
+    expect(await clientColumnsWithPrivilege(t, "authenticated", "INSERT")).toEqual([
       "birth_date",
       "client_type",
       "email",

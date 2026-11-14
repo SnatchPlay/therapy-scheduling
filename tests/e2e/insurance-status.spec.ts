@@ -5,7 +5,7 @@
 // слід назвати у звіті UAT. Без @writes (`--grep-invert '@writes'`) сценарій не запускається.
 import { readFileSync } from "node:fs";
 import { expect, test, type Browser, type Page } from "@playwright/test";
-import { authFile, switchRole, withRole, type Role } from "./support/roles";
+import { ROLES, authFile, switchRole, withRole, type Role } from "./support/roles";
 import { attachRuntimeErrors, given, thenStep, when } from "./support/uat";
 
 const run = Date.now().toString(36);
@@ -19,10 +19,14 @@ test.afterEach(async ({ page }) => attachRuntimeErrors(page));
 
 const status = (page: Page) => page.getByTestId("insurance-status");
 
-/** Картка клієнта очима ролі в другій сесії: рядок «Insurance: …» (або порожньо, якщо картки не видно). */
+/**
+ * Картка клієнта очима ролі в другій сесії: рядок «Insurance: …». Перед читанням перевіряємо, що сесія справді належить
+ * очікуваному акаунту (email ролі в шапці), інакше крок «Тоді» міг би пройти від імені не тієї ролі.
+ */
 const statusAs = (browser: Browser, role: Role) =>
   withRole(browser, role, async (other) => {
     await other.goto(`/clients/${clientId}`);
+    await expect(other.getByTestId("viewer")).toContainText(ROLES[role]);
     return (await status(other).textContent()) ?? "";
   });
 
@@ -225,17 +229,19 @@ test.describe("therapist", () => {
       });
       await when("therapist1 напряму, оминаючи сторінки застосунку, пробує змінити статус на «Verified»", async () => {
         // Запит до Data API з сесією терапевта: політика на update є лише в планувальника й адміністратора.
+        const headers = { apikey: key!, Authorization: `Bearer ${accessTokenOf("therapist")}` };
+        // Токен дійсний і це справді therapist1: той самий токен читає саме цю картку (рівно один рядок). Без цього
+        // порожня відповідь PATCH могла б означати і «RLS не пропустила», і «токен протермінований / не той URL».
+        const visible = await request.get(`${base}/rest/v1/clients?id=eq.${clientId}&select=id`, { headers });
+        expect(visible.status(), "GET картки токеном therapist1").toBe(200);
+        expect(await visible.json(), "therapist1 бачить картку свого клієнта (токен дійсний)").toEqual([{ id: clientId }]);
+        // PostgREST на update, відфільтрований RLS, відповідає 200 з []: нуль зачеплених, а не помилка.
         const response = await request.patch(`${base}/rest/v1/clients?id=eq.${clientId}`, {
-          headers: {
-            apikey: key!,
-            Authorization: `Bearer ${accessTokenOf("therapist")}`,
-            "Content-Type": "application/json",
-            Prefer: "return=representation",
-          },
+          headers: { ...headers, "Content-Type": "application/json", Prefer: "return=representation" },
           data: { insurance_status: "Verified" },
         });
-        // База не бачить рядка для терапевта: нуль зачеплених (або відмова), а не успішна зміна.
-        expect(response.status() < 300 ? await response.json() : []).toEqual([]);
+        expect(response.status(), "PATCH: RLS відфільтрувала рядок, а не помилка запиту").toBe(200);
+        expect(await response.json(), "PATCH не зачепив жодного рядка").toEqual([]);
       });
       await thenStep(
         page,

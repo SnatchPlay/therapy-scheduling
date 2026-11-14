@@ -2,7 +2,7 @@
 // політика clients_update_insurance_staff (міграція insurance_status, ADR 0005). Мутації правил (таблиця — в описі PR)
 // червонять відповідні тести.
 import { beforeAll, describe, expect, it } from "vitest";
-import { createSlot, ensureClient, holdAs } from "./fixtures";
+import { clientColumnsWithPrivilege, createSlot, ensureClient, holdAs } from "./fixtures";
 import { createTestDb, type TestDb } from "./supabase-pglite";
 
 let t: TestDb;
@@ -140,8 +140,17 @@ describe("Позначення й зміна статусу (плануваль�
     const clientId = await ensureClient(t, "Client NoReset", "noreset@example.test");
     await presetStatus(clientId, "Verified");
 
-    await expect(setStatusAs(SCHEDULER, clientId, "Not set")).rejects.toMatchObject({ code: "42501" });
-    await expect(setStatusAs(ADMIN, clientId, "Not set")).rejects.toMatchObject({ code: "42501" });
+    // Відмовляє тригер clients_insurance_not_set (його текст), а не політика: RLS для цього запиту дозволяє.
+    await expect(setStatusAs(SCHEDULER, clientId, "Not set")).rejects.toMatchObject({
+      code: "42501",
+      message: expect.stringContaining("статус «Not set» не повернути"),
+    });
+    await expect(setStatusAs(ADMIN, clientId, "Not set")).rejects.toMatchObject({
+      code: "42501",
+      message: expect.stringContaining("статус «Not set» не повернути"),
+    });
+    // Тригер не залежить від ролі: service_role (в обхід RLS) теж не повертає «Not set».
+    await expect(presetStatus(clientId, "Not set")).rejects.toMatchObject({ code: "42501" });
 
     expect(await statusInDb(clientId)).toBe("Verified");
   });
@@ -150,24 +159,28 @@ describe("Позначення й зміна статусу (плануваль�
     const clientId = await ensureClient(t, "Client Bad", "badstatus@example.test");
     await presetStatus(clientId, "Verified");
 
-    // Політика (with check) і check таблиці відмовляють по-різному за кодом: RLS — 42501, check — 23514.
-    await expect(setStatusAs(SCHEDULER, clientId, "Approved")).rejects.toMatchObject({ code: "42501" });
-    await expect(setStatusAs(SCHEDULER, clientId, "")).rejects.toMatchObject({ code: "42501" });
-    // Остання брама для запису в обхід політики (service_role): check таблиці.
+    // Політика пускає планувальника (роль перевірено), тож значення поза списком відхиляє check таблиці (23514): це ж
+    // остання брама й для запису в обхід політики (service_role).
+    await expect(setStatusAs(SCHEDULER, clientId, "Approved")).rejects.toMatchObject({ code: "23514" });
+    await expect(setStatusAs(SCHEDULER, clientId, "")).rejects.toMatchObject({ code: "23514" });
     await expect(presetStatus(clientId, "Approved")).rejects.toMatchObject({ code: "23514" });
 
     expect(await statusInDb(clientId)).toBe("Verified");
   });
 
-  it("AC-INS-02: планувальник змінює лише статус: інші колонки картки недоступні для update, дані не змінились", async () => {
+  it("AC-INS-02: планувальник змінює лише статус: інші колонки недоступні для update (відмова колонкового права), дані не змінились", async () => {
+    // Картка з уже виставленим статусом: політика й with check її пропускають, тож відмова приходить саме від колонкового
+    // права («permission denied for table»), а не від RLS («violates row-level security policy»). Із «Not set» цю відмову
+    // могла б дати й політика, і тест лишився б зеленим навіть при grant update на всю таблицю.
     const clientId = await ensureClient(t, "Client Columns", "columns@example.test");
+    await presetStatus(clientId, "Verified");
 
     await expect(
       t.asUser(SCHEDULER, "update public.clients set full_name = 'Renamed' where id = $1", [clientId]),
-    ).rejects.toMatchObject({ code: "42501" });
+    ).rejects.toMatchObject({ code: "42501", message: expect.stringMatching(/permission denied for table clients/) });
     await expect(
       t.asUser(SCHEDULER, "update public.clients set email = 'other@example.test' where id = $1", [clientId]),
-    ).rejects.toMatchObject({ code: "42501" });
+    ).rejects.toMatchObject({ code: "42501", message: expect.stringMatching(/permission denied for table clients/) });
 
     const [row] = await t.asService<{ full_name: string; email: string }>(
       "select full_name, email from public.clients where id = $1",
@@ -226,24 +239,28 @@ describe("Терапевт: бачить статус своїх клієнті�
 });
 
 describe("Права, прочитані з бази", () => {
-  it("AC-INS-02: update для authenticated — лише колонка insurance_status; anon без жодного права на clients", async () => {
-    const updatable = await t.asOwner<{ grantee: string; column_name: string }>(
-      `select grantee, column_name from information_schema.column_privileges
-       where table_schema = 'public' and table_name = 'clients' and privilege_type = 'UPDATE'
-         and grantee in ('anon', 'authenticated')
-       order by grantee, column_name`,
-    );
-    expect(updatable).toEqual([{ grantee: "authenticated", column_name: "insurance_status" }]);
+  it("AC-INS-02: фактичне право update для authenticated — лише колонка insurance_status; anon без жодного права на clients", async () => {
+    // has_column_privilege враховує й право на всю таблицю, і право через роль-посередника (шим як у Supabase: noinherit).
+    expect(await clientColumnsWithPrivilege(t, "authenticated", "UPDATE")).toEqual(["insurance_status"]);
+    expect(
+      await t.asOwner<{ full_name: boolean }>(
+        "select has_column_privilege('authenticated', 'public.clients', 'full_name', 'UPDATE') as full_name",
+      ),
+    ).toEqual([{ full_name: false }]);
 
-    const anon = await t.asOwner(
-      "select 1 from information_schema.column_privileges where table_schema = 'public' and table_name = 'clients' and grantee = 'anon'",
-    );
-    expect(anon).toHaveLength(0);
+    for (const privilege of ["SELECT", "INSERT", "UPDATE"] as const) {
+      expect(await clientColumnsWithPrivilege(t, "anon", privilege)).toEqual([]);
+    }
+    expect(
+      await t.asOwner(
+        "select has_table_privilege('anon', 'public.clients', 'DELETE') or has_table_privilege('authenticated', 'public.clients', 'DELETE') as d",
+      ),
+    ).toEqual([{ d: false }]);
   });
 
-  it("AC-INS-05: на clients рівно одна політика update — для планувальника й адміністратора", async () => {
+  it("AC-INS-05: на clients рівно одна політика, що дозволяє update (cmd UPDATE або ALL) — для планувальника й адміністратора", async () => {
     const policies = await t.asOwner<{ policyname: string; roles: string }>(
-      "select policyname, roles::text as roles from pg_policies where schemaname = 'public' and tablename = 'clients' and cmd = 'UPDATE'",
+      "select policyname, roles::text as roles from pg_policies where schemaname = 'public' and tablename = 'clients' and cmd in ('UPDATE', 'ALL')",
     );
     expect(policies).toEqual([{ policyname: "clients_update_insurance_staff", roles: "{authenticated}" }]);
   });

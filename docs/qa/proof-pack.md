@@ -66,6 +66,7 @@ FAIL і NEEDS-HUMAN не ховаємо: вони й у таблиці вище,
 - Мутації:
   - SQL (`node scripts/mutation-check.mjs --only I1,…,I8`): 8 з 8 вбито — таблиця в описі [PR #69](https://github.com/SnatchPlay/therapy-scheduling/pull/69); визначення — [scripts/mutants.mjs](https://github.com/SnatchPlay/therapy-scheduling/blob/7c6adb8/scripts/mutants.mjs).
   - TypeScript (`--only T4,…,T12`): 9 з 9 вбито — [PR #70](https://github.com/SnatchPlay/therapy-scheduling/pull/70).
+  - Після фідбеку WS9 (гілка `task/ws9-feedback`): додано T13 (`proxy.ts`, AC-INS-06), I9 (`anon` отримує `select` на `clients`, AC-INS-06), I10 (право на всю таблицю через роль-посередника `with inherit true`) і I11 (`clients_email_check` лишається `not valid`); I2 перенесено на тригер `clients_insurance_not_set` ([ADR 0007](../decisions/0007-insurance-not-set-trigger.md)). `npm run mutation:sql` — 17 з 17 вбито, `npm run mutation:points` — 13 з 13 вбито. Пункт 18.3 плану закрито міграцією `validate constraint`: `db-deploy` сам перевіряє рядки проду.
   - Stryker для `src/lib/messages.ts` (рядки зрізу): 5 з 5 вбито — [PR #70](https://github.com/SnatchPlay/therapy-scheduling/pull/70). Значень «до» немає: у PR зафіксовано лише результат. Для `actions.ts` Stryker не запускається (див. «Не перевірено»).
   - Сліпі тести бази (гілка `docs/ws9-proof-pack`) входять у набір мутантів I1–I8 і потраплять у `main` разом із PR цієї гілки; самі по собі вбивають 4 з 8 (див. примітку під таблицею доказів).
 - CodeRabbit: не викликався: рішення власника репо. Відповідей на знахідки немає.
