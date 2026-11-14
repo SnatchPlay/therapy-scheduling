@@ -79,3 +79,18 @@ export function quietDay(week = 0): string {
   day.setUTCDate(day.getUTCDate() + ((7 - day.getUTCDay()) % 7) + 7 * week);
   return day.toISOString().slice(0, 10);
 }
+
+/**
+ * Колонки public.clients, на які роль ФАКТИЧНО має право (has_column_privilege): враховує й право на всю таблицю, і право,
+ * видане через іншу роль, яку успадковує ця. Звірка за ім'ям grantee у information_schema цього не бачить.
+ */
+export async function clientColumnsWithPrivilege(t: TestDb, role: "anon" | "authenticated", privilege: "SELECT" | "INSERT" | "UPDATE") {
+  const rows = await t.asOwner<{ column_name: string }>(
+    `select attname as column_name from pg_attribute
+     where attrelid = 'public.clients'::regclass and attnum > 0 and not attisdropped
+       and has_column_privilege($1, 'public.clients', attname, $2)
+     order by attname`,
+    [role, privilege],
+  );
+  return rows.map((r) => r.column_name);
+}

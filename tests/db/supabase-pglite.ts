@@ -18,8 +18,10 @@ interface DemoUser {
 
 /** Те, що в Supabase вже є до наших міграцій: ролі, схема auth, auth.uid(). */
 const SUPABASE_SHIM = `
-  create role anon nologin;
-  create role authenticated nologin;
+  -- Як у Supabase: anon і authenticated — nologin noinherit. Права, видані іншій ролі (посереднику), яку їм видали через
+  -- grant role, не успадковуються: тест не бачить «права», яких на проді немає.
+  create role anon nologin noinherit;
+  create role authenticated nologin noinherit;
   create role service_role nologin bypassrls;
   create role supabase_auth_admin nologin;
   create schema auth;
