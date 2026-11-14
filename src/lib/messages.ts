@@ -32,6 +32,21 @@ export const MESSAGES = {
   UNEXPECTED: "Something went wrong. Try again.",
 } as const;
 
+/**
+ * Тексти помічника, що складає чернетку картки (дослівно з AC-INTAKE-01, 06, 07, 08). Окремо від MESSAGES: вони не йдуть у
+ * ?msg=<код> після redirect, їх повертає дія `requestIntakeDraft` самій формі.
+ */
+export const INTAKE_MESSAGES = {
+  DRAFT_READY: "Draft ready. Check the fields and create the card.", // AC-INTAKE-01, 02
+  DRAFT_REFUSED: "This text can't be used to draft a client card. Paste the client's request or fill in the form manually.", // AC-INTAKE-06, 07
+  ASSISTANT_UNAVAILABLE: "The assistant is unavailable right now. Fill in the form manually.", // AC-INTAKE-08
+} as const;
+
+/** «Draft is incomplete. Missing: …» (AC-INTAKE-04, 05): назви порожніх обов'язкових полів у порядку форми. */
+export function draftIncomplete(missing: readonly string[]): string {
+  return `Draft is incomplete. Missing: ${missing.join(", ")}. Fill them in manually.`;
+}
+
 export type MessageCode = keyof typeof MESSAGES;
 
 function isMessageCode(value: unknown): value is MessageCode {
