@@ -35,7 +35,8 @@ describe("/", () => {
     const html = renderToStaticMarkup(await open());
     expect(html).toContain("Your account has no access yet. Contact an administrator.");
     for (const word of [">Slots<", ">Holds<", ">Clients<", ">Schedule<", "data-testid=\"client-card\""]) expect(html).not.toContain(word);
-    expect(html).toContain("user@example.test · no role");
+    expect(html).toContain(">user@example.test<");
+    expect(html).toContain(">no role<");
     expect(html).toContain(">Sign out<");
   });
 });
