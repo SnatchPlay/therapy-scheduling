@@ -63,6 +63,9 @@
       "scripts/smoke.mjs",
       "scripts/mutation-check.mjs",
       "scripts/uat/**",
+      // Скрипти набору курсу materials/ai-feature (WS10): npm run ai:models, ai:quota; правки набору — з репо курсу.
+      "scripts/free-models.mjs",
+      "scripts/quota.mjs",
       "src/app/api/health/route.ts"
     ],
     "thresholdOverrides": [
