@@ -27,9 +27,10 @@ Done when: AC-INTAKE-03, AC-INTAKE-08, AC-INTAKE-09 на рівні застос
 
 ## 24. Живий eval і записи (PR `task/intake-draft-eval`)
 
-- [x] 24.1 ADR 0008 і перехід на Claude API: `@ai-sdk/anthropic@4.0.96`, `src/lib/ai/anthropic.ts`, `ANTHROPIC_API_KEY` у `.env.local`; у Vercel (Production, Preview) — робить власник
+- [x] 24.1 ADR 0008 і перехід на Claude API: `@ai-sdk/anthropic@4.0.96`, `src/lib/ai/anthropic.ts`, `ANTHROPIC_API_KEY` у `.env.local`; у Vercel лише Production — робить власник
 - [x] 24.2 `vitest.eval.config.mts`, `evals/golden.live.eval.ts`, скрипт `eval`, `tests/golden.test.ts`; `RECORD=1 npm run eval`: справжні записи в `tests/fixtures/golden/recorded.json`; звіт `evals/reports/<дата й час>.md`; кожен FAIL пояснено
 - [x] 24.3 Заповнені `docs/conformance.md` для AC-INTAKE-01, 02, 04, 05, 06, 07 (реплей) після зеленого `npm test`
+- [x] 24.4 Ліміт 10 чернеток на годину на користувача: міграція `intake_draft_quota`, rpc перед моделлю, тести бази й дії, мутанти I12 і I13 (Р36)
 
 Done when: AC-INTAKE-01, 02, 04, 06, 07 (офлайн-реплей записаних відповідей; частка успіху — у звіті eval)
 

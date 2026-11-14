@@ -107,14 +107,20 @@ export type IntakeDraftState =
 /** Довжина тексту звернення: вимога PM, «Припущення» (поле більшого не приймає). */
 const MAX_REQUEST_LENGTH = 2000;
 
+/** Користувач бачить завжди те саме «недоступний» (AC-INTAKE-08); причина — лише в лог сервера, без тексту звернення. */
+function unavailable(text: string, reason: string): IntakeDraftState {
+  console.error(`intake draft unavailable: ${reason}`);
+  return { kind: "unavailable", message: INTAKE_MESSAGES.ASSISTANT_UNAVAILABLE, text };
+}
+
 /**
- * AC-INTAKE-01…09: чернетка картки з тексту звернення (design.md, Р30–Р33). Дія лише ПОВЕРТАЄ чернетку у форму: вона не
- * торкається бази (картку створює людина через createClientCard з правилами й RLS), не має інструментів запису й не
- * виконує вказівок з тексту. Роль перевіряємо до виклику моделі: інакше терапевт чи будь-хто, хто пройшов вхід, витрачав би
+ * AC-INTAKE-01…09: чернетка картки з тексту звернення (design.md, Р30–Р33, Р36). Дія лише ПОВЕРТАЄ чернетку у форму: до
+ * бази вона звертається лише за лімітом запитів до моделі (rpc take_intake_draft_slot), клієнтів і слотів не торкається
+ * (картку створює людина через createClientCard з правилами й RLS), не має інструментів запису й не виконує вказівок з тексту. Роль перевіряємо до виклику моделі: інакше терапевт чи будь-хто, хто пройшов вхід, витрачав би
  * гроші власника за платні виклики. Порожній текст і текст довший за ліміт до моделі не йдуть (припущення розробника, Р33).
  */
 export async function requestIntakeDraft(_previous: IntakeDraftState, formData: FormData): Promise<IntakeDraftState> {
-  const { role } = await getViewer();
+  const { role, supabase } = await getViewer();
   if (!role) redirect("/");
 
   const value = formData.get("text");
@@ -126,12 +132,13 @@ export async function requestIntakeDraft(_previous: IntakeDraftState, formData: 
   // Модуль із ключем (`server-only`) вантажимо лише тут: сторінки й тести, що імпортують цей файл, його не тягнуть.
   const { productModel } = await import("@/lib/ai/anthropic");
   const model = productModel();
-  const result = model ? await askModel(text, today, model) : undefined;
-  if (!result?.ok) {
-    // Причина збою — у лог сервера (текст звернення туди не потрапляє); користувач бачить лише «недоступний» (AC-INTAKE-08).
-    console.error(`intake draft unavailable: ${result ? result.reason : "no model key"}`);
-    return { kind: "unavailable", message: INTAKE_MESSAGES.ASSISTANT_UNAVAILABLE, text };
-  }
+  if (!model) return unavailable(text, "no model key");
+  // Ліміт 10 запитів на годину на користувача — у базі (міграція intake_draft_quota, ADR 0008). Помилка перевірки теж
+  // закриває: платного виклику без ліміту не робимо.
+  const { data: allowed, error: quotaError } = await supabase.rpc("take_intake_draft_slot");
+  if (quotaError || allowed !== true) return unavailable(text, quotaError ? "quota check failed" : "quota exhausted");
+  const result = await askModel(text, today, model);
+  if (!result.ok) return unavailable(text, result.reason);
 
   const outcome = buildOutcome(result.draft, today);
   return outcome.kind === "draft"

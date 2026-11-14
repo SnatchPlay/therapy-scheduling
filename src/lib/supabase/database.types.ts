@@ -241,7 +241,10 @@ isOneToOne: false
         to: "slot_board"
         isOneToOne: false
         isSetofReturn: true
-      } }
+      } },
+"take_intake_draft_slot":
+{ Args: never; Returns: boolean
+                           }
           }
           Enums: {
             [_ in never]: never
