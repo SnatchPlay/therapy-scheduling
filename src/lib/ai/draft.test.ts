@@ -27,7 +27,7 @@ const VALID = JSON.stringify({
   guardianEmail: null,
 });
 const apiError = (statusCode: number, data?: unknown) =>
-  new APICallError({ message: "provider error", url: "https://openrouter.ai/api/v1/chat/completions", requestBodyValues: {}, statusCode, data });
+  new APICallError({ message: "provider error", url: "https://api.anthropic.com/v1/messages", requestBodyValues: {}, statusCode, data });
 
 describe("AC-INTAKE-08: помічник недоступний (збої моделі)", () => {
   it("AC-INTAKE-08: відповідь не за схемою → invalid_output, а не «майже чернетка»", async () => {
@@ -40,13 +40,6 @@ describe("AC-INTAKE-08: помічник недоступний (збої мод
     const result = await askModel("text", "2026-11-13", model, { maxRetries: 1 });
     expect(result).toMatchObject({ ok: false, reason: "rate_limited" });
     expect(model.doGenerateCalls).toHaveLength(2);
-  });
-
-  it("AC-INTAKE-08: HTTP 200 з тілом помилки code 429 → rate_limited (ліміт постачальника за OpenRouter), без повтору", async () => {
-    const model = failing(() => apiError(200, { code: 429, message: "upstream rate limit" }));
-    const result = await askModel("text", "2026-11-13", model, { maxRetries: 2 });
-    expect(result).toMatchObject({ ok: false, reason: "rate_limited" });
-    expect(model.doGenerateCalls).toHaveLength(1);
   });
 
   it("AC-INTAKE-08: повільна модель → timeout", async () => {

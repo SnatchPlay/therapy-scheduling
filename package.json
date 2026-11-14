@@ -32,13 +32,11 @@
     "uat": "node scripts/uat/run.mjs",
     "uat:nc": "node scripts/uat/run.mjs --negative-controls",
     "uat:review": "node scripts/uat/review.mjs && node scripts/uat/report.mjs",
-    "ai:models": "node scripts/free-models.mjs",
-    "ai:quota": "node --env-file-if-exists=.env.local scripts/quota.mjs",
-    "eval": "vitest run -c vitest.eval.config.mts"
+    "eval": "node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run -c vitest.eval.config.mts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "4.0.96",
     "@base-ui/react": "1.9.0",
-    "@openrouter/ai-sdk-provider": "3.1.0",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.117.3",
     "ai": "7.0.162",

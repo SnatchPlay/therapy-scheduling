@@ -1,28 +1,11 @@
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { createAnthropic } from "@ai-sdk/anthropic";
 
-// Кандидати на 04.11.2026 (OpenRouter GET /api/v1/models). Безкоштовні моделі з'являються й зникають:
-// перед роботою запустіть `npm run ai:models` і перевірте ланцюжок живим прогоном `npm run eval`.
-// Порядок = пріоритет. Лише ID із `:free`: платна модель у списку fallback оплачується за її ціною.
-//   gemma-4-31b / gemma-4-26b — найкраща заявка на багатомовність (українська — ймовірно, у картці не названа);
-//     НЕ мають structured_outputs: json_schema може бути проігноровано, тому поля повторено в промпті, а zod — ворота.
-//   nemotron-3.5-super-vl     — строга схема (structured_outputs) і зображення; української в її картці немає.
-export const PRODUCT_MODELS = [
-  "google/gemma-4-31b-it:free",
-  "google/gemma-4-26b-a4b-it:free",
-  "nvidia/nemotron-3.5-super-vl:free",
-] as const;
+// Модель чернетки картки — Claude Haiku 5.5: найдешевша модель сімейства, для витягування полів з коротких текстів досить (ADR 0007).
+// Одна модель, без ланцюжка fallback: Anthropic API не має «зникаючих» безкоштовних моделей і денного ліміту, як OpenRouter :free.
+export const PRODUCT_MODEL = "claude-haiku-5-5";
 
-// Фабрики приймають ключ параметром і НЕ читають process.env: так їх можна імпортувати в eval-скрипті.
-// У коді застосунку модель бере лише src/lib/ai/openrouter.ts (server-only).
+// Фабрика приймає ключ параметром і НЕ читає process.env: так її можна імпортувати в eval-скрипті.
+// У коді застосунку модель бере лише src/lib/ai/anthropic.ts (server-only).
 export function makeProductModel(apiKey: string | undefined) {
-  const openrouter = createOpenRouter({ apiKey, appName: "Therapy scheduling intake draft" });
-  return openrouter.chat(PRODUCT_MODELS[0], {
-    // OpenRouter пробує наступну модель при помилці, ліміті постачальника або простої.
-    // Платформний ліміт безкоштовних моделей (20/хв, 50/день на акаунт) ланцюжок НЕ обходить.
-    models: [...PRODUCT_MODELS],
-    // Без provider.require_parameters: з ним OpenRouter може відкинути Gemma (немає structured_outputs).
-    // Файлів функція не приймає (лише вставлений текст), тому плагін file-parser, що за замовчуванням може піти в платний рушій, не підключаємо.
-    // Портативний параметр `reasoning` з AI SDK 7 цей провайдер не передає — лише його власний.
-    reasoning: { effort: "low", exclude: true },
-  });
+  return createAnthropic({ apiKey })(PRODUCT_MODEL);
 }

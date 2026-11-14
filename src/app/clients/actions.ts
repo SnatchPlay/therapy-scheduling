@@ -111,7 +111,7 @@ const MAX_REQUEST_LENGTH = 2000;
  * AC-INTAKE-01…09: чернетка картки з тексту звернення (design.md, Р30–Р33). Дія лише ПОВЕРТАЄ чернетку у форму: вона не
  * торкається бази (картку створює людина через createClientCard з правилами й RLS), не має інструментів запису й не
  * виконує вказівок з тексту. Роль перевіряємо до виклику моделі: інакше терапевт чи будь-хто, хто пройшов вхід, витрачав би
- * денний ліміт безкоштовних запитів. Порожній текст і текст довший за ліміт до моделі не йдуть (припущення розробника, Р33).
+ * гроші власника за платні виклики. Порожній текст і текст довший за ліміт до моделі не йдуть (припущення розробника, Р33).
  */
 export async function requestIntakeDraft(_previous: IntakeDraftState, formData: FormData): Promise<IntakeDraftState> {
   const { role } = await getViewer();
@@ -124,7 +124,7 @@ export async function requestIntakeDraft(_previous: IntakeDraftState, formData: 
 
   const today = todayInPractice();
   // Модуль із ключем (`server-only`) вантажимо лише тут: сторінки й тести, що імпортують цей файл, його не тягнуть.
-  const { productModel } = await import("@/lib/ai/openrouter");
+  const { productModel } = await import("@/lib/ai/anthropic");
   const model = productModel();
   const result = model ? await askModel(text, today, model) : undefined;
   if (!result?.ok) {

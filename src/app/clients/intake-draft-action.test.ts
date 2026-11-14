@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Server action чернетки без Next і бази: справжній код дії, моделі й обгортки OpenRouter; підміняємо лише межі введення-виведення —
+// Server action чернетки без Next і бази: справжній код дії, моделі й обгортки Claude; підміняємо лише межі введення-виведення —
 // мережу (fetch) і `server-only` (пакет-заборона імпорту з клієнта). База — об'єкт, що фіксує будь-яке звернення: дія чернетки
 // не має торкатися бази, картку створює лише людина (AC-INTAKE-03).
 const touched = vi.fn();
@@ -26,15 +26,17 @@ class Redirect extends Error {
 
 const { requestIntakeDraft } = await import("./actions");
 
-// Відповідь OpenRouter (формат chat completions) із JSON моделі в `content`.
+// Відповідь Claude API (формат Messages) із JSON моделі в текстовому блоці.
 const completion = (json: object) =>
   Response.json({
-    id: "gen-1",
-    object: "chat.completion",
-    created: 1,
-    model: "google/gemma-4-31b-it:free",
-    choices: [{ index: 0, message: { role: "assistant", content: JSON.stringify(json) }, finish_reason: "stop" }],
-    usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 },
+    id: "msg_1",
+    type: "message",
+    role: "assistant",
+    model: "claude-haiku-5-5",
+    content: [{ type: "text", text: JSON.stringify(json) }],
+    stop_reason: "end_turn",
+    stop_sequence: null,
+    usage: { input_tokens: 10, output_tokens: 20 },
   });
 const fetchMock = vi.fn<(...args: unknown[]) => Promise<Response>>();
 
@@ -60,7 +62,7 @@ const form = (text: string) => {
 beforeEach(() => {
   vi.clearAllMocks();
   role = "scheduler";
-  vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+  vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
   vi.stubGlobal("fetch", fetchMock);
   fetchMock.mockReset();
   fetchMock.mockImplementation(async () => completion(ADULT));
@@ -125,7 +127,7 @@ describe("requestIntakeDraft", () => {
   });
 
   it("AC-INTAKE-08: немає ключа — «помічник недоступний», до моделі запит не йде, база не чіпається", async () => {
-    vi.stubEnv("OPENROUTER_API_KEY", "");
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
     const state = await requestIntakeDraft(null, form("Hi, my name is Client Ten."));
     expect(state).toEqual({
       kind: "unavailable",
@@ -137,7 +139,7 @@ describe("requestIntakeDraft", () => {
   });
 
   it("AC-INTAKE-08: 429 від постачальника — «помічник недоступний»; причина в логу сервера без тексту звернення", async () => {
-    fetchMock.mockImplementation(async () => Response.json({ error: { message: "rate limit", code: 429 } }, { status: 429 }));
+    fetchMock.mockImplementation(async () => Response.json({ type: "error", error: { type: "rate_limit_error", message: "rate limit" } }, { status: 429 }));
     expect(await requestIntakeDraft(null, form("Hi, my name is Client Ten."))).toMatchObject({ kind: "unavailable" });
     expect(console.error).toHaveBeenCalledWith("intake draft unavailable: rate_limited");
     expect(vi.mocked(console.error).mock.calls.flat().join(" ")).not.toContain("Client Ten");
