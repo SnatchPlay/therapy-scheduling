@@ -1,0 +1,78 @@
+{
+  "kind": "uat",
+  "generatedAt": "2026-11-15T11:56:51.254Z",
+  "baseURL": "https://therapy-scheduling-weld.vercel.app",
+  "deployedSha": "53e90d6edc20e721f964bee8a132a012a02a6ac9",
+  "testsCommit": "ca42ff8e8d40b0ca1a643cddeb008cf23e9f8fa0",
+  "reviewer": {
+    "model": "claude-haiku-5-5",
+    "disputes": "claude-sonnet-5-5"
+  },
+  "note": "Відео й траси не в git і не в CI (лише test-results/ на машині прогону). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
+  "results": [
+    {
+      "id": "AC-INTAKE-03",
+      "proof": "AC-INTAKE-03",
+      "title": "AC-INTAKE-03: чернетку за текстом з AC-INTAKE-01 заповнено у формі, але картку не створено — у списку клієнтів «Client Ten» немає",
+      "screenshot": "test-results/uat-report-partial/frames/AC-INTAKE-03-then-1.png",
+      "video": "test-results/artifacts/intake-draft-AC-INTAKE-03--a9d11-клієнтів-«Client-Ten»-немає-chromium/video.webm",
+      "trace": "test-results/artifacts/intake-draft-AC-INTAKE-03--a9d11-клієнтів-«Client-Ten»-немає-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": false,
+        "readable": false,
+        "notes": "На кадрі сторінка «Clients» з однією видимою карткою «Client Ten» (client10@example.test), але список обрізаний нижче «Shot Other». Решту карток не видно, тому відсутність дубліката підтвердити не можна, потрібна людина."
+      },
+      "agentModel": "claude-sonnet-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "NEEDS-HUMAN",
+        "claude-sonnet-5-5": "NEEDS-HUMAN"
+      },
+      "escalated": true,
+      "quotesVerified": [],
+      "verdict": "NEEDS-HUMAN",
+      "factoryGate": "NOT-EARNED",
+      "rule": "R3: перевірки пройшли, агент не погоджується — вирішує людина",
+      "playwrightMs": 8384,
+      "reviewCostUsd": 0.03927,
+      "reviewWallMs": 22848
+    },
+    {
+      "id": "AC-INTAKE-06",
+      "proof": "AC-INTAKE-06",
+      "title": "AC-INTAKE-06: текст не про нового клієнта — поля форми не змінено (Name лишається «Client Fifteen»), scheduler1 бачить повідомлення про відмову",
+      "screenshot": "test-results/uat-report-partial/frames/AC-INTAKE-06-then-1.png",
+      "video": "test-results/artifacts/intake-draft-AC-INTAKE-06--2322f-ть-повідомлення-про-відмову-chromium/video.webm",
+      "trace": "test-results/artifacts/intake-draft-AC-INTAKE-06--2322f-ть-повідомлення-про-відмову-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі сторінка «New client»: поле Name містить «Client Fifteen», а під полем «Client request» з текстом «Can you recommend a good book about anxiety?» червоним показано повідомлення «This text can't be used to draft a client card. Paste the client's request or fill in the form manually.». Текст повідомлення збігається з критерієм; апострофи на кадрі виглядають прямими, як у критерії, але за такої роздільності typographic-апостроф повністю не виключити."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Client Fifteen",
+          "onPage": true
+        },
+        {
+          "quote": "This text can't be used to draft a client card. Paste the client's request or fill in the form manually.",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 5719,
+      "reviewCostUsd": 0.00207,
+      "reviewWallMs": 9236
+    }
+  ],
+  "negativeControls": []
+}
