@@ -105,7 +105,7 @@ export function ClientCardForm() {
   const { values, codes, key } = useFormSource(state, draft);
   return (
     <div className="flex max-w-xl flex-col gap-6">
-      <IntakeDraftPanel key={draft ? `${draft.kind}:${draft.message}:${draft.text}` : "initial"} state={draft} action={draftAction} pending={drafting} />
+      <IntakeDraftPanel state={draft} action={draftAction} pending={drafting} />
       <CardFields key={key} state={state} values={values} codes={codes} action={action} pending={pending} />
     </div>
   );

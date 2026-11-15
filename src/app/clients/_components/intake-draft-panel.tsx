@@ -23,17 +23,19 @@ export function IntakeDraftPanel({
   action: (formData: FormData) => void;
   pending: boolean;
 }) {
-  const [hasText, setHasText] = useState(Boolean(state?.text.trim()));
+  // Керований textarea: React 19 після дії скидає лише некеровані поля, тож текст лишається без перемонтування панелі.
+  // Перемонтування (key) лишало в DOM стару копію форми поруч із новою: на проді було дві панелі й два #intake_text.
+  const [text, setText] = useState(state?.text ?? "");
   return (
     <form action={action} className="flex flex-col gap-2">
       <Label htmlFor="intake_text">Client request</Label>
-      {/* Текст не зберігаємо; дія повертає його назад, бо React 19 скидає форму після дії. */}
+      {/* Текст нікуди не зберігаємо: він живе лише в цьому полі й іде в дію. */}
       <Textarea
         id="intake_text"
         name="text"
         maxLength={MAX_REQUEST_LENGTH}
-        defaultValue={state?.text ?? ""}
-        onChange={(e) => setHasText(e.target.value.trim().length > 0)}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
         autoComplete="off"
         aria-describedby="intake_hint"
       />
@@ -46,7 +48,7 @@ export function IntakeDraftPanel({
         </Alert>
       ) : null}
       <div>
-        <Button type="submit" variant="secondary" disabled={pending || !hasText}>
+        <Button type="submit" variant="secondary" disabled={pending || text.trim().length === 0}>
           Draft from request
         </Button>
       </div>

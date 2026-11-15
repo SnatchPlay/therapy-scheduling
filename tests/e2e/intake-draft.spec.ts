@@ -126,6 +126,8 @@ if (liveModel) {
           },
           async () => {
             await expect(page.getByTestId("viewer")).toContainText("scheduler1@example.test");
+            // Після відповіді панель одна: перемонтування лишало стару копію форми (два #intake_text) — виявив UAT на проді.
+            await expect(page.locator("#intake_text")).toHaveCount(1);
             await expect(page.getByLabel("Name")).toHaveValue("Client Fifteen");
             await expect(page.getByLabel("Client type")).toHaveValue("");
             await expect(page.getByLabel("Date of birth (YYYY-MM-DD)")).toHaveValue("");
