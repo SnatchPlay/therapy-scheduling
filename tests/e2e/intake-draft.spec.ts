@@ -78,8 +78,13 @@ if (liveModel) {
           page,
           {
             clause: "картки «Client Ten» у списку немає: картку створює лише сам планувальник, коли зберігає форму",
-            visible: ["список клієнтів без нової картки «Client Ten»"],
-            hidden: ["кількість карток «Client Ten» і всіх карток у списку така сама, як до чернетки"],
+            visible: [`список клієнтів: карток «Client Ten» у ньому ${cardsBefore.clientTen} (як і до чернетки), нової серед них немає`],
+            hidden: [
+              `до чернетки «Client Ten» було ${cardsBefore.clientTen}, усіх карток ${cardsBefore.all}: після чернетки кількості ті самі`,
+              ...(cardsBefore.clientTen > 0
+                ? ["картка «Client Ten» уже існувала до UAT (створена вручну), тому нуль карток на цій базі неможливий"]
+                : []),
+            ],
           },
           async () => {
             await expect(page.getByTestId("viewer")).toContainText("scheduler1@example.test");

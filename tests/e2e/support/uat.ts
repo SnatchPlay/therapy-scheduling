@@ -74,7 +74,12 @@ export async function attachRuntimeErrors(page: Page) {
     .map((m) => m.text());
   const pageErrors = (await page.pageErrors({ filter: "all" })).map((e) => String(e));
   const responses = await Promise.all(
-    (await page.requests()).map(async (r) => ({ r, status: (await r.response())?.status() ?? 0 })),
+    // Запит без відповіді на мить завершення (напр. фоновий prefetch, перерваний переходом) не має висіти до таймауту
+    // хука: r.response() для нього не повертається. Чекаємо коротко: невідомий статус — не 5xx.
+    (await page.requests()).map(async (r) => {
+      const response = await Promise.race([r.response(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 2_000))]);
+      return { r, status: response?.status() ?? 0 };
+    }),
   );
   const failed = responses
     .filter(({ r, status }) => r.failure() !== null || status >= 500)
