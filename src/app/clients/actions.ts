@@ -133,7 +133,7 @@ export async function requestIntakeDraft(_previous: IntakeDraftState, formData: 
   const { productModel } = await import("@/lib/ai/anthropic");
   const model = productModel();
   if (!model) return unavailable(text, "no model key");
-  // Ліміт 10 запитів на годину на користувача — у базі (міграція intake_draft_quota, ADR 0008). Помилка перевірки теж
+  // Ліміт 10 запитів на годину на користувача і загальна стеля 200 на добу — у базі (міграції intake_draft_quota, intake_draft_daily_cap, ADR 0008). Помилка перевірки теж
   // закриває: платного виклику без ліміту не робимо.
   const { data: allowed, error: quotaError } = await supabase.rpc("take_intake_draft_slot");
   if (quotaError || allowed !== true) return unavailable(text, quotaError ? "quota check failed" : "quota exhausted");

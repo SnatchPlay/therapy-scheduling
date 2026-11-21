@@ -1,17 +1,21 @@
-// Ліміт чернеток картки (міграція intake_draft_quota, ADR 0008): 10 запитів до моделі за годину на користувача.
-// Правило живе в private.take_intake_draft_slot; мутації правила (scripts/mutants.mjs, I12, I13) червонять ці тести.
+// Ліміт чернеток картки (міграції intake_draft_quota і intake_draft_daily_cap, ADR 0008): 10 запитів до моделі за годину на
+// користувача й 200 за добу на всіх. Правило живе в private.take_intake_draft_slot; мутації (scripts/mutants.mjs, I12–I19) червонять ці тести.
 // Межа PGlite: одне з'єднання, тож «одночасні» виклики йдуть по черзі й блокування користувача не перевіряється.
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "./supabase-pglite";
 
 let t: TestDb;
-let SCHEDULER: string, SCHEDULER2: string;
+let SCHEDULER: string, SCHEDULER2: string, ADMIN: string;
 
 beforeAll(async () => {
   t = await createTestDb();
   SCHEDULER = t.users["scheduler1@example.test"];
   SCHEDULER2 = t.users["scheduler2@example.test"];
+  ADMIN = t.users["admin@example.test"];
 }, 60_000);
+
+// Загальна стеля рахує рядки всіх користувачів: кожен тест лишає таблицю порожньою.
+afterEach(() => t.asService("delete from public.intake_draft_requests"));
 
 /** Як server action: rpc від імені користувача; true — запит до моделі дозволено й записано. */
 async function takeAs(userId: string) {
@@ -123,5 +127,31 @@ describe("ліміт чернеток: 10 на годину на користу�
        from unnest(array['authenticated', 'anon']) r, unnest(array['SELECT', 'INSERT', 'UPDATE', 'DELETE']) v`,
     );
     expect(rows.filter((r) => r.ok)).toEqual([]);
+  });
+});
+
+describe("загальна добова стеля: 200 запитів за добу на всіх користувачів", () => {
+  it("AC-INTAKE-08: двісті перший запит за добу від іншого користувача — відмова без запису; двісті — ще дозволено", async () => {
+    await seed(ADMIN, 60 * 5, 100);
+    await seed(SCHEDULER2, 60 * 5, 99);
+    expect(await takeAs(SCHEDULER)).toBe(true);
+    expect(await countInDb(SCHEDULER)).toBe(1);
+    expect(await takeAs(SCHEDULER)).toBe(false);
+    expect(await takeAs(SCHEDULER2)).toBe(false);
+    expect(await countInDb(SCHEDULER)).toBe(1);
+  });
+
+  it("AC-INTAKE-08: запити старші за добу в стелю не входять і прибираються разом із чужими", async () => {
+    await seed(ADMIN, 60 * 25, 150);
+    await seed(SCHEDULER2, 60 * 25, 150);
+    expect(await takeAs(SCHEDULER)).toBe(true);
+    expect(await countInDb(ADMIN)).toBe(0);
+    expect(await countInDb(SCHEDULER2)).toBe(0);
+  });
+
+  it("AC-INTAKE-08: стеля й ліміт користувача незалежні: 10 за годину блокує одного, а решта 199 за добу — всіх інших", async () => {
+    await seed(SCHEDULER, 5, 10);
+    expect(await takeAs(SCHEDULER)).toBe(false);
+    expect(await takeAs(SCHEDULER2)).toBe(true);
   });
 });

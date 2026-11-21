@@ -14,6 +14,8 @@ const ROLES_AND_CLIENTS = "supabase/migrations/20261019142745_roles_and_clients.
 const INSURANCE = "supabase/migrations/20261108062344_insurance_status.sql";
 const INSURANCE_FIX = "supabase/migrations/20261114153320_insurance_not_set_trigger_validate_email.sql";
 const INTAKE_QUOTA = "supabase/migrations/20261114155638_intake_draft_quota.sql";
+// Функцію ліміту остаточно визначає ця міграція (create or replace): мутанти тіла функції мутують її, а не стару.
+const INTAKE_CAP = "supabase/migrations/20261121082136_intake_draft_daily_cap.sql";
 const INTAKE_QUOTA_DB = "tests/db/intake-draft-quota-db.test.ts";
 const INSURANCE_DB = "tests/db/insurance-status-db.test.ts";
 const INSURANCE_BLIND = "tests/db/insurance-status-blind.test.ts";
@@ -140,10 +142,10 @@ export const mutants = [
     replace: "select 1;",
   },
   {
-    id: "I12", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_QUOTA, tests: [INTAKE_QUOTA_DB],
+    id: "I12", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_CAP, tests: [INTAKE_QUOTA_DB],
     what: "ліміт чернеток не спрацьовує: одинадцятий запит за годину теж дозволено",
-    find: "if v_used >= 10 then",
-    replace: "if v_used >= 1000000 then",
+    find: "if v_user_hour >= 10 or v_all_day >= 200 then",
+    replace: "if v_user_hour >= 1000000 or v_all_day >= 200 then",
   },
   {
     id: "I13", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_QUOTA, tests: [INTAKE_QUOTA_DB],
@@ -167,16 +169,28 @@ export const mutants = [
     replace: "-- revoke прибрано",
   },
   {
-    id: "I16", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_QUOTA, tests: [INTAKE_QUOTA_DB],
+    id: "I16", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_CAP, tests: [INTAKE_QUOTA_DB],
     what: "security definer без set search_path = '': підміна об'єктів через search_path викликача",
     find: "security definer\nset search_path = ''\nas $$\ndeclare",
     replace: "security definer\nas $$\ndeclare",
   },
   {
-    id: "I17", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_QUOTA, tests: [INTAKE_QUOTA_DB],
+    id: "I17", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_CAP, tests: [INTAKE_QUOTA_DB],
     what: "сесія без користувача (auth.uid() порожній) отримує дозвіл: перевірку на null прибрано",
     find: "if v_user is null then\n    return false;\n  end if;",
     replace: "",
+  },
+  {
+    id: "I18", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_CAP, tests: [INTAKE_QUOTA_DB],
+    what: "загальна добова стеля не спрацьовує: двісті перший запит за добу від іншого користувача теж дозволено",
+    find: "if v_user_hour >= 10 or v_all_day >= 200 then",
+    replace: "if v_user_hour >= 10 then",
+  },
+  {
+    id: "I19", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_CAP, tests: [INTAKE_QUOTA_DB],
+    what: "прибирання старих рядків лише користувача: чужі рядки понад добу лишаються, таблиця росте",
+    find: "delete from public.intake_draft_requests where created_at < clock_timestamp() - interval '1 day';",
+    replace: "delete from public.intake_draft_requests where user_id = v_user and created_at < clock_timestamp() - interval '1 day';",
   },
   // ── Сторінки (TS): відмова з текстом PM ────────────────────────────────────────────────────────────────────
   {
