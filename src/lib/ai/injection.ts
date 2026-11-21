@@ -6,10 +6,11 @@ const INJECTION_PATTERNS: RegExp[] = [
   /\b(ignore|disregard|forget)\b.{0,20}\b(previous|prior|above|earlier)\b.{0,20}\b(instructions?|prompts?|rules)\b/,
   /\b(assistant|ai|model) reading this\b/,
   /\bsystem prompt\b/,
-  /\bignora\b.{0,40}\b(anteriores|previas)\b/,
+  /\b(ignora|olvida|descarta)\b.{0,40}\b(instrucciones|indicaciones|reglas)\b.{0,20}\b(anteriores|previas)\b/,
 ];
 
 export function looksLikeInjection(text: string): boolean {
-  const normalized = text.toLowerCase().replace(/\s+/g, " ");
+  // NFKC і без символів нульової ширини: «ig\u200bnore» не обходить перелік.
+  const normalized = text.normalize("NFKC").replace(/\p{Cf}/gu, "").toLowerCase().replace(/\s+/g, " ");
   return INJECTION_PATTERNS.some((pattern) => pattern.test(normalized));
 }

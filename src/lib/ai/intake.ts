@@ -31,17 +31,34 @@ export function todayInPractice(now: Date = new Date()): string {
 
 const clean = (value: string | null): string => value?.trim() ?? "";
 
+/** Порівняння без впливу типографіки: NFKC, «’» як «'», довгі дефіси як «-», регістр. Діакритику не знімаємо: ім'я має бути як у тексті. */
+const fold = (value: string): string =>
+  value
+    .normalize("NFKC")
+    .replace(/[\u2018\u2019\u02bc]/g, "'")
+    .replace(/[\u2010\u2011\u2012\u2013]/g, "-")
+    .toLowerCase();
+
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 /**
- * Значення з відповіді моделі лишається, лише якщо воно є в тексті звернення: кожне слово імені чи email (без урахування
- * регістру й пробілів) — підрядок тексту. Вигадане чи підставлене моделлю ім'я й email не потрапляють у форму (там порожньо й
- * «Missing»): чужий email у картці — це листи не тій людині.
+ * Захист від галюцинацій, а не від ін'єкцій: значення з відповіді моделі лишається, лише якщо воно ціле слово (email — ціла
+ * адреса) в тексті звернення. Вигадане моделлю ім'я чи email не потрапляють у форму (там порожньо й «Missing»): чужий email у
+ * картці — це листи не тій людині. Значення, яке підказав сам текст, ця перевірка пропускає: цю межу тримають відмова моделі
+ * й `looksLikeInjection`.
  */
 function mentionedIn(text: string, value: string | null): string | null {
   const wanted = clean(value);
   if (!wanted) return null;
-  const haystack = text.toLowerCase();
-  const squashed = haystack.replace(/\s+/g, "");
-  return wanted.toLowerCase().split(/\s+/).every((token) => haystack.includes(token) || squashed.includes(token)) ? wanted : null;
+  const haystack = fold(text);
+  const found = fold(wanted)
+    .split(/\s+/)
+    .every((token) => {
+      // Ліворуч від email не може стояти символ адреси («xbob@x.test» не містить «bob@x.test»).
+      const left = token.includes("@") ? "(?<![\\p{L}\\p{N}._+-])" : "(?<![\\p{L}\\p{N}])";
+      return new RegExp(`${left}${escapeRegExp(token)}(?![\\p{L}\\p{N}])`, "u").test(haystack);
+    });
+  return found ? wanted : null;
 }
 
 function grounded(draft: ModelDraft, text: string): ModelDraft {

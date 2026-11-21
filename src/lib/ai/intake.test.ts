@@ -151,6 +151,19 @@ describe("AC-INTAKE-07: значення, яких немає в тексті з
     expect(draftOf({}, "CLIENT TEN, CLIENT10@EXAMPLE.TEST").values).toMatchObject({ full_name: "Client Ten", email: "client10@example.test" });
   });
 
+  it("AC-INTAKE-07: типографські апостроф і дефіс, діакритика в різній формі Unicode не гублять значення", () => {
+    expect(draftOf({ fullName: "Sean O'Brien" }, "I'm Sean O\u2019Brien, sean@example.test").values.full_name).toBe("Sean O'Brien");
+    expect(draftOf({ fullName: "Mary-Jane Ríos" }, "Mary\u2011Jane Ríos here, a@example.test").values.full_name).toBe("Mary-Jane Ríos");
+    expect(draftOf({ fullName: "José Núñez" }, "Soy Jose\u0301 Nu\u0301n\u0303ez, a@example.test").values.full_name).toBe("José Núñez");
+  });
+
+  it("AC-INTAKE-07: збіг лише цілим словом: «Al Ng» не береться з «Alan Nguyen», «bob@x.test» — з «xbob@x.test»", () => {
+    expect(draftOf({ fullName: "Al Ng" }, "Hello, I am Alan Nguyen, a@example.test").values.full_name).toBe("");
+    expect(draftOf({ email: "bob@x.test" }, "Client Ten, xbob@x.test").values.email).toBe("");
+    expect(draftOf({ email: "bob@x.test" }, "Client Ten, a.bob@x.test").values.email).toBe("");
+    expect(draftOf({ email: "bob@x.test" }, "Client Ten, write to bob@x.test.").values.email).toBe("bob@x.test");
+  });
+
   it("AC-INTAKE-07: email, якого немає в тексті, — порожньо й «Missing: Email» (чужий email у картці — листи не тій людині)", () => {
     const outcome = draftOf({ email: "other@example.test" }, TEXT);
     expect(outcome.values.email).toBe("");
