@@ -1,5 +1,5 @@
 // Ліміт чернеток картки (міграції intake_draft_quota і intake_draft_daily_cap, ADR 0008): 10 запитів до моделі за годину на
-// користувача й 200 за добу на всіх. Правило живе в private.take_intake_draft_slot; мутації (scripts/mutants.mjs, I12–I19) червонять ці тести.
+// користувача й 200 за добу на всіх. Правило живе в private.take_intake_draft_slot; мутації (scripts/mutants.mjs, I12–I16, I18–I20) червонять ці тести.
 // Межа PGlite: одне з'єднання, тож «одночасні» виклики йдуть по черзі й блокування користувача не перевіряється.
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "./supabase-pglite";
