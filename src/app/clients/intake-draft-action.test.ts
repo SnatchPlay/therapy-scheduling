@@ -160,7 +160,8 @@ describe("requestIntakeDraft", () => {
   it("AC-INTAKE-08: 429 від постачальника — «помічник недоступний»; причина в логу сервера без тексту звернення", async () => {
     fetchMock.mockImplementation(async () => Response.json({ type: "error", error: { type: "rate_limit_error", message: "rate limit" } }, { status: 429 }));
     expect(await requestIntakeDraft(null, form("Hi, my name is Client Ten, client10@example.test."))).toMatchObject({ kind: "unavailable" });
-    expect(console.error).toHaveBeenCalledWith("intake draft unavailable: rate_limited");
+    const call = vi.mocked(console.error).mock.calls.flat().map(String).filter((line) => line.startsWith("{")).map((line) => JSON.parse(line)).find((e) => e.event === "llm.call");
+    expect(call).toMatchObject({ state: "unavailable", errorKind: "rate_limited", route: "/clients/new", promptVersion: "intake-v1" });
     expect(vi.mocked(console.error).mock.calls.flat().join(" ")).not.toContain("Client Ten");
   }, 20_000);
 

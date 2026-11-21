@@ -1,5 +1,6 @@
 import { APICallError, NoObjectGeneratedError, Output, RetryError, generateText, type LanguageModel } from "ai";
-import { draftInstructions, wrapDocument } from "./prompts/draft";
+import { logLlmCall } from "./llm-log";
+import { DRAFT_PROMPT_VERSION, draftInstructions, wrapDocument } from "./prompts/draft";
 import { DraftSchema, type ModelDraft } from "./schema";
 
 // Чиста функція: модель передають параметром. Застосунок передає модель Claude (src/lib/ai/anthropic.ts),
@@ -10,10 +11,16 @@ export type ModelResult =
   | { ok: true; draft: ModelDraft; modelId: string }
   | { ok: false; reason: "invalid_output" | "rate_limited" | "timeout" | "provider_error"; message: string };
 
-export type DraftOptions = { maxRetries?: number; timeoutMs?: number };
+export type DraftOptions = {
+  maxRetries?: number;
+  timeoutMs?: number;
+  /** Куди писати llm.call. Немає — журналу немає (так працюють golden-тести й eval). */
+  log?: { requestId: string; route: string; model: string };
+};
 
 /** Питає модель про одне звернення. Нічого не пише й не має інструментів: модель повертає лише JSON за схемою. */
 export async function askModel(text: string, today: string, model: LanguageModel, opts: DraftOptions = {}): Promise<ModelResult> {
+  const started = performance.now();
   try {
     const result = await generateText({
       model,
@@ -26,9 +33,35 @@ export async function askModel(text: string, today: string, model: LanguageModel
       timeout: opts.timeoutMs ?? 45_000,
     });
     // result.output уже перевірено за DraftSchema (інакше — виняток NoObjectGeneratedError).
+    if (opts.log) {
+      logLlmCall({
+        requestId: opts.log.requestId,
+        route: opts.log.route,
+        model: result.response.modelId,
+        fallbackUsed: false,
+        state: result.output.status,
+        latencyMs: performance.now() - started,
+        inputTokens: result.usage.inputTokens,
+        outputTokens: result.usage.outputTokens,
+        promptVersion: DRAFT_PROMPT_VERSION,
+      });
+    }
     return { ok: true, draft: result.output, modelId: result.response.modelId };
   } catch (error) {
-    return classifyError(error);
+    const failure = classifyError(error);
+    if (opts.log) {
+      logLlmCall({
+        requestId: opts.log.requestId,
+        route: opts.log.route,
+        model: opts.log.model,
+        fallbackUsed: false,
+        state: "unavailable",
+        latencyMs: performance.now() - started,
+        promptVersion: DRAFT_PROMPT_VERSION,
+        errorKind: failure.reason,
+      });
+    }
+    return failure;
   }
 }
 
