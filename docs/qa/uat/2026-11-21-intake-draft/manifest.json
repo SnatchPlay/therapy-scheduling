@@ -1,0 +1,135 @@
+{
+  "kind": "uat",
+  "generatedAt": "2026-11-21T08:30:20.466Z",
+  "baseURL": "https://therapy-scheduling-weld.vercel.app",
+  "deployedSha": "78f00d6b8e4327ba2da3818b3796d0ba0b924dd6",
+  "testsCommit": "ae7dfecd2781446fa7c533253e63af007d19ac1e",
+  "reviewer": {
+    "model": "claude-haiku-5-5",
+    "disputes": "claude-sonnet-5-5"
+  },
+  "note": "Відео й траси не в git і не в CI (лише test-results/ на машині прогону). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
+  "results": [
+    {
+      "id": "AC-INTAKE-03",
+      "proof": "AC-INTAKE-03",
+      "title": "AC-INTAKE-03: чернетку за текстом з AC-INTAKE-01 заповнено у формі, але картку не створено — у списку клієнтів «Client Tenfold» немає",
+      "screenshot": "test-results/uat-report-partial/frames/AC-INTAKE-03-then-1.png",
+      "video": "test-results/artifacts/intake-draft-AC-INTAKE-03--c3485-нтів-«Client-Tenfold»-немає-chromium/video.webm",
+      "trace": "test-results/artifacts/intake-draft-AC-INTAKE-03--c3485-нтів-«Client-Tenfold»-немає-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі сторінка «Clients» з 12 картками; картки «Client Tenfold» серед них немає. Є лише раніше створена картка «Client Ten» (client10@example.test), що узгоджується з поясненням в ac.md."
+      },
+      "agentModel": "claude-sonnet-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "NEEDS-HUMAN",
+        "claude-sonnet-5-5": "PASS"
+      },
+      "escalated": true,
+      "quotesVerified": [
+        {
+          "quote": "Clients",
+          "onPage": true
+        },
+        {
+          "quote": "All client cards.",
+          "onPage": true
+        },
+        {
+          "quote": "Accept Adult",
+          "onPage": true
+        },
+        {
+          "quote": "Accept Child",
+          "onPage": true
+        },
+        {
+          "quote": "Client Ten",
+          "onPage": true
+        },
+        {
+          "quote": "client1",
+          "onPage": true
+        },
+        {
+          "quote": "client2",
+          "onPage": true
+        },
+        {
+          "quote": "Shot Adult",
+          "onPage": true
+        },
+        {
+          "quote": "Shot Child",
+          "onPage": true
+        },
+        {
+          "quote": "Shot Other",
+          "onPage": true
+        },
+        {
+          "quote": "UAT AC-CARD-05 Client",
+          "onPage": true
+        },
+        {
+          "quote": "UAT Insurance mw7iaemv",
+          "onPage": true
+        },
+        {
+          "quote": "UAT Insurance mw7ion9z",
+          "onPage": true
+        },
+        {
+          "quote": "UAT Insurance mw7pty47",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 9243,
+      "reviewCostUsd": 0.04457,
+      "reviewWallMs": 19889
+    },
+    {
+      "id": "AC-INTAKE-06",
+      "proof": "AC-INTAKE-06",
+      "title": "AC-INTAKE-06: текст не про нового клієнта — поля форми не змінено (Name лишається «Client Fifteen»), scheduler1 бачить повідомлення про відмову",
+      "screenshot": "test-results/uat-report-partial/frames/AC-INTAKE-06-then-1.png",
+      "video": "test-results/artifacts/intake-draft-AC-INTAKE-06--2322f-ть-повідомлення-про-відмову-chromium/video.webm",
+      "trace": "test-results/artifacts/intake-draft-AC-INTAKE-06--2322f-ть-повідомлення-про-відмову-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі сторінка «New client» з полем Name, що містить «Client Fifteen», і червоним повідомленням про помилку під полем Client request. Текст повідомлення збігається з критерієм посимвольно (перенесення рядка у блоці є лише візуальним). Решта полів форми на кадрі порожня, але це не з кадрів і не оцінюється."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Client Fifteen",
+          "onPage": true
+        },
+        {
+          "quote": "This text can't be used to draft a client card. Paste the client's request or fill in the form manually.",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 5709,
+      "reviewCostUsd": 0.00192,
+      "reviewWallMs": 7666
+    }
+  ],
+  "negativeControls": []
+}
