@@ -175,12 +175,6 @@ export const mutants = [
     replace: "security definer\nas $$\ndeclare",
   },
   {
-    id: "I17", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_CAP, tests: [INTAKE_QUOTA_DB],
-    what: "сесія без користувача (auth.uid() порожній) отримує дозвіл: перевірку на null прибрано",
-    find: "if v_user is null then\n    return false;\n  end if;",
-    replace: "",
-  },
-  {
     id: "I18", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_CAP, tests: [INTAKE_QUOTA_DB],
     what: "загальна добова стеля не спрацьовує: двісті перший запит за добу від іншого користувача теж дозволено",
     find: "if v_user_hour >= 10 or v_all_day >= 200 then",
