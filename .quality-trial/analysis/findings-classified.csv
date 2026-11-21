@@ -112,3 +112,4 @@ WS11B-03,2026-11-21,WS11-B,blind-review,real,DRY,,static,,,APP_ENV resolved by t
 WS11B-04,2026-11-21,WS11-B,blind-review,real,TEST,,static,,,needs_info and refused state mapping untested,L
 WS11B-05,2026-11-21,WS11-B,blind-review,real,YAGNI,,static,,,number rule and warn level without a user,L
 WS11B-06,2026-11-21,WS11-B,fallow,real,YAGNI,,static,,,three new exports without a user,L
+WS11B-07,2026-11-21,WS11-B,blind-review,real,SEC,,static,,,Sentry Console integration turned console output with db error text into breadcrumbs that beforeSend does not scrub,M

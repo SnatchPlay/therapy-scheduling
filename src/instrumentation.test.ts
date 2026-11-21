@@ -41,4 +41,11 @@ describe("Sentry: що збираємо", () => {
     expect(JSON.stringify(sent)).not.toContain("client10");
     expect(JSON.stringify(sent)).toContain("invalid input syntax for type uuid");
   });
+
+  it("не збирає консольні крихти: console.* може нести текст помилки бази з введеним значенням", () => {
+    register();
+    const options = vi.mocked(Sentry.init).mock.calls.at(-1)?.[0];
+    const integrations = options?.integrations as (defaults: { name: string }[]) => { name: string }[];
+    expect(integrations([{ name: "Console" }, { name: "Http" }])).toEqual([{ name: "Http" }]);
+  });
 });

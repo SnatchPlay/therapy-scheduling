@@ -8,6 +8,8 @@ export function register() {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: appEnv() ?? process.env.VERCEL_ENV,
+    // Інтеграція Console робить із кожного console.* крихту з текстом (Next пише туди помилки з повідомленням бази), а beforeSend крихти не чистить.
+    integrations: (defaults) => defaults.filter((integration) => integration.name !== "Console"),
     // Текст помилки бази може повторювати введене значення (`invalid input syntax for type uuid: "…"`): лапки з вмістом ховаємо до відправки.
     beforeSend(event) {
       for (const exception of event.exception?.values ?? []) {
