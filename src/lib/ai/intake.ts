@@ -31,6 +31,29 @@ export function todayInPractice(now: Date = new Date()): string {
 
 const clean = (value: string | null): string => value?.trim() ?? "";
 
+/**
+ * Значення з відповіді моделі лишається, лише якщо воно є в тексті звернення: кожне слово імені чи email (без урахування
+ * регістру й пробілів) — підрядок тексту. Вигадане чи підставлене моделлю ім'я й email не потрапляють у форму (там порожньо й
+ * «Missing»): чужий email у картці — це листи не тій людині.
+ */
+function mentionedIn(text: string, value: string | null): string | null {
+  const wanted = clean(value);
+  if (!wanted) return null;
+  const haystack = text.toLowerCase();
+  const squashed = haystack.replace(/\s+/g, "");
+  return wanted.toLowerCase().split(/\s+/).every((token) => haystack.includes(token) || squashed.includes(token)) ? wanted : null;
+}
+
+function grounded(draft: ModelDraft, text: string): ModelDraft {
+  return {
+    ...draft,
+    fullName: mentionedIn(text, draft.fullName),
+    email: mentionedIn(text, draft.email),
+    guardianName: mentionedIn(text, draft.guardianName),
+    guardianEmail: mentionedIn(text, draft.guardianEmail),
+  };
+}
+
 /** Повна справжня календарна дата РРРР-ММ-ДД не пізніша за сьогодні; інакше порожньо (AC-INTAKE-05). */
 function validBirthDate(value: string | null, today: string): string {
   const text = clean(value);
@@ -107,10 +130,11 @@ function missingLabels(values: IntakeValues): string[] {
   return required.filter(([isMissing]) => isMissing).map(([, label]) => label);
 }
 
-/** Відповідь моделі → відмова або чернетка з повідомленням (AC-INTAKE-01, 02, 04, 05, 06, 07). */
-export function buildOutcome(draft: ModelDraft, today: string): IntakeOutcome {
+/** Відповідь моделі → відмова або чернетка з повідомленням (AC-INTAKE-01, 02, 04, 05, 06, 07). `inputText` — текст звернення. */
+export function buildOutcome(modelDraft: ModelDraft, today: string, inputText: string): IntakeOutcome {
   const refused: IntakeOutcome = { kind: "refused", message: INTAKE_MESSAGES.DRAFT_REFUSED };
-  if (draft.status === "refused") return refused;
+  if (modelDraft.status === "refused") return refused;
+  const draft = grounded(modelDraft, inputText);
 
   const birthDate = validBirthDate(draft.birthDate, today);
   const type = resolveType(draft, birthDate, today);

@@ -26,8 +26,9 @@ export function draftInstructions(today: string): string {
 }
 
 // Недовірений текст завжди загортаємо як дані: модель бачить межу, а тест перевіряє, що межа є.
-// Теги <document> з самого тексту вирізаємо, щоб текст не міг «закрити» межу й дописати власні інструкції.
+// Кожне «<» із самого тексту екранується: тег межі не можна ні «закрити», ні «зібрати» з вкладених фрагментів
+// (`</docu</document>ment>` після вирізання одним проходом склався б у справжній `</document>`).
 export function wrapDocument(text: string): string {
-  const safe = text.replace(/<\/?\s*document\s*>/gi, "");
+  const safe = text.replaceAll("<", "&lt;");
   return `<document>\n${safe}\n</document>`;
 }

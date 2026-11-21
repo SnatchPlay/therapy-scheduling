@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { askModel } from "@/lib/ai/draft";
+import { looksLikeInjection } from "@/lib/ai/injection";
 import { buildOutcome, todayInPractice, type IntakeValues } from "@/lib/ai/intake";
 import { clientErrorCode, INTAKE_MESSAGES, MESSAGES, toMessageCode, type ClientType, type MessageCode } from "@/lib/messages";
 import { getViewer, STAFF } from "@/lib/supabase/viewer";
@@ -117,7 +118,7 @@ function unavailable(text: string, reason: string): IntakeDraftState {
  * AC-INTAKE-01…09: чернетка картки з тексту звернення (design.md, Р30–Р33, Р36). Дія лише ПОВЕРТАЄ чернетку у форму: до
  * бази вона звертається лише за лімітом запитів до моделі (rpc take_intake_draft_slot), клієнтів і слотів не торкається
  * (картку створює людина через createClientCard з правилами й RLS), не має інструментів запису й не виконує вказівок з тексту. Роль перевіряємо до виклику моделі: інакше терапевт чи будь-хто, хто пройшов вхід, витрачав би
- * гроші власника за платні виклики. Порожній текст і текст довший за ліміт до моделі не йдуть (припущення розробника, Р33).
+ * гроші власника за платні виклики. Порожній текст, текст довший за ліміт і текст з вказівками для асистента (looksLikeInjection) до моделі й до ліміту не йдуть (Р33).
  */
 export async function requestIntakeDraft(_previous: IntakeDraftState, formData: FormData): Promise<IntakeDraftState> {
   const { role, supabase } = await getViewer();
@@ -126,7 +127,7 @@ export async function requestIntakeDraft(_previous: IntakeDraftState, formData: 
   const value = formData.get("text");
   const text = typeof value === "string" ? value : "";
   if (!STAFF.includes(role)) return { kind: "refused", message: MESSAGES.CARD_FORBIDDEN, text };
-  if (!text.trim() || text.length > MAX_REQUEST_LENGTH) return { kind: "refused", message: INTAKE_MESSAGES.DRAFT_REFUSED, text };
+  if (!text.trim() || text.length > MAX_REQUEST_LENGTH || looksLikeInjection(text)) return { kind: "refused", message: INTAKE_MESSAGES.DRAFT_REFUSED, text };
 
   const today = todayInPractice();
   // Модуль із ключем (`server-only`) вантажимо лише тут: сторінки й тести, що імпортують цей файл, його не тягнуть.
@@ -140,7 +141,7 @@ export async function requestIntakeDraft(_previous: IntakeDraftState, formData: 
   const result = await askModel(text, today, model);
   if (!result.ok) return unavailable(text, result.reason);
 
-  const outcome = buildOutcome(result.draft, today);
+  const outcome = buildOutcome(result.draft, today, text);
   return outcome.kind === "draft"
     ? { kind: "draft", message: outcome.message, text, values: outcome.values }
     : { kind: "refused", message: outcome.message, text };
