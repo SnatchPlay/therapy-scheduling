@@ -149,9 +149,12 @@ describe("загальна добова стеля: 200 запитів за до
     expect(await countInDb(SCHEDULER2)).toBe(0);
   });
 
-  it("AC-INTAKE-08: стеля й ліміт користувача незалежні: 10 за годину блокує одного, а решта 199 за добу — всіх інших", async () => {
-    await seed(SCHEDULER, 5, 10);
-    expect(await takeAs(SCHEDULER)).toBe(false);
-    expect(await takeAs(SCHEDULER2)).toBe(true);
+  it("AC-INTAKE-08: слот дають лише планувальнику й адміністратору: терапевт і користувач без ролі отримують відмову й нічого не записують (стелю не вичерпати)", async () => {
+    for (const email of ["therapist1@example.test", "newuser1@example.test"]) {
+      expect(await takeAs(t.users[email]), email).toBe(false);
+      expect(await countInDb(t.users[email]), email).toBe(0);
+    }
+    expect(await takeAs(ADMIN)).toBe(true);
+    expect(await takeAs(SCHEDULER)).toBe(true);
   });
 });

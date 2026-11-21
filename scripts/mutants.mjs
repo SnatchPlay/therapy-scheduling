@@ -192,6 +192,12 @@ export const mutants = [
     find: "delete from public.intake_draft_requests where created_at < clock_timestamp() - interval '1 day';",
     replace: "delete from public.intake_draft_requests where user_id = v_user and created_at < clock_timestamp() - interval '1 day';",
   },
+  {
+    id: "I20", kind: "sql", ac: "AC-INTAKE-08", file: INTAKE_CAP, tests: [INTAKE_QUOTA_DB],
+    what: "перевірку ролі в базі прибрано: терапевт чи користувач без ролі бере слоти через Data API й вичерпує загальну стелю",
+    find: "if coalesce((select private.current_app_role()), '') not in ('admin', 'scheduler') then\n    return false;\n  end if;",
+    replace: "",
+  },
   // ── Сторінки (TS): відмова з текстом PM ────────────────────────────────────────────────────────────────────
   {
     id: "T1", kind: "ts", ac: "AC-CARD-16", file: CLIENT_PAGE, tests: [CLIENT_PAGE_TEST],
