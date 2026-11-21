@@ -12,9 +12,11 @@ const DRAFT_READY = "Draft ready. Check the fields and create the card.";
 const UNAVAILABLE = "The assistant is unavailable right now. Fill in the form manually.";
 const DRAFT_REFUSED =
   "This text can't be used to draft a client card. Paste the client's request or fill in the form manually.";
-// Текст звернення з AC-INTAKE-01 дослівно.
-const INTAKE_TEXT =
-  "Hi, my name is Client Ten, I was born on May 14, 1990. I'd like individual sessions in English. My email is client10@example.test.";
+// Текст звернення за сценарієм AC-INTAKE-01, але з іменем, якого на проді немає. Картка «Client Ten» там уже є (створена
+// вручну до UAT), і на кадрі «картки немає» вона суперечила б «Тоді». Чернетка нічого не створює, тож це ім'я лишається вільним.
+const NAME = "Client Tenfold";
+const EMAIL = "client10fold@example.test";
+const INTAKE_TEXT = `Hi, my name is ${NAME}, I was born on May 14, 1990. I'd like individual sessions in English. My email is ${EMAIL}.`;
 const NOT_A_CLIENT_REQUEST = "Can you recommend a good book about anxiety?";
 // Відповідь моделі чекаємо довше за типові 5 с: таймаут виклику моделі — 45 с, плюс один повтор.
 const MODEL_WAIT = 100_000;
@@ -41,33 +43,35 @@ async function expectDraftOutcome(page: Page, expected: string) {
   ).toHaveText(expected);
 }
 
-/** Картки у списку `/clients`: усі й лише «Client Ten». */
+/** Картки у списку `/clients`: усі й лише з іменем NAME. */
 async function cardCounts(page: Page) {
   const cards = page.getByTestId("client-card");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  return { all: await cards.count(), clientTen: await cards.getByRole("link", { name: "Client Ten", exact: true }).count() };
+  return { all: await cards.count(), named: await cards.getByRole("link", { name: NAME, exact: true }).count() };
 }
 
 if (liveModel) {
   test.describe("AC-INTAKE-03", () => {
-    let cardsBefore = { all: 0, clientTen: 0 };
+    let cardsBefore = { all: 0, named: 0 };
 
     test(
-      "AC-INTAKE-03: чернетку за текстом з AC-INTAKE-01 заповнено у формі, але картку не створено — у списку клієнтів «Client Ten» немає",
+      `AC-INTAKE-03: чернетку за текстом з AC-INTAKE-01 заповнено у формі, але картку не створено — у списку клієнтів «${NAME}» немає`,
       { tag: ["@uat", "@ai"], annotation: { type: "ac", description: "AC-INTAKE-03" } },
       async ({ page }) => {
         await given("чернетку за текстом з AC-INTAKE-01 заповнено у формі нової картки", async () => {
-          // На проді «Client Ten» може вже бути (створена вручну до UAT): тоді доказом є незмінна кількість карток, а не нуль.
           await page.goto("/clients");
           cardsBefore = await cardCounts(page);
-          test.info().annotations.push({ type: "client-ten-before", description: String(cardsBefore.clientTen) });
+          expect(
+            cardsBefore.named,
+            `передумова AC-INTAKE-03 не виконана: картка «${NAME}» уже є на проді; без неї «картки немає» нічого б не довело`,
+          ).toBe(0);
 
           await page.goto("/clients/new");
           await page.getByLabel("Client request").fill(INTAKE_TEXT);
           await page.getByRole("button", { name: "Draft from request" }).click();
           await expectDraftOutcome(page, DRAFT_READY);
-          await expect(page.getByLabel("Name")).toHaveValue("Client Ten");
-          await expect(page.getByLabel("Email")).toHaveValue("client10@example.test");
+          await expect(page.getByLabel("Name")).toHaveValue(NAME);
+          await expect(page.getByLabel("Email")).toHaveValue(EMAIL);
         });
 
         await when("scheduler1 не створює картку й відкриває список клієнтів", async () => {
@@ -77,20 +81,16 @@ if (liveModel) {
         await thenStep(
           page,
           {
-            clause: "картки «Client Ten» у списку немає: картку створює лише сам планувальник, коли зберігає форму",
-            visible: [`список клієнтів: карток «Client Ten» у ньому ${cardsBefore.clientTen} (як і до чернетки), нової серед них немає`],
+            clause: `картки «${NAME}» у списку немає: картку створює лише сам планувальник, коли зберігає форму`,
+            visible: [`список клієнтів, у якому немає картки «${NAME}»`],
             hidden: [
-              `до чернетки «Client Ten» було ${cardsBefore.clientTen}, усіх карток ${cardsBefore.all}: після чернетки кількості ті самі`,
-              ...(cardsBefore.clientTen > 0
-                ? ["картка «Client Ten» уже існувала до UAT (створена вручну), тому нуль карток на цій базі неможливий"]
-                : []),
+              `кількість карток у списку така сама, як до чернетки (${cardsBefore.all})`,
+              "ім'я в AC — «Client Ten»; на проді така картка вже існує (створена вручну до UAT), тому в тесті взято те саме звернення з вільним іменем",
             ],
           },
           async () => {
             await expect(page.getByTestId("viewer")).toContainText("scheduler1@example.test");
-            await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-            // Карток «Client Ten» не побільшало (на чистій базі їх 0, як у AC) і загалом карток стільки ж, скільки було.
-            expect(await cardCounts(page)).toEqual(cardsBefore);
+            expect(await cardCounts(page)).toEqual({ all: cardsBefore.all, named: 0 });
           },
         );
       },
