@@ -1,0 +1,85 @@
+# Звіт UAT — 21.11.2026
+
+- **Застосунок:** https://therapy-scheduling-weld.vercel.app (/api/health: коміт `78f00d6`)
+- **Код тестів:** `task/intake-uat-unique` @ `ae7dfec` + незакомічені зміни
+- **Прогін:** 21.11.2026, 10:29 (Київ), Playwright 27.0 с; AC: 2 — PASS 2, FAIL 0, NEEDS-HUMAN 0
+- **Рецензент:** `claude-haiku-5-5`; суперечки → `claude-sonnet-5-5`. Разом за розбір: $0.0465 (ціни API; за підпискою — у межах ліміту плану)
+- **Відео й траси:** не в git і не в CI — лише `test-results/` на машині прогону; трасу відкриває `npx playwright show-trace <trace.zip>`
+
+> Примітка: «+ незакомічені зміни» у шапці — лише `.claude/launch.json` (локальна конфігурація dev-сервера, не код тестів). Код тестів — коміт `ae7dfec` гілки `task/intake-uat-unique`, повністю закомічений.
+> AC-INTAKE-03: на проді вже є картка «Client Ten» (створена вручну до UAT), тому в тесті те саме звернення з іменем «Client Tenfold», якого там немає; кадр списку цілком, без «Client Tenfold». Перший прогін 2026-11-15 з іменем «Client Ten» мав вердикт NEEDS-HUMAN.
+
+| AC | Перевірки | Агент | Підсумок | Чому | Playwright | Розбір |
+|---|---|---|---|---|---|---|
+| AC-INTAKE-03 | пройшли | Haiku: NEEDS-HUMAN, Sonnet: PASS | **PASS** | R6: перевірки, агент і цитати збігаються | 9.2 с | $0.0446, 19.9 с |
+| AC-INTAKE-06 | пройшли | Haiku: PASS | **PASS** | R6: перевірки, агент і цитати збігаються | 5.7 с | $0.0019, 7.7 с |
+
+## AC-INTAKE-03 — PASS
+
+**Тест:** AC-INTAKE-03: чернетку за текстом з AC-INTAKE-01 заповнено у формі, але картку не створено — у списку клієнтів «Client Tenfold» немає
+
+**Критерій** (requirements/36-planuvalnyk-otrymuie-chernetku-kartky.md):
+
+> AC-INTAKE-03: Дано чернетку за текстом з AC-INTAKE-01 заповнено у формі нової картки. Коли scheduler1 не створює картку й відкриває список клієнтів. Тоді картки «Client Ten» у списку немає: картку створює лише сам планувальник, коли зберігає форму.
+
+![Кадр «Тоді» 1](frames/AC-INTAKE-03-then-1.png)
+
+**Кроки:** ✔ Дано: чернетку за текстом з AC-INTAKE-01 заповнено у формі нової картки → ✔ Коли: scheduler1 не створює картку й відкриває список клієнтів → ✔ Тоді: картки «Client Tenfold» у списку немає: картку створює лише сам планувальник, коли зберігає форму
+
+**Агент (claude-sonnet-5-5, PASS):** На кадрі сторінка «Clients» з 12 картками; картки «Client Tenfold» серед них немає. Є лише раніше створена картка «Client Ten» (client10@example.test), що узгоджується з поясненням в ac.md.
+
+Haiku сказав NEEDS-HUMAN, тож розбір повторив Sonnet; рішення агента — за Sonnet.
+
+**Цитати агента, звірені зі сторінкою (aria):**
+- «Clients» — є на сторінці
+- «All client cards.» — є на сторінці
+- «Accept Adult» — є на сторінці
+- «Accept Child» — є на сторінці
+- «Client Ten» — є на сторінці
+- «client1» — є на сторінці
+- «client2» — є на сторінці
+- «Shot Adult» — є на сторінці
+- «Shot Child» — є на сторінці
+- «Shot Other» — є на сторінці
+- «UAT AC-CARD-05 Client» — є на сторінці
+- «UAT Insurance mw7iaemv» — є на сторінці
+- «UAT Insurance mw7ion9z» — є на сторінці
+- «UAT Insurance mw7pty47» — є на сторінці
+
+**Правило:** R6: перевірки, агент і цитати збігаються
+
+**Відео:** `test-results/artifacts/intake-draft-AC-INTAKE-03--c3485-нтів-«Client-Tenfold»-немає-chromium/video.webm` · **траса:** `test-results/artifacts/intake-draft-AC-INTAKE-03--c3485-нтів-«Client-Tenfold»-немає-chromium/trace.zip` (не в git)
+
+**Рішення PM:** ☐ приймаю · ☐ відхилення від вимог (issue «Відхилення від вимог: AC-INTAKE-03 — …») · @login: ____
+
+## AC-INTAKE-06 — PASS
+
+**Тест:** AC-INTAKE-06: текст не про нового клієнта — поля форми не змінено (Name лишається «Client Fifteen»), scheduler1 бачить повідомлення про відмову
+
+**Критерій** (requirements/36-planuvalnyk-otrymuie-chernetku-kartky.md):
+
+> AC-INTAKE-06: Дано у формі нової картки вже введено Name «Client Fifteen». Коли scheduler1 просить скласти чернетку з тексту звернення «Can you recommend a good book about anxiety?». Тоді поля форми не змінено (Name лишається «Client Fifteen»), і scheduler1 бачить повідомлення «This text can't be used to draft a client card. Paste the client's request or fill in the form manually.»
+
+![Кадр «Тоді» 1](frames/AC-INTAKE-06-then-1.png)
+
+**Кроки:** ✔ Дано: у формі нової картки вже введено Name «Client Fifteen» → ✔ Коли: scheduler1 просить скласти чернетку з тексту звернення «Can you recommend a good book about anxiety?» → ✔ Тоді: поля форми не змінено (Name лишається «Client Fifteen»), і scheduler1 бачить повідомлення «This text can't be used to draft a client card. Paste the client's request or fill in the form manually.»
+
+**Агент (claude-haiku-5-5, PASS):** На кадрі сторінка «New client» з полем Name, що містить «Client Fifteen», і червоним повідомленням про помилку під полем Client request. Текст повідомлення збігається з критерієм посимвольно (перенесення рядка у блоці є лише візуальним). Решта полів форми на кадрі порожня, але це не з кадрів і не оцінюється.
+
+**Цитати агента, звірені зі сторінкою (aria):**
+- «Client Fifteen» — є на сторінці
+- «This text can't be used to draft a client card. Paste the client's request or fill in the form manually.» — є на сторінці
+
+**Правило:** R6: перевірки, агент і цитати збігаються
+
+**Відео:** `test-results/artifacts/intake-draft-AC-INTAKE-06--2322f-ть-повідомлення-про-відмову-chromium/video.webm` · **траса:** `test-results/artifacts/intake-draft-AC-INTAKE-06--2322f-ть-повідомлення-про-відмову-chromium/trace.zip` (не в git)
+
+**Рішення PM:** ☐ приймаю · ☐ відхилення від вимог (issue «Відхилення від вимог: AC-INTAKE-06 — …») · @login: ____
+
+## Як читати підсумок
+
+- **PASS** — автоматичні перевірки пройшли, агент-рецензент погодився з кадром, а кожну його цитату знайдено на сторінці.
+- **FAIL** — впала автоматична перевірка. Агент цього не перекриває: невидимі вади (буфер обміну, база) він на кадрі не побачить.
+- **NEEDS-HUMAN** — перевірки зелені, але агент не погодився або його цитати немає на сторінці. Часто це слабкий тест або розбіжність між текстом AC і тестом — питання до PM, а не обов'язково вада продукту.
+
+Правила: R1: перевірка впала — FAIL завжди, агент не перекриває; R2: немає вердикту агента (або він про інший AC) чи кадру; R3: перевірки пройшли, агент не погоджується — вирішує людина; R4: не всі видимі частини підтверджено або цитат агента немає на сторінці (aria); R5: помилка сторінки або 5xx під час сценарію; R6: перевірки, агент і цитати збігаються.
