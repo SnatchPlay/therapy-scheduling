@@ -21,3 +21,17 @@ export function classifyDbProbe({ status, error }: DbProbe): DbHealth {
   // 0 — мережа (Supabase недоступний або хибний URL), 5xx, PGRST000–003.
   return { db: "down", reason: `status-${status}${code ? `-${code}` : ""}` };
 }
+
+/**
+ * Ref проєкту Supabase — перший сегмент хоста `https://<ref>.supabase.co`. Не секрет: браузер і так отримує URL.
+ * `/api/health` показує його, щоб було видно, у яку базу (прод чи staging) дивиться цей деплой.
+ */
+export function supabaseRefFromUrl(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    const [ref, ...rest] = new URL(url).hostname.split(".");
+    return ref && rest.length > 0 ? ref : null;
+  } catch {
+    return null;
+  }
+}
