@@ -75,6 +75,8 @@ if (liveModel) {
         });
 
         await when("scheduler1 не створює картку й відкриває список клієнтів", async () => {
+          // Високе вікно: кадр «Тоді» має вмістити весь список, інакше «картки немає» з кадру не підтвердити (нижня частина обрізана).
+          await page.setViewportSize({ width: 1280, height: 2000 });
           await page.goto("/clients");
         });
 
