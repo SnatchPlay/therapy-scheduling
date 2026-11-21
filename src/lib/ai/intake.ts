@@ -31,6 +31,46 @@ export function todayInPractice(now: Date = new Date()): string {
 
 const clean = (value: string | null): string => value?.trim() ?? "";
 
+/** Порівняння без впливу типографіки: NFKC, «’» як «'», довгі дефіси як «-», регістр. Діакритику не знімаємо: ім'я має бути як у тексті. */
+const fold = (value: string): string =>
+  value
+    .normalize("NFKC")
+    .replace(/[\u2018\u2019\u02bc]/g, "'")
+    .replace(/[\u2010\u2011\u2012\u2013]/g, "-")
+    .toLowerCase();
+
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Захист від галюцинацій, а не від ін'єкцій: значення з відповіді моделі лишається, лише якщо воно ціле слово (email — ціла
+ * адреса) в тексті звернення. Вигадане моделлю ім'я чи email не потрапляють у форму (там порожньо й «Missing»): чужий email у
+ * картці — це листи не тій людині. Значення, яке підказав сам текст, ця перевірка пропускає: цю межу тримають відмова моделі
+ * й `looksLikeInjection`.
+ */
+function mentionedIn(text: string, value: string | null): string | null {
+  const wanted = clean(value);
+  if (!wanted) return null;
+  const haystack = fold(text);
+  const found = fold(wanted)
+    .split(/\s+/)
+    .every((token) => {
+      // Ліворуч від email не може стояти символ адреси («xbob@x.test» не містить «bob@x.test»).
+      const left = token.includes("@") ? "(?<![\\p{L}\\p{N}._+-])" : "(?<![\\p{L}\\p{N}])";
+      return new RegExp(`${left}${escapeRegExp(token)}(?![\\p{L}\\p{N}])`, "u").test(haystack);
+    });
+  return found ? wanted : null;
+}
+
+function grounded(draft: ModelDraft, text: string): ModelDraft {
+  return {
+    ...draft,
+    fullName: mentionedIn(text, draft.fullName),
+    email: mentionedIn(text, draft.email),
+    guardianName: mentionedIn(text, draft.guardianName),
+    guardianEmail: mentionedIn(text, draft.guardianEmail),
+  };
+}
+
 /** Повна справжня календарна дата РРРР-ММ-ДД не пізніша за сьогодні; інакше порожньо (AC-INTAKE-05). */
 function validBirthDate(value: string | null, today: string): string {
   const text = clean(value);
@@ -107,10 +147,11 @@ function missingLabels(values: IntakeValues): string[] {
   return required.filter(([isMissing]) => isMissing).map(([, label]) => label);
 }
 
-/** Відповідь моделі → відмова або чернетка з повідомленням (AC-INTAKE-01, 02, 04, 05, 06, 07). */
-export function buildOutcome(draft: ModelDraft, today: string): IntakeOutcome {
+/** Відповідь моделі → відмова або чернетка з повідомленням (AC-INTAKE-01, 02, 04, 05, 06, 07). `inputText` — текст звернення. */
+export function buildOutcome(modelDraft: ModelDraft, today: string, inputText: string): IntakeOutcome {
   const refused: IntakeOutcome = { kind: "refused", message: INTAKE_MESSAGES.DRAFT_REFUSED };
-  if (draft.status === "refused") return refused;
+  if (modelDraft.status === "refused") return refused;
+  const draft = grounded(modelDraft, inputText);
 
   const birthDate = validBirthDate(draft.birthDate, today);
   const type = resolveType(draft, birthDate, today);

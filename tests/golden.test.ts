@@ -38,7 +38,7 @@ async function expectReplay(c: GoldenCase) {
   const result = await askModel(c.input, TODAY, model);
   expect(result.ok).toBe(true);
   if (!result.ok) return;
-  expect(scoreOutcome(c.expected, buildOutcome(result.draft, TODAY)).mismatches).toEqual([]);
+  expect(scoreOutcome(c.expected, buildOutcome(result.draft, TODAY, c.input)).mismatches).toEqual([]);
   // Недовірений вхід дійшов до моделі загорнутим як дані.
   expect(JSON.stringify(model.doGenerateCalls[0].prompt)).toContain("<document>");
 }

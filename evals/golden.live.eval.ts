@@ -57,7 +57,7 @@ async function evalCase(c: GoldenCase, run: number): Promise<CaseResult> {
     rows.push({ ...base, modelId: "—", pass: false, why: message });
     return { status: "failed", message };
   }
-  const score = scoreOutcome(c.expected, buildOutcome(result.draft, today));
+  const score = scoreOutcome(c.expected, buildOutcome(result.draft, today, c.input));
   const why = score.mismatches.map((m) => `${m.field}: очікували «${String(m.expected)}», отримали «${String(m.actual)}»`).join("; ");
   rows.push({ ...base, modelId: result.modelId, pass: score.pass, why });
   // Записуємо ЛИШЕ успішні відповіді: офлайн-реплей у CI має лишатися зеленим.

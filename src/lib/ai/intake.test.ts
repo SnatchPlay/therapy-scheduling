@@ -15,8 +15,11 @@ const draft = (over: Partial<ModelDraft> = {}): ModelDraft => ({
   guardianEmail: null,
   ...over,
 });
-const draftOf = (over: Partial<ModelDraft>) => {
-  const outcome = buildOutcome(draft(over), TODAY);
+// Текст звернення за замовчуванням містить усе, що назвала модель: тести правил не залежать від заземлення (його перевіряє окремий блок).
+const textOf = (d: ModelDraft) => [d.fullName, d.email, d.guardianName, d.guardianEmail].filter(Boolean).join(" ");
+const outcomeOf = (over: Partial<ModelDraft>, text?: string) => buildOutcome(draft(over), TODAY, text ?? textOf(draft(over)));
+const draftOf = (over: Partial<ModelDraft>, text?: string) => {
+  const outcome = outcomeOf(over, text);
   if (outcome.kind !== "draft") throw new Error("очікували чернетку");
   return outcome;
 };
@@ -61,7 +64,7 @@ describe("AC-INTAKE-04: «Missing: …» і правила полів", () => {
 
   it("AC-INTAKE-04: модель не знайшла жодних даних клієнта — чернетки немає, це відмова", () => {
     const empty = { status: "needs_info", clientType: null, fullName: null, birthDate: null, sessionLanguage: null, email: null } as const;
-    expect(buildOutcome(draft(empty), TODAY)).toEqual({
+    expect(outcomeOf(empty)).toEqual({
       kind: "refused",
       message: "This text can't be used to draft a client card. Paste the client's request or fill in the form manually.",
     });
@@ -125,7 +128,7 @@ describe("AC-INTAKE-01, 02: тип, email, мова", () => {
 
 describe("AC-INTAKE-06: відмова моделі", () => {
   it("AC-INTAKE-06: refused → форма не змінюється, повідомлення дослівно з вимоги", () => {
-    expect(buildOutcome(draft({ status: "refused", fullName: "Client Fifteen" }), TODAY)).toEqual({
+    expect(outcomeOf({ status: "refused", fullName: "Client Fifteen" })).toEqual({
       kind: "refused",
       message: "This text can't be used to draft a client card. Paste the client's request or fill in the form manually.",
     });
@@ -137,5 +140,46 @@ describe("todayInPractice", () => {
     // 03:00 UTC 14 листопада = 19:00 13 листопада в Лос-Анджелесі (UTC−8 узимку).
     expect(todayInPractice(new Date("2026-11-14T03:00:00Z"))).toBe("2026-11-13");
     expect(todayInPractice(new Date("2026-11-14T09:00:00Z"))).toBe("2026-11-14");
+  });
+});
+
+describe("AC-INTAKE-07: значення, яких немає в тексті звернення, у форму не потрапляють", () => {
+  const TEXT = "Hi, I'm Client Ten. English sessions please. client10@example.test";
+
+  it("AC-INTAKE-07: ім'я й email з тексту лишаються (без урахування регістру й пробілів)", () => {
+    expect(draftOf({}, TEXT).values).toMatchObject({ full_name: "Client Ten", email: "client10@example.test" });
+    expect(draftOf({}, "CLIENT TEN, CLIENT10@EXAMPLE.TEST").values).toMatchObject({ full_name: "Client Ten", email: "client10@example.test" });
+  });
+
+  it("AC-INTAKE-07: типографські апостроф і дефіс, діакритика в різній формі Unicode не гублять значення", () => {
+    expect(draftOf({ fullName: "Sean O'Brien" }, "I'm Sean O\u2019Brien, sean@example.test").values.full_name).toBe("Sean O'Brien");
+    expect(draftOf({ fullName: "Mary-Jane Ríos" }, "Mary\u2011Jane Ríos here, a@example.test").values.full_name).toBe("Mary-Jane Ríos");
+    expect(draftOf({ fullName: "José Núñez" }, "Soy Jose\u0301 Nu\u0301n\u0303ez, a@example.test").values.full_name).toBe("José Núñez");
+  });
+
+  it("AC-INTAKE-07: збіг лише цілим словом: «Al Ng» не береться з «Alan Nguyen», «bob@x.test» — з «xbob@x.test»", () => {
+    expect(draftOf({ fullName: "Al Ng" }, "Hello, I am Alan Nguyen, a@example.test").values.full_name).toBe("");
+    expect(draftOf({ email: "bob@x.test" }, "Client Ten, xbob@x.test").values.email).toBe("");
+    expect(draftOf({ email: "bob@x.test" }, "Client Ten, a.bob@x.test").values.email).toBe("");
+    expect(draftOf({ email: "bob@x.test" }, "Client Ten, write to bob@x.test.").values.email).toBe("bob@x.test");
+  });
+
+  it("AC-INTAKE-07: email, якого немає в тексті, — порожньо й «Missing: Email» (чужий email у картці — листи не тій людині)", () => {
+    const outcome = draftOf({ email: "other@example.test" }, TEXT);
+    expect(outcome.values.email).toBe("");
+    expect(outcome.message).toBe("Draft is incomplete. Missing: Email. Fill them in manually.");
+  });
+
+  it("AC-INTAKE-07: ім'я, якого немає в тексті, — порожньо й «Missing: Name»", () => {
+    const outcome = draftOf({ fullName: "Somebody Else" }, TEXT);
+    expect(outcome.values.full_name).toBe("");
+    expect(outcome.message).toBe("Draft is incomplete. Missing: Name. Fill them in manually.");
+  });
+
+  it("AC-INTAKE-07: опікун і його email теж мають бути в тексті", () => {
+    const child = { clientType: "Child", fullName: "Child One", birthDate: "2015-03-01", email: null, guardianName: "Grace One", guardianEmail: "grace@example.test" };
+    const text = "I'm Grace One, my child Child One was born 2015-03-01, contact grace@example.test";
+    expect(draftOf(child, text).values).toMatchObject({ guardian_name: "Grace One", guardian_email: "grace@example.test" });
+    expect(draftOf({ ...child, guardianEmail: "teacher@example.test" }, text).values.guardian_email).toBe("");
   });
 });
