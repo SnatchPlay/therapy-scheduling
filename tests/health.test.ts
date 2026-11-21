@@ -1,6 +1,6 @@
 // D0: /api/health відрізняє «база відповіла» від «база недоступна, призупинена чи ключ хибний».
 import { describe, expect, it } from "vitest";
-import { classifyDbProbe } from "@/lib/health";
+import { classifyDbProbe, supabaseRefFromUrl } from "@/lib/health";
 
 describe("classifyDbProbe (/api/health)", () => {
   it("рахує базу живою, коли запит пройшов або Postgres відмовив у правах (42501)", () => {
@@ -29,5 +29,19 @@ describe("classifyDbProbe (/api/health)", () => {
       reason: "status-503-PGRST002",
     });
     expect(classifyDbProbe({ status: 0, error: { message: "fetch failed" } })).toEqual({ db: "down", reason: "status-0" });
+  });
+});
+
+describe("supabaseRefFromUrl (/api/health, supabaseRef)", () => {
+  it("бере ref — перший сегмент хоста адреси проєкту", () => {
+    expect(supabaseRefFromUrl("https://abcdefghijklmnop.supabase.co")).toBe("abcdefghijklmnop");
+    expect(supabaseRefFromUrl("https://abcdefghijklmnop.supabase.co/")).toBe("abcdefghijklmnop");
+  });
+
+  it("повертає null, коли змінної немає або це не адреса з доменом", () => {
+    expect(supabaseRefFromUrl(undefined)).toBeNull();
+    expect(supabaseRefFromUrl("")).toBeNull();
+    expect(supabaseRefFromUrl("not a url")).toBeNull();
+    expect(supabaseRefFromUrl("http://localhost:54321")).toBeNull();
   });
 });
