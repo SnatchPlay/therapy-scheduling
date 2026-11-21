@@ -32,4 +32,13 @@ describe("Sentry: що збираємо", () => {
     register();
     expect(vi.mocked(Sentry.init).mock.calls.at(-1)?.[0]).toMatchObject({ dsn: "https://key@o1.ingest.sentry.io/2", environment: "staging" });
   });
+
+  it("beforeSend ховає вміст лапок у тексті винятку: помилка типу в базі повторює введене значення", () => {
+    register();
+    const options = vi.mocked(Sentry.init).mock.calls.at(-1)?.[0];
+    const event = { type: undefined, exception: { values: [{ type: "Error", value: 'update clients.insurance_status: 22P02 invalid input syntax for type uuid: "client10@example.test"' }] } };
+    const sent = options?.beforeSend?.(event, {});
+    expect(JSON.stringify(sent)).not.toContain("client10");
+    expect(JSON.stringify(sent)).toContain("invalid input syntax for type uuid");
+  });
 });

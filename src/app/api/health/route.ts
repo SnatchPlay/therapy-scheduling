@@ -4,7 +4,7 @@
 // Читають: scripts/smoke.mjs, .github/workflows/smoke.yml і перевірка розгортань курсу.
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { classifyDbProbe, supabaseRefFromUrl } from "@/lib/health";
+import { appEnv, classifyDbProbe, supabaseRefFromUrl } from "@/lib/health";
 import type { Database } from "@/lib/supabase/database.types";
 
 export const dynamic = "force-dynamic";
@@ -13,8 +13,6 @@ export async function GET() {
   // VERCEL_GIT_COMMIT_SHA є, коли у Vercel увімкнено «Automatically expose System Environment Variables» (типово так).
   const sha = process.env.VERCEL_GIT_COMMIT_SHA ?? "local";
   const env = process.env.VERCEL_ENV ?? "local";
-  // На staging VERCEL_ENV теж "preview", тож середовище називає наша змінна APP_ENV (лише сервер, без NEXT_PUBLIC_).
-  const appEnv = process.env.APP_ENV?.trim() || null;
   const supabaseRef = supabaseRefFromUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
   let health: { db: "ok" | "down"; reason: string };
   try {
@@ -31,7 +29,7 @@ export async function GET() {
     health = { db: "down", reason: "exception" };
   }
   return NextResponse.json(
-    { ok: health.db === "ok", sha, env, appEnv, supabaseRef, ...health },
+    { ok: health.db === "ok", sha, env, appEnv: appEnv(), supabaseRef, ...health },
     { status: health.db === "ok" ? 200 : 503, headers: { "cache-control": "no-store" } },
   );
 }

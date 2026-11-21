@@ -1,9 +1,9 @@
 import { APICallError, NoObjectGeneratedError, Output, RetryError, generateText, type LanguageModel } from "ai";
-import { logLlmCall } from "./llm-log";
+import { logLlmCall, type LlmCall } from "./llm-log";
 import { DRAFT_PROMPT_VERSION, draftInstructions, wrapDocument } from "./prompts/draft";
 import { DraftSchema, type ModelDraft } from "./schema";
 
-// Чиста функція: модель передають параметром. Застосунок передає модель Claude (src/lib/ai/anthropic.ts),
+// Модель передають параметром. Застосунок передає модель Claude (src/lib/ai/anthropic.ts),
 // тести — MockLanguageModelV4 із записаною відповіддю. Тут немає `import "server-only"` і немає process.env,
 // тому Vitest може імпортувати цей файл. Взято з набору курсу (materials/ai-feature).
 
@@ -15,12 +15,14 @@ export type DraftOptions = {
   maxRetries?: number;
   timeoutMs?: number;
   /** Куди писати llm.call. Немає — журналу немає (так працюють golden-тести й eval). */
-  log?: { requestId: string; route: string; model: string };
+  log?: { requestId: string; route: string };
 };
 
-/** Питає модель про одне звернення. Нічого не пише й не має інструментів: модель повертає лише JSON за схемою. */
+/** Питає модель про одне звернення. Не пише в базу й не має інструментів: модель повертає лише JSON за схемою. */
 export async function askModel(text: string, today: string, model: LanguageModel, opts: DraftOptions = {}): Promise<ModelResult> {
   const started = performance.now();
+  let outcome: ModelResult;
+  let call: Pick<LlmCall, "model" | "state" | "inputTokens" | "outputTokens" | "errorKind">;
   try {
     const result = await generateText({
       model,
@@ -33,36 +35,16 @@ export async function askModel(text: string, today: string, model: LanguageModel
       timeout: opts.timeoutMs ?? 45_000,
     });
     // result.output уже перевірено за DraftSchema (інакше — виняток NoObjectGeneratedError).
-    if (opts.log) {
-      logLlmCall({
-        requestId: opts.log.requestId,
-        route: opts.log.route,
-        model: result.response.modelId,
-        fallbackUsed: false,
-        state: result.output.status,
-        latencyMs: performance.now() - started,
-        inputTokens: result.usage.inputTokens,
-        outputTokens: result.usage.outputTokens,
-        promptVersion: DRAFT_PROMPT_VERSION,
-      });
-    }
-    return { ok: true, draft: result.output, modelId: result.response.modelId };
+    outcome = { ok: true, draft: result.output, modelId: result.response.modelId };
+    call = { model: result.response.modelId, state: result.output.status, inputTokens: result.usage.inputTokens, outputTokens: result.usage.outputTokens };
   } catch (error) {
-    const failure = classifyError(error);
-    if (opts.log) {
-      logLlmCall({
-        requestId: opts.log.requestId,
-        route: opts.log.route,
-        model: opts.log.model,
-        fallbackUsed: false,
-        state: "unavailable",
-        latencyMs: performance.now() - started,
-        promptVersion: DRAFT_PROMPT_VERSION,
-        errorKind: failure.reason,
-      });
-    }
-    return failure;
+    outcome = classifyError(error);
+    call = { model: typeof model === "string" ? model : model.modelId, state: "unavailable", errorKind: outcome.reason };
   }
+  if (opts.log) {
+    logLlmCall({ ...opts.log, fallbackUsed: false, latencyMs: performance.now() - started, promptVersion: DRAFT_PROMPT_VERSION, ...call });
+  }
+  return outcome;
 }
 
 export function classifyError(error: unknown): Extract<ModelResult, { ok: false }> {

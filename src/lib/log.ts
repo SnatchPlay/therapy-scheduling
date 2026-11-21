@@ -7,16 +7,15 @@ export type FieldRule =
   | "token" //   коротке ідентифікатор-подібне значення: літери, цифри, . _ : / - (модель, id запиту, код помилки)
   | "path" //    шлях маршруту: /, /clients/[id], /api/health — без ?query і #
   | "int" //     ціле число ≥ 0 (токени, мілісекунди); дробове округлюємо
-  | "number" //  скінченне число ≥ 0 (вартість у USD)
   | "boolean"
   | readonly string[]; // перелік дозволених значень (enum)
 
 export type LogSchema = Readonly<Record<string, FieldRule>>;
 export type LogValue = string | number | boolean;
-export type LogLevel = "info" | "warn" | "error";
+export type LogLevel = "info" | "error";
 
 /** Найдовше значення рядка в журналі: довше — обрізаємо (id, моделі й маршрути коротші). */
-export const MAX_STRING = 120;
+const MAX_STRING = 120;
 
 const TOKEN = /^[A-Za-z0-9._:/-]+$/;
 const PATH = /^\/[A-Za-z0-9._~\-/[\]()@]*$/;
@@ -30,7 +29,6 @@ const RULES: Record<Exclude<FieldRule, readonly string[]>, (value: unknown) => L
   token: (value) => (typeof value === "string" && TOKEN.test(value) ? value.slice(0, MAX_STRING) : undefined),
   path: (value) => (typeof value === "string" && PATH.test(value) ? value.slice(0, MAX_STRING) : undefined),
   int: (value) => (isNonNegative(value) ? Math.round(value) : undefined),
-  number: (value) => (isNonNegative(value) ? value : undefined),
   boolean: (value) => (typeof value === "boolean" ? value : undefined),
 };
 
@@ -59,7 +57,7 @@ export function formatEvent(event: string, fields: Readonly<Record<string, unkno
 
 /**
  * Пише одну подію в журнал (на Vercel — Runtime Logs; на Hobby вони живуть 1 годину).
- * console.error Vercel показує як error; console.warn у звичайних (не потокових) функціях — теж як error.
+ * console.error Vercel показує як error.
  * Повертає записаний рядок — зручно для тестів.
  */
 export function logEvent(

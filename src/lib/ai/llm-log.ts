@@ -3,7 +3,7 @@
 import { logEvent, type LogSchema } from "@/lib/log";
 
 /** ok / needs_info / refused — відповідь моделі за схемою; unavailable — відповіді немає (ліміт, таймаут, збій). */
-export const LLM_STATES = ["ok", "needs_info", "refused", "unavailable"] as const;
+const LLM_STATES = ["ok", "needs_info", "refused", "unavailable"] as const;
 export type LlmState = (typeof LLM_STATES)[number];
 
 export type LlmCall = {
@@ -26,7 +26,7 @@ export type LlmCall = {
 };
 
 /** Схема llm.call: єдиний список полів, які взагалі можуть потрапити в журнал. */
-export const LLM_CALL_SCHEMA = {
+const LLM_CALL_SCHEMA = {
   requestId: "token",
   route: "path",
   model: "token",

@@ -106,3 +106,9 @@ T15-02,2026-10-26,T-15,browser,real,UI,,run,,,sign-out showed login page before 
 T15-03,2026-10-26,T-15,blind-review,real,DOC,,static,,,comments and DESIGN out of date after motion change; 30 fps check skipped frames,L
 T15-04,2026-10-26,T-15,blind-review,real,SEC,,static,,,browser sign-out left Next client cache: Back showed client data,H
 T15-05,2026-10-26,T-15,coderabbit,real,FAIL,,static,,,no fallback if client navigation to /login stalls after sign-out,L
+WS11B-01,2026-11-21,WS11-B,blind-review,real,SEC,,static,,,database error message with the entered value went to Sentry via onRequestError,M
+WS11B-02,2026-11-21,WS11-B,blind-review,real,DRY,,static,,,askModel logged in two blocks inside try and kept stale 'pure function' comments,M
+WS11B-03,2026-11-21,WS11-B,blind-review,real,DRY,,static,,,APP_ENV resolved by two different rules (health and Sentry),M
+WS11B-04,2026-11-21,WS11-B,blind-review,real,TEST,,static,,,needs_info and refused state mapping untested,L
+WS11B-05,2026-11-21,WS11-B,blind-review,real,YAGNI,,static,,,number rule and warn level without a user,L
+WS11B-06,2026-11-21,WS11-B,fallow,real,YAGNI,,static,,,three new exports without a user,L

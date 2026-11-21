@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { askModel } from "@/lib/ai/draft";
-import { PRODUCT_MODEL } from "@/lib/ai/models";
 import { looksLikeInjection } from "@/lib/ai/injection";
 import { buildOutcome, todayInPractice, type IntakeValues } from "@/lib/ai/intake";
 import { clientErrorCode, INTAKE_MESSAGES, MESSAGES, toMessageCode, type ClientType, type MessageCode } from "@/lib/messages";
@@ -139,7 +138,7 @@ export async function requestIntakeDraft(_previous: IntakeDraftState, formData: 
   // закриває: платного виклику без ліміту не робимо.
   const { data: allowed, error: quotaError } = await supabase.rpc("take_intake_draft_slot");
   if (quotaError || allowed !== true) return unavailable(text, quotaError ? "quota check failed" : "quota exhausted");
-  const result = await askModel(text, today, model, { log: { requestId: crypto.randomUUID(), route: "/clients/new", model: PRODUCT_MODEL } });
+  const result = await askModel(text, today, model, { log: { requestId: crypto.randomUUID(), route: "/clients/new" } });
   if (!result.ok) return unavailable(text); // причину пише llm.call (errorKind)
 
   const outcome = buildOutcome(result.draft, today, text);
