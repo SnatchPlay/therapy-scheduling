@@ -109,8 +109,8 @@ export type IntakeDraftState =
 const MAX_REQUEST_LENGTH = 2000;
 
 /** Користувач бачить завжди те саме «недоступний» (AC-INTAKE-08); причина — лише в лог сервера, без тексту звернення. */
-function unavailable(text: string, reason: string): IntakeDraftState {
-  console.error(`intake draft unavailable: ${reason}`);
+function unavailable(text: string, reason?: string): IntakeDraftState {
+  if (reason) console.error(`intake draft unavailable: ${reason}`);
   return { kind: "unavailable", message: INTAKE_MESSAGES.ASSISTANT_UNAVAILABLE, text };
 }
 
@@ -138,8 +138,8 @@ export async function requestIntakeDraft(_previous: IntakeDraftState, formData: 
   // закриває: платного виклику без ліміту не робимо.
   const { data: allowed, error: quotaError } = await supabase.rpc("take_intake_draft_slot");
   if (quotaError || allowed !== true) return unavailable(text, quotaError ? "quota check failed" : "quota exhausted");
-  const result = await askModel(text, today, model);
-  if (!result.ok) return unavailable(text, result.reason);
+  const result = await askModel(text, today, model, { log: { requestId: crypto.randomUUID(), route: "/clients/new" } });
+  if (!result.ok) return unavailable(text); // причину пише llm.call (errorKind)
 
   const outcome = buildOutcome(result.draft, today, text);
   return outcome.kind === "draft"

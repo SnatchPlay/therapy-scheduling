@@ -1,6 +1,6 @@
 import { APICallError } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { askModel } from "./draft";
 import { DRAFT_PROMPT_VERSION, draftInstructions, wrapDocument } from "./prompts/draft";
 
@@ -89,5 +89,42 @@ describe("AC-INTAKE-07: текст звернення — це дані, а не
 
   it("версія промпту задана (записи golden cases прив'язані до неї)", () => {
     expect(DRAFT_PROMPT_VERSION).toMatch(/^intake-v\d+$/);
+  });
+});
+
+describe("llm.call: журнал виклику моделі без тексту звернення", () => {
+  const log = { requestId: "3f0c2a9e-1b7d-4c55-9a3e-2f6d8e1c0b4a", route: "/clients/new" };
+  const TEXT = "Hi, I'm Client Ten, client10@example.test, please call me";
+  afterEach(() => vi.restoreAllMocks());
+
+  it("успішний виклик: один рядок info зі станом, токенами й версією промпту, без тексту звернення", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    await askModel(TEXT, "2026-11-13", replay(VALID), { log });
+    expect(info).toHaveBeenCalledTimes(1);
+    const line = String(info.mock.calls[0][0]);
+    expect(JSON.parse(line)).toMatchObject({ event: "llm.call", state: "ok", model: "recorded", fallbackUsed: false, inputTokens: 10, outputTokens: 20, promptVersion: DRAFT_PROMPT_VERSION });
+    expect(line).not.toContain("Client Ten");
+    expect(line).not.toContain("example.test");
+  });
+
+  it.each(["ok", "needs_info", "refused"] as const)("стан у журналі повторює відповідь моделі: %s", async (status) => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    await askModel(TEXT, "2026-11-13", replay(JSON.stringify({ ...JSON.parse(VALID), status })), { log });
+    expect(JSON.parse(String(info.mock.calls[0][0]))).toMatchObject({ state: status });
+  });
+
+  it("збій моделі: один рядок error зі станом unavailable і кодом причини, без тексту помилки постачальника", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    await askModel(TEXT, "2026-11-13", failing(() => apiError(500)), { maxRetries: 0, log });
+    expect(error).toHaveBeenCalledTimes(1);
+    const line = String(error.mock.calls[0][0]);
+    expect(JSON.parse(line)).toMatchObject({ event: "llm.call", state: "unavailable", errorKind: "provider_error", model: "mock-model-id" });
+    expect(line).not.toContain("provider error");
+  });
+
+  it("без опції log журналу немає", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    await askModel(TEXT, "2026-11-13", replay(VALID));
+    expect(info).not.toHaveBeenCalled();
   });
 });

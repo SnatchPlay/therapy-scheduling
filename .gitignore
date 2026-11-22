@@ -63,3 +63,6 @@ accounts.txt
 /playwright-report/
 /blob-report/
 /playwright/.auth/
+
+# Sentry Config File
+.env.sentry-build-plugin

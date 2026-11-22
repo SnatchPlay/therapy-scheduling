@@ -1,6 +1,6 @@
 // D0: /api/health відрізняє «база відповіла» від «база недоступна, призупинена чи ключ хибний».
-import { describe, expect, it } from "vitest";
-import { classifyDbProbe, supabaseRefFromUrl } from "@/lib/health";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { appEnv, classifyDbProbe, supabaseRefFromUrl } from "@/lib/health";
 
 describe("classifyDbProbe (/api/health)", () => {
   it("рахує базу живою, коли запит пройшов або Postgres відмовив у правах (42501)", () => {
@@ -43,5 +43,18 @@ describe("supabaseRefFromUrl (/api/health, supabaseRef)", () => {
     expect(supabaseRefFromUrl("")).toBeNull();
     expect(supabaseRefFromUrl("not a url")).toBeNull();
     expect(supabaseRefFromUrl("http://localhost:54321")).toBeNull();
+  });
+});
+
+describe("appEnv (/api/health і Sentry: одне правило середовища)", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("повертає APP_ENV без пробілів, а порожню чи відсутню змінну вважає відсутньою", () => {
+    vi.stubEnv("APP_ENV", " staging ");
+    expect(appEnv()).toBe("staging");
+    vi.stubEnv("APP_ENV", "  ");
+    expect(appEnv()).toBeNull();
+    vi.stubEnv("APP_ENV", "");
+    expect(appEnv()).toBeNull();
   });
 });

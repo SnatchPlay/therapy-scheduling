@@ -35,3 +35,8 @@ export function supabaseRefFromUrl(url: string | undefined): string | null {
     return null;
   }
 }
+
+/** Назва середовища з нашої змінної APP_ENV ("staging"); на staging VERCEL_ENV теж "preview", тож лише вона їх розрізняє. Порожня чи з пробілів — як немає. */
+export function appEnv(): string | null {
+  return process.env.APP_ENV?.trim() || null;
+}
