@@ -239,7 +239,23 @@
       "Bash(*vercel pull*)",
       "PowerShell(*git diff*--no-index*)",
       "PowerShell(*git diff*--output*)",
-      "PowerShell(*vercel pull*)"
+      "PowerShell(*vercel pull*)",
+      "mcp__vercel__create_ai_gateway_rule",
+      "mcp__vercel__create_ai_gateway_virtual_model",
+      "mcp__vercel__update_ai_gateway_rule",
+      "mcp__vercel__update_ai_gateway_virtual_model",
+      "mcp__vercel__upsert_ai_gateway_budget",
+      "mcp__vercel__upsert_ai_gateway_budget_default",
+      "mcp__vercel__fork_drive",
+      "mcp__vercel__start_board_thread",
+      "mcp__vercel__reply_to_board_thread",
+      "mcp__vercel__label_board_message",
+      "mcp__vercel__react_to_board_message",
+      "mcp__vercel__create_observability_query",
+      "mcp__vercel__create_trace_session",
+      "mcp__vercel__import-claude-dashboard-from-url",
+      "mcp__vercel__import-claude-design-from-url",
+      "mcp__vercel__import-claude-motion-from-url"
     ]
   }
 }

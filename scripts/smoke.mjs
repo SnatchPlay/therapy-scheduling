@@ -20,11 +20,15 @@
 //   - x-vercel-set-bypass-cookie НЕ надсилаємо: він потрібен браузеру для наступних запитів і відповідає
 //     редіректом із Set-Cookie, а smoke з redirect:"manual" тоді побачив би 3xx замість сторінки.
 //   - SMOKE_TARGET=deploy (ставить workflow для preview і staging) змінює лише підказки в повідомленнях про збій.
+//   - EXPECT_SUPABASE_REF (ставить workflow зі змінних репо SUPABASE_PROD_REF і SUPABASE_STAGING_REF): ref проєкту Supabase, на
+//     який має дивитися деплой. /api/health віддає supabaseRef з NEXT_PUBLIC_SUPABASE_URL; інший ref — збій із назвою змінної
+//     (інцидент-дріл 2026-11-22: хибний ref дав «Supabase недоступний», а деплой, що дивиться в чужу живу базу, ішов би зеленим).
 const [rawBase = process.env.PROD_URL ?? "", expectSha = ""] = process.argv.slice(2);
 // client_payload.url від Vercel може прийти хостом без схеми — додаємо https://.
 const base = (/^https?:\/\//.test(rawBase) ? rawBase : rawBase ? `https://${rawBase}` : "").replace(/\/+$/, "");
 const bypass = (process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? "").trim();
 const target = process.env.SMOKE_TARGET === "deploy" ? "deploy" : "prod";
+const expectRef = (process.env.EXPECT_SUPABASE_REF ?? "").trim();
 
 const headers = { "user-agent": "smoke/2.0 (WS11)" };
 if (bypass) headers["x-vercel-protection-bypass"] = bypass;
@@ -96,6 +100,11 @@ async function main() {
   } else if (health.db !== "ok") {
     fail.push(
       `"/api/health": HTTP ${health.status}, db=${health.db ?? "?"}${health.reason ? ` (${health.reason})` : ""} — Supabase недоступний чи NEXT_PUBLIC_SUPABASE_URL у Vercel не той?`,
+    );
+  }
+  if (expectRef && health && "supabaseRef" in health && health.supabaseRef !== expectRef) {
+    fail.push(
+      `"/api/health": supabaseRef=${String(health.supabaseRef)}, а очікувався ${expectRef} — NEXT_PUBLIC_SUPABASE_URL цього середовища у Vercel вказує на іншу базу: виправте змінну (рядок саме цього середовища чи гілки) і зробіть Redeploy`,
     );
   }
   if (expectSha && health?.sha === "local") {

@@ -121,3 +121,11 @@ WS11C-05,2026-11-22,WS11-C,blind-review,real,FAIL,,static,,,gh secret and gh var
 WS11C-06,2026-11-22,WS11-C,blind-review,nit,DEAD,,static,,,allow rules for supabase tools outside enabled feature groups,L
 WS11C-07,2026-11-22,WS11-C,blind-review,nit,SEC,,static,,,filter_project_envs in ask not deny (kit decision and drill answers no),L
 WS11C-08,2026-11-22,WS11-C,blind-review,real,SEC,,static,,,vercel pull not denied while vercel env pull is,L
+WS11C2-01,2026-11-22,WS11-C,blind-review,real,FAIL,,static,,,unset repo variable silently disables the supabaseRef check,M
+WS11C2-02,2026-11-22,WS11-C,blind-review,real,DOC,,static,,,postmortem links a PR number that did not exist yet,L
+WS11C2-03,2026-11-22,WS11-C,blind-review,nit,FAIL,,static,,,check skipped when health has no supabaseRef field (old previews),L
+WS11C2-04,2026-11-22,WS11-C,blind-review,real,DOC,,static,,,runbook grep pattern does not match the script message,L
+WS11C2-05,2026-11-22,WS11-C,blind-review,real,DOC,,static,,,smoke daily time stated for winter only,L
+WS11C2-06,2026-11-22,WS11-C,blind-review,nit,DOC,,static,,,status condition note covers only lagging staging,L
+WS11C2-07,2026-11-22,WS11-C,blind-review,real,DRIFT,,static,,,severity scale source stated differently in postmortem and runbook,L
+WS11C2-08,2026-11-22,WS11-C,blind-review,nit,DOC,,static,,,local OS user path in transcript while header says nothing removed,L

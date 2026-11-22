@@ -33,3 +33,4 @@ date,step,instrument,diff_lines,tokens,minutes,findings_real,findings_nit,findin
 2026-11-21,WS11-B,blind-review,488,298140,4.5,5,0,0,5,two reviewers in parallel; correctness 1 medium (db error text to Sentry) 6 low; principles 13; 5 declined on purpose (see findings-log)
 2026-11-21,WS11-B,blind-review,490,133974,1.6,1,0,0,4,architecture reviewer; 1 real fixed (console breadcrumbs), 4 kept or dropped with counterargument
 2026-11-22,WS11-C,blind-review,257,130302,2.1,5,2,0,1,one reviewer on permission profile; 5 real (4 fixed in files 1 mitigated by launch flags) 2 nit kept 1 dropped with evidence
+2026-11-22,WS11-C,blind-review,466,151266,2.4,5,3,0,0,one reviewer on smoke ref check and ops docs; 5 real fixed 3 nit (1 fixed 2 kept with reason)
