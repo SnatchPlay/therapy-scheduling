@@ -115,7 +115,7 @@ Staging щоденний smoke не будить: **перед UAT (User Accepta
 | Рядок підключення бази (`SUPABASE_DB_URL`, після зміни пароля бази) | Connect у тому самому проєкті, Session pooler; пароль з `!@#` — закодувати | GitHub → Environments → `production` чи `staging` | наступний прогін CI: запобіжник друкує правильний ref |
 | `VERCEL_AUTOMATION_BYPASS_SECRET` | Vercel → Settings → Deployment Protection → Protection Bypass for Automation | GitHub → Settings → Secrets → Actions | оновіть секрет у GitHub і зробіть redeploy staging: старі деплої можуть не прийняти новий секрет |
 | `TELEGRAM_BOT_TOKEN` | Telegram, BotFather (перевипуск токена; назву команди звірте в інтерфейсі) | GitHub Secrets | ручний червоний прогін smoke → повідомлення прийшло |
-| `ANTHROPIC_API_KEY` | консоль Anthropic → API keys | Vercel → **Production** (у Preview ключа немає навмисно: платні виклики) | redeploy; старий ключ видалити |
+| `ANTHROPIC_API_KEY` | консоль Anthropic → API keys | Vercel → **Production** і **Preview, лише гілка `staging`** (в інших preview ключа немає навмисно: платні виклики) | redeploy; старий ключ видалити |
 | `SENTRY_AUTH_TOKEN` (вивантаження source maps) | Sentry → Settings → Auth Tokens | Vercel (Production і Preview) і локальний `.env.sentry-build-plugin`; у GitHub не кладемо | redeploy |
 | `SENTRY_DSN` | Sentry → проєкт → Client Keys | Vercel (Production і Preview, Sensitive) | redeploy; DSN не секрет за задумом Sentry, але тримаємо в змінній |
 
