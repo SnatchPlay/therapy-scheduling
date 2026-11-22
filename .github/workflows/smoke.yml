@@ -23,8 +23,9 @@
 name: smoke
 
 on:
-  # Прод після деплою: commit status «Vercel» = success на коміті main. Кожен інший commit status (CodeRabbit тощо)
-  # створює в Actions пропущений (skipped) прогін — це шум, не збій.
+  # Прод після деплою: commit status «Vercel» = success на HEAD main (github.sha для status — останній коміт гілки за
+  # замовчуванням; статус деплою staging, що відстає від main, має інший sha і прод-перевірку не запускає: інцидент-дріл
+  # 2026-11-22). Кожен інший commit status (CodeRabbit тощо) створює в Actions пропущений (skipped) прогін — це шум, не збій.
   status:
   # Vercel шле repository_dispatch після кожного деплою: production → job "prod", усе інше (preview, staging) → "deploy".
   repository_dispatch:
@@ -58,12 +59,14 @@ jobs:
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && inputs.url == '') ||
       (github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success' &&
-       contains(github.event.branches.*.name, github.event.repository.default_branch)) ||
+       github.event.sha == github.sha) ||
       (github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'production')
     runs-on: ubuntu-latest
     timeout-minutes: 6
     env:
       PROD_URL: ${{ vars.PROD_URL }}
+      # Прод має дивитися на свій проєкт Supabase (змінна репо SUPABASE_PROD_REF).
+      EXPECT_SUPABASE_REF: ${{ vars.SUPABASE_PROD_REF }}
       # Очікуваний коміт: щойно розгорнутий (status / repository_dispatch) або HEAD main (schedule, ручний запуск з main).
       EXPECT_SHA: ${{ github.event.client_payload.git.sha || github.event.sha || github.sha }}
       # Прод не за захистом (Standard Protection), але заголовок не шкодить, якщо колись увімкнуть All Deployments.
@@ -80,6 +83,10 @@ jobs:
         run: |
           if [ -z "$PROD_URL" ]; then
             echo "::error title=smoke::Немає змінної репо PROD_URL — Settings → Secrets and variables → Actions → Variables → PROD_URL = https://<проєкт>.vercel.app"
+            exit 1
+          fi
+          if [ -z "$EXPECT_SUPABASE_REF" ]; then
+            echo "::error title=smoke::Немає змінної репо SUPABASE_PROD_REF — без неї smoke не перевіряє, що прод дивиться на свій проєкт Supabase"
             exit 1
           fi
       - name: Прод = main, сторінка входу відкривається, база відповідає
@@ -125,6 +132,8 @@ jobs:
       DEPLOY_ENV: ${{ github.event.client_payload.environment || 'manual' }}
       DEPLOY_BRANCH: ${{ github.event.client_payload.git.ref || '' }}
       SMOKE_TARGET: deploy
+      # Усі непродові деплої (preview і staging) мають дивитися на проєкт staging (змінна репо SUPABASE_STAGING_REF).
+      EXPECT_SUPABASE_REF: ${{ vars.SUPABASE_STAGING_REF }}
       # Значення — лише з GitHub Secrets; скрипт додає заголовок x-vercel-protection-bypass і не друкує секрет.
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
     steps:
@@ -140,6 +149,10 @@ jobs:
         run: |
           if [ -z "$DEPLOY_URL" ]; then
             echo "::error title=smoke::Немає адреси деплою (client_payload.url чи поле url ручного запуску)"
+            exit 1
+          fi
+          if [ -z "$EXPECT_SUPABASE_REF" ]; then
+            echo "::error title=smoke::Немає змінної репо SUPABASE_STAGING_REF — без неї smoke не перевіряє, що деплой дивиться на проєкт staging"
             exit 1
           fi
           if [ -z "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
