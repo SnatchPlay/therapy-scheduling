@@ -113,3 +113,11 @@ WS11B-04,2026-11-21,WS11-B,blind-review,real,TEST,,static,,,needs_info and refus
 WS11B-05,2026-11-21,WS11-B,blind-review,real,YAGNI,,static,,,number rule and warn level without a user,L
 WS11B-06,2026-11-21,WS11-B,fallow,real,YAGNI,,static,,,three new exports without a user,L
 WS11B-07,2026-11-21,WS11-B,blind-review,real,SEC,,static,,,Sentry Console integration turned console output with db error text into breadcrumbs that beforeSend does not scrub,M
+WS11C-01,2026-11-22,WS11-C,blind-review,real,SEC,,static,,,deny patterns for git push and gh start at command start and miss a prefixed or flagged command,M
+WS11C-02,2026-11-22,WS11-C,blind-review,real,SEC,,static,,,allowed git diff bypasses Read and Write denies (--no-index and --output),M
+WS11C-03,2026-11-22,WS11-C,blind-review,real,DRIFT,,static,,,incident profile merges with settings.local.json so read-only is not absolute; mitigated by launch flags,M
+WS11C-04,2026-11-22,WS11-C,blind-review,dropped,DOC,,static,,,hardcoded supabase ref is staging (verified in smoke health) and server name clash solved by strict-mcp-config,L
+WS11C-05,2026-11-22,WS11-C,blind-review,real,FAIL,,static,,,gh secret and gh variable deny blocked read-only list used by bootstrap checks,L
+WS11C-06,2026-11-22,WS11-C,blind-review,nit,DEAD,,static,,,allow rules for supabase tools outside enabled feature groups,L
+WS11C-07,2026-11-22,WS11-C,blind-review,nit,SEC,,static,,,filter_project_envs in ask not deny (kit decision and drill answers no),L
+WS11C-08,2026-11-22,WS11-C,blind-review,real,SEC,,static,,,vercel pull not denied while vercel env pull is,L
